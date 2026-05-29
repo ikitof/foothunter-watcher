@@ -584,6 +584,7 @@ def run_gui():
         "wake": threading.Event(),
         "stop": False,
         "last": None,          # dernier (comp, payload) rendu (pour re-render rapide)
+        "team_win": None,      # fenêtre "historique d'équipe" ouverte (réutilisée)
     }
 
     # ---- rendu ------------------------------------------------------------
@@ -596,6 +597,130 @@ def run_gui():
         f.pack(fill="x", padx=6, pady=(10, 2))
         tk.Label(f, text=text, bg=BG, fg=color, anchor="w",
                  font=("TkDefaultFont", 10, "bold")).pack(side="left")
+
+    # ---- historique d'une équipe (clic sur un nom) ------------------------
+    def _groups_for(comp):
+        """Retrouve les journées d'une compétition depuis le dernier rendu."""
+        if state["last"] is None:
+            return None
+        last_comp, payload = state["last"]
+        if last_comp == ALL_KEY:
+            return (payload or {}).get(comp)
+        groups, _ = payload
+        return groups
+
+    def open_team(comp, team):
+        groups = _groups_for(comp)
+        if not team or team == "?" or not groups:
+            return
+        show_team_window(comp, team, team_history(groups, team))
+
+    def _bind_team_click(label, comp, team):
+        """Rend un nom d'équipe cliquable (curseur main + survol + clic)."""
+        if not team or team == "?":
+            return
+        base = label.cget("fg")
+        label.configure(cursor="hand2")
+        label.bind("<Enter>", lambda _e: label.configure(fg=ACCENT))
+        label.bind("<Leave>", lambda _e, c=base: label.configure(fg=c))
+        label.bind("<Button-1>", lambda _e: open_team(comp, team))
+
+    def show_team_window(comp, team, hist):
+        old = state.get("team_win")
+        if old is not None and old.winfo_exists():
+            old.destroy()
+        win = tk.Toplevel(root)
+        state["team_win"] = win
+        win.title(f"⚽ {team}")
+        win.configure(bg=BG)
+        win.geometry("470x600")
+        win.minsize(340, 320)
+        try:
+            win.attributes("-topmost", bool(topmost_var.get()))
+        except tk.TclError:
+            pass
+        win.lift()
+
+        cv = tk.Canvas(win, bg=BG, highlightthickness=0, bd=0)
+        sb = tk.Scrollbar(win, orient="vertical", command=cv.yview)
+        cv.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        cv.pack(side="left", fill="both", expand=True)
+        box = tk.Frame(cv, bg=BG)
+        bid = cv.create_window((0, 0), window=box, anchor="nw")
+        box.bind("<Configure>", lambda _e: cv.configure(scrollregion=cv.bbox("all")))
+        cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
+
+        def _wheel(e):
+            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            return "break"   # n'entraîne pas le défilement de la fenêtre principale
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            win.bind(seq, _wheel)
+
+        st = hist["stats"]
+        tk.Label(box, text=team, bg=BG, fg=ACCENT, anchor="w",
+                 font=("TkDefaultFont", 13, "bold")).pack(fill="x", padx=10, pady=(10, 0))
+        tk.Label(box, text=f"{comp} · historique", bg=BG, fg=MUTED, anchor="w",
+                 font=("TkDefaultFont", 8)).pack(fill="x", padx=10)
+
+        def fmt(v, suffix=""):
+            return f"{v}{suffix}" if v is not None else "—"
+
+        if st["played"] == 0:
+            tk.Label(box, text="Aucun match joué pour le moment.", bg=BG, fg=MUTED,
+                     font=("TkDefaultFont", 9)).pack(padx=10, pady=14)
+        else:
+            card = tk.Frame(box, bg=CARD)
+            card.pack(fill="x", padx=8, pady=8)
+
+            def stat_line(label, value):
+                r = tk.Frame(card, bg=CARD)
+                r.pack(fill="x")
+                tk.Label(r, text=label, bg=CARD, fg=MUTED, anchor="w",
+                         font=("TkDefaultFont", 9)).pack(side="left", padx=8, pady=2)
+                tk.Label(r, text=value, bg=CARD, fg=FG, anchor="e",
+                         font=("TkDefaultFont", 9, "bold")).pack(side="right", padx=8)
+
+            stat_line("Matchs joués", str(st["played"]))
+            stat_line("Bilan V-N-D", f"{st['wins']}-{st['draws']}-{st['losses']}  ·  {st['points']} pts")
+            stat_line("Buts marqués", f"{st['gf']}  ({fmt(st['avg_gf'])}/match)")
+            stat_line("Buts encaissés", f"{st['ga']}  ({fmt(st['avg_ga'])}/match)")
+            stat_line("Possession moy.", fmt(st["avg_poss"], "%"))
+            stat_line("Occasions moy.", fmt(st["avg_occ"]))
+
+            tk.Label(box, text="Matchs", bg=BG, fg=ACCENT, anchor="w",
+                     font=("TkDefaultFont", 10, "bold")).pack(fill="x", padx=10, pady=(8, 2))
+            res_col = {"V": GREEN, "N": MUTED, "D": LIVE}
+            for p in hist["played"]:
+                row = tk.Frame(box, bg=CARD)
+                row.pack(fill="x", padx=8, pady=2)
+                top = tk.Frame(row, bg=CARD)
+                top.pack(fill="x", padx=8, pady=(4, 0))
+                tk.Label(top, text=p["res"], bg=CARD, fg=res_col[p["res"]], width=2,
+                         font=("TkDefaultFont", 10, "bold")).pack(side="left")
+                tk.Label(top, text=f"{p['label']} · {'dom.' if p['home'] else 'ext.'}",
+                         bg=CARD, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(2, 6))
+                tk.Label(top, text=p["opp"], bg=CARD, fg=FG, anchor="w",
+                         font=("TkDefaultFont", 9)).pack(side="left")
+                tk.Label(top, text=p["score"], bg=CARD, fg=res_col[p["res"]],
+                         font=("TkDefaultFont", 10, "bold")).pack(side="right")
+                detail = []
+                if p["poss"] is not None:
+                    detail.append(f"poss {p['poss']}%")
+                if p["occ"] is not None:
+                    detail.append(f"occ {p['occ']}")
+                if detail:
+                    tk.Label(row, text="   ".join(detail), bg=CARD, fg=MUTED, anchor="w",
+                             font=("TkDefaultFont", 8)).pack(fill="x", padx=8, pady=(0, 4))
+
+        if hist["upcoming"]:
+            tk.Label(box, text="À venir", bg=BG, fg=ACCENT, anchor="w",
+                     font=("TkDefaultFont", 10, "bold")).pack(fill="x", padx=10, pady=(8, 2))
+            for u in hist["upcoming"]:
+                tk.Label(box, text=f"{u['label']} · {'dom.' if u['home'] else 'ext.'} · "
+                                   f"{u['opp']}  ({u['date']})",
+                         bg=BG, fg=MUTED, anchor="w",
+                         font=("TkDefaultFont", 8)).pack(fill="x", padx=12, pady=1)
 
     def render_match(parent, comp, m, show_comp=False):
         live = m.get("live")
@@ -613,6 +738,7 @@ def run_gui():
         ta = tk.Label(line, text=short(m["a"]), bg=bg, fg=FG, anchor="e",
                       font=("TkDefaultFont", 10))
         ta.grid(row=0, column=0, sticky="e")
+        _bind_team_click(ta, comp, m["a"])
         # score / date au centre
         if m["status"] == "result":
             sc_fg = LIVE if live else FG
@@ -627,6 +753,7 @@ def run_gui():
         tb = tk.Label(line, text=short(m["b"]), bg=bg, fg=FG, anchor="w",
                       font=("TkDefaultFont", 10))
         tb.grid(row=0, column=2, sticky="w")
+        _bind_team_click(tb, comp, m["b"])
         line.grid_columnconfigure(0, weight=1, uniform="x")
         line.grid_columnconfigure(2, weight=1, uniform="x")
 
@@ -743,9 +870,11 @@ def run_gui():
                     vals = [rowd.get("Rang"), rowd.get("Équipe"),
                             rowd.get("Points"), rowd.get("Diff"), rowd.get("Buts")]
                     for ci, val in enumerate(vals):
-                        tk.Label(tbl, text=val, bg=BG, fg=FG,
-                                 font=("TkDefaultFont", 8),
-                                 anchor="w").grid(row=ri, column=ci, sticky="w", padx=4)
+                        lbl = tk.Label(tbl, text=val, bg=BG, fg=FG,
+                                       font=("TkDefaultFont", 8), anchor="w")
+                        lbl.grid(row=ri, column=ci, sticky="w", padx=4)
+                        if ci == 1:   # colonne "Équipe" -> cliquable
+                            _bind_team_click(lbl, comp, val)
                 tbl.grid_columnconfigure(1, weight=1)
 
         inner.update_idletasks()
