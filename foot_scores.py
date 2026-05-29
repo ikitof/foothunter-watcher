@@ -15,6 +15,7 @@ Lancement :  python3 foot_scores.py
 Self-test (sans fenêtre) :  python3 foot_scores.py --selftest
 """
 
+import os
 import sys
 import re
 import json
@@ -35,7 +36,9 @@ LIVE_GRACE = 200                      # secondes pendant lesquelles un match res
 HTTP_TIMEOUT = 25
 USER_AGENT = "FootScores/1.0 (desktop widget)"
 
-CONFIG_PATH = __file__.rsplit("/", 1)[0] + "/foot_scores_config.json"
+CONFIG_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "foot_scores_config.json"
+)
 
 SCORE_RE = re.compile(r"^\s*(\d+)\s*-\s*(\d+)\s*$")
 DATE_RE = re.compile(r"^\s*\d{1,2}/\d{1,2}/\d{2,4}\s*$")

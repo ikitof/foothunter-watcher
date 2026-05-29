@@ -22,23 +22,25 @@ plus besoin de faire F5 ni de cliquer pour déplier les matchs.
 ## Lancer
 
 Aucune installation : ça n'utilise que Python 3 + Tkinter (déjà présents).
+Place le dossier où tu veux, puis depuis ce dossier :
 
 ```bash
-python3 /home/awiriath/perso/score/foot_scores.py
+python3 foot_scores.py
 # ou
-/home/awiriath/perso/score/run.sh
+./run.sh
 ```
 
 ### Icône sur le bureau / menu d'applications
 
+Le script `install.sh` détecte automatiquement le chemin du dossier — aucun
+chemin à modifier à la main.
+
 ```bash
 # dans le menu d'applications :
-cp /home/awiriath/perso/score/foot-live.desktop ~/.local/share/applications/
+./install.sh
 
 # OU une icône cliquable sur le bureau :
-cp /home/awiriath/perso/score/foot-live.desktop ~/Bureau/   # ou ~/Desktop/
-gio set ~/Bureau/foot-live.desktop metadata::trusted true    # autoriser le double-clic
-chmod +x ~/Bureau/foot-live.desktop
+./install.sh ~/Bureau     # ou  ./install.sh ~/Desktop
 ```
 
 ## Utilisation

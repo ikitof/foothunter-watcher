@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Foot Live — préférences locales (taille/position/réglages de la fenêtre)
+foot_scores_config.json
