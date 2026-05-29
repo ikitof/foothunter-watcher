@@ -629,6 +629,12 @@ def run_gui():
     styled_check(bar2, "épingler", topmost_var).pack(side="left")
     styled_check(bar2, "bip", beep_var).pack(side="left")
 
+    stats_btn = tk.Button(bar2, text="📊 stats", bg=CARD, fg=FG, bd=0, relief="flat",
+                          activebackground=ACCENT, activeforeground="#fff",
+                          font=("TkDefaultFont", 8), cursor="hand2",
+                          command=lambda: open_stats())
+    stats_btn.pack(side="right", padx=(0, 6))
+
     # ---- zone défilante ---------------------------------------------------
     body_wrap = tk.Frame(root, bg=BG)
     body_wrap.pack(fill="both", expand=True)
@@ -668,6 +674,7 @@ def run_gui():
         "stop": False,
         "last": None,          # dernier (comp, payload) rendu (pour re-render rapide)
         "team_win": None,      # fenêtre "historique d'équipe" ouverte (réutilisée)
+        "stats_win": None,     # fenêtre "stats & classement" ouverte (réutilisée)
     }
 
     # ---- rendu ------------------------------------------------------------
@@ -804,6 +811,166 @@ def run_gui():
                                    f"{u['opp']}  ({u['date']})",
                          bg=BG, fg=MUTED, anchor="w",
                          font=("TkDefaultFont", 8)).pack(fill="x", padx=12, pady=1)
+
+    # ---- page "stats & classement" (bouton 📊) ----------------------------
+    def _stats_rows():
+        """Classement à afficher d'après le dernier rendu (comp courante ou Toutes)."""
+        if state["last"] is None:
+            return None, None
+        last_comp, payload = state["last"]
+        if last_comp == ALL_KEY:
+            rows = []
+            for c, gs in (payload or {}).items():
+                for r in leaderboard(gs):
+                    r["comp"] = c
+                    rows.append(r)
+            rows.sort(key=lambda t: (t["points"], t["gd"], t["gf"]), reverse=True)
+            return "★ Toutes", rows
+        groups, _ = payload
+        rows = leaderboard(groups)
+        for r in rows:
+            r["comp"] = last_comp
+        return last_comp, rows
+
+    def open_stats():
+        title, rows = _stats_rows()
+        if rows:
+            show_stats_window(title, rows)
+
+    def show_stats_window(title, rows):
+        old = state.get("stats_win")
+        if old is not None and old.winfo_exists():
+            old.destroy()
+        win = tk.Toplevel(root)
+        state["stats_win"] = win
+        win.title(f"📊 Stats — {title}")
+        win.configure(bg=BG)
+        win.geometry("660x600")
+        win.minsize(440, 320)
+        try:
+            win.attributes("-topmost", bool(topmost_var.get()))
+        except tk.TclError:
+            pass
+        win.lift()
+
+        cv = tk.Canvas(win, bg=BG, highlightthickness=0, bd=0)
+        sb = tk.Scrollbar(win, orient="vertical", command=cv.yview)
+        cv.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        cv.pack(side="left", fill="both", expand=True)
+        box = tk.Frame(cv, bg=BG)
+        bid = cv.create_window((0, 0), window=box, anchor="nw")
+        box.bind("<Configure>", lambda _e: cv.configure(scrollregion=cv.bbox("all")))
+        cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
+
+        def _wheel(e):
+            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            return "break"
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            win.bind(seq, _wheel)
+
+        tk.Label(box, text=f"📊 Classement & stats — {title}", bg=BG, fg=ACCENT,
+                 anchor="w", font=("TkDefaultFont", 12, "bold")).pack(fill="x", padx=10, pady=(10, 2))
+
+        # faits marquants
+        played = [r for r in rows if r["played"]]
+
+        def best(metric, biggest=True):
+            pool = [r for r in played if r.get(metric) is not None]
+            if not pool:
+                return None
+            return (max if biggest else min)(pool, key=lambda r: r[metric])
+
+        facts = []
+        atk = best("gf", True)
+        dfn = best("ga", False)
+        pos = best("avg_poss", True)
+        occ = best("avg_occ", True)
+        if atk:
+            facts.append(("🥇 Meilleure attaque", f"{atk['team']} ({atk['gf']} buts)"))
+        if dfn:
+            facts.append(("🛡️ Meilleure défense", f"{dfn['team']} ({dfn['ga']} encaissés)"))
+        if pos:
+            facts.append(("⚽ Possession", f"{pos['team']} ({pos['avg_poss']}%)"))
+        if occ:
+            facts.append(("🎯 Occasions", f"{occ['team']} ({occ['avg_occ']}/match)"))
+        if facts:
+            fc = tk.Frame(box, bg=CARD)
+            fc.pack(fill="x", padx=8, pady=(2, 8))
+            for label, value in facts:
+                r = tk.Frame(fc, bg=CARD)
+                r.pack(fill="x")
+                tk.Label(r, text=label, bg=CARD, fg=MUTED, anchor="w",
+                         font=("TkDefaultFont", 9)).pack(side="left", padx=8, pady=2)
+                tk.Label(r, text=value, bg=CARD, fg=FG, anchor="e",
+                         font=("TkDefaultFont", 9, "bold")).pack(side="right", padx=8)
+
+        tk.Label(box, text="Clique un en-tête pour trier · clique une équipe pour son historique",
+                 bg=BG, fg=MUTED, anchor="w", font=("TkDefaultFont", 8)).pack(fill="x", padx=10, pady=(0, 4))
+
+        grid = tk.Frame(box, bg=BG)
+        grid.pack(fill="both", expand=True, padx=6, pady=(0, 8))
+        cols = [("#", None), ("Équipe", "team"), ("MJ", "played"), ("V-N-D", None),
+                ("Pts", "points"), ("BP", "gf"), ("BC", "ga"), ("Diff", "gd"),
+                ("Poss", "avg_poss"), ("Occ", "avg_occ")]
+        sortst = {"key": "points", "rev": True}
+
+        def on_sort(key):
+            if sortst["key"] == key:
+                sortst["rev"] = not sortst["rev"]
+            else:
+                sortst["key"] = key
+                sortst["rev"] = (key != "team")   # numérique décroissant, équipe A→Z
+            draw()
+
+        def draw():
+            for w in grid.winfo_children():
+                w.destroy()
+            key, rev = sortst["key"], sortst["rev"]
+
+            def sort_key(r):
+                if key == "team":
+                    return (r.get("team") or "").lower()
+                v = r.get(key)
+                return v if v is not None else float("-inf")
+            ordered = sorted(rows, key=sort_key, reverse=rev)
+
+            for ci, (label, k) in enumerate(cols):
+                arrow = (" ▾" if rev else " ▴") if (k and k == key) else ""
+                h = tk.Label(grid, text=label + arrow, bg=HDR,
+                             fg=ACCENT if k else MUTED, font=("TkDefaultFont", 8, "bold"),
+                             anchor="w" if label == "Équipe" else "center", padx=4)
+                h.grid(row=0, column=ci, sticky="we", padx=1, pady=1)
+                if k:
+                    h.configure(cursor="hand2")
+                    h.bind("<Button-1>", lambda _e, kk=k: on_sort(kk))
+
+            for ri, r in enumerate(ordered, start=1):
+                rowbg = CARD if ri % 2 else BG
+
+                def cell(ci, text, fg=FG, left=False):
+                    lbl = tk.Label(grid, text=text, bg=rowbg, fg=fg,
+                                   font=("TkDefaultFont", 8),
+                                   anchor="w" if left else "center", padx=4)
+                    lbl.grid(row=ri, column=ci, sticky="we", padx=1)
+                    return lbl
+
+                cell(0, str(ri), MUTED)
+                tname = cell(1, r["team"], FG, left=True)
+                _bind_team_click(tname, r.get("comp"), r["team"])
+                cell(2, str(r["played"]))
+                cell(3, f"{r['wins']}-{r['draws']}-{r['losses']}")
+                cell(4, str(r["points"]), GREEN)
+                cell(5, str(r["gf"]))
+                cell(6, str(r["ga"]))
+                gd = r["gd"]
+                cell(7, f"+{gd}" if gd > 0 else str(gd),
+                     GREEN if gd > 0 else (LIVE if gd < 0 else MUTED))
+                cell(8, f"{r['avg_poss']}%" if r["avg_poss"] is not None else "—")
+                cell(9, f"{r['avg_occ']}" if r["avg_occ"] is not None else "—")
+            grid.grid_columnconfigure(1, weight=1)
+
+        draw()
 
     def render_match(parent, comp, m, show_comp=False):
         live = m.get("live")
