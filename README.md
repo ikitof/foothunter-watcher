@@ -16,6 +16,9 @@ plus besoin de faire F5 ni de cliquer pour déplier les matchs.
   (désactivable).
 - Vue **« ★ Toutes (live) »** : voit l'action de **toutes** les compétitions d'un coup,
   ou choisis une seule compétition (Premier League, Champions League, …).
+- **Clique sur une équipe** (dans un match ou le classement) pour ouvrir son
+  **historique** : chaque match (score, possession, occasions) et ses **moyennes**
+  (buts pour/contre, possession, occasions) + son bilan **V-N-D** et ses points.
 - **Classement** affiché pour les championnats.
 - Fenêtre **petite, épinglée au-dessus, déplaçable**, qui mémorise sa taille,
   sa position et tes réglages.
@@ -49,6 +52,7 @@ chemin à modifier à la main.
 | Contrôle           | Effet                                                            |
 |--------------------|-----------------------------------------------------------------|
 | Liste déroulante   | Choisir la compétition (ou « ★ Toutes (live) »)                 |
+| Clic sur une équipe| Ouvrir son historique de matchs + ses statistiques moyennes     |
 | `toutes les N s`   | Intervalle de rafraîchissement                                  |
 | `↻`                | Rafraîchir tout de suite                                        |
 | `live`             | N'afficher que le direct + la journée/tour en cours            |
