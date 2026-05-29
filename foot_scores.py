@@ -226,7 +226,14 @@ def fetch_competition(name):
 # Logique "live" (indépendante de l'UI, testable)
 # ----------------------------------------------------------------------------
 def current_group_index(groups):
-    """Index du groupe en cours = 1er groupe contenant un match programmé, sinon le dernier."""
+    """Index du groupe en cours.
+
+    Priorité au groupe qui contient un match EN DIRECT (marqueur du site) ; sinon
+    le 1er groupe contenant un match programmé ; sinon le dernier.
+    """
+    for i, g in enumerate(groups):
+        if any(m.get("site_live") for m in g["matches"]):
+            return i
     for i, g in enumerate(groups):
         if any(m["status"] == "scheduled" for m in g["matches"]):
             return i
