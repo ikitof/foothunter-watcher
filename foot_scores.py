@@ -309,6 +309,66 @@ def team_history(groups, team):
     return dict(played=played, upcoming=upcoming, stats=stats)
 
 
+def leaderboard(groups):
+    """Classement agrégé par équipe sur les journées fournies.
+
+    Renvoie une liste de dicts (un par équipe) triée par points, puis différence
+    de buts, puis buts marqués (décroissant) :
+    {team, played, wins, draws, losses, points, gf, ga, gd, avg_gf, avg_ga,
+     avg_poss, avg_occ}. Les moyennes valent None si le site n'a fourni aucune
+     donnée (possession/occasions) pour l'équipe.
+    """
+    teams = {}
+
+    def slot(name):
+        if name not in teams:
+            teams[name] = dict(team=name, played=0, wins=0, draws=0, losses=0,
+                               points=0, gf=0, ga=0, _poss=[], _occ=[])
+        return teams[name]
+
+    for g in groups:
+        for m in g["matches"]:
+            if m.get("status") != "result":
+                continue
+            sc = _pair(m.get("mid"))
+            a, b = m.get("a"), m.get("b")
+            if not sc or not a or not b:
+                continue
+            pp, oo = _pair(m.get("poss")), _pair(m.get("occ"))
+            for name, gf, ga, side in ((a, sc[0], sc[1], 0), (b, sc[1], sc[0], 1)):
+                t = slot(name)
+                t["played"] += 1
+                t["gf"] += gf
+                t["ga"] += ga
+                if gf > ga:
+                    t["wins"] += 1
+                    t["points"] += 3
+                elif gf == ga:
+                    t["draws"] += 1
+                    t["points"] += 1
+                else:
+                    t["losses"] += 1
+                if pp:
+                    t["_poss"].append(pp[side])
+                if oo:
+                    t["_occ"].append(oo[side])
+
+    def avg(vals):
+        return round(sum(vals) / len(vals), 1) if vals else None
+
+    out = []
+    for t in teams.values():
+        poss, occ = t.pop("_poss"), t.pop("_occ")
+        t["gd"] = t["gf"] - t["ga"]
+        t["avg_gf"] = round(t["gf"] / t["played"], 1) if t["played"] else None
+        t["avg_ga"] = round(t["ga"] / t["played"], 1) if t["played"] else None
+        t["avg_poss"] = avg(poss)
+        t["avg_occ"] = avg(occ)
+        out.append(t)
+    out.sort(key=lambda t: (t["points"], t["gd"], t["gf"]), reverse=True)
+    return out
+
+
 class LiveTracker:
     """Mémorise le dernier état des matchs et la date du dernier changement de score."""
 
@@ -397,6 +457,29 @@ def selftest_offline():
     assert st["avg_poss"] == 57.5 and st["avg_occ"] == 4.5  # (60+55)/2 ; (5+4)/2
     assert len(h["upcoming"]) == 1 and h["upcoming"][0]["opp"] == "Gamma"
     print("  ✓ team_history OK (V/N/D, points, moyennes dom./ext., à venir)")
+
+    # 5) leaderboard : agrégat trié par points/diff, moyennes par équipe.
+    g4 = [
+        {"label": "J1", "matches": [
+            dict(a="Alpha", b="Beta", mid="2 - 1", status="result",
+                 poss="55% - 45%", occ="4 - 2", site_live=False),
+            dict(a="Gamma", b="Delta", mid="0 - 0", status="result",
+                 poss=None, occ=None, site_live=False)]},
+        {"label": "J2", "matches": [
+            dict(a="Beta", b="Gamma", mid="3 - 0", status="result",
+                 poss=None, occ=None, site_live=False),
+            dict(a="Alpha", b="Delta", mid="1 - 1", status="result",
+                 poss=None, occ=None, site_live=False)]},
+    ]
+    lb = leaderboard(g4)
+    assert [r["team"] for r in lb] == ["Alpha", "Beta", "Delta", "Gamma"], lb
+    top = lb[0]
+    assert (top["played"], top["wins"], top["draws"], top["losses"]) == (2, 1, 1, 0)
+    assert top["points"] == 4 and top["gf"] == 3 and top["ga"] == 2 and top["gd"] == 1
+    assert top["avg_poss"] == 55.0   # une seule donnée de possession (55), l'autre None
+    beta = next(r for r in lb if r["team"] == "Beta")
+    assert beta["points"] == 3 and beta["gd"] == 2
+    print("  ✓ leaderboard OK (tri points/diff, moyennes)")
 
 
 def selftest():
