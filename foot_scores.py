@@ -285,7 +285,45 @@ class LiveTracker:
 # ----------------------------------------------------------------------------
 # Self-test (sans interface graphique)
 # ----------------------------------------------------------------------------
+def selftest_offline():
+    """Tests déterministes (sans réseau) de la détection 'live'."""
+    # 1) _subtree_has_class repère le marqueur du site, même imbriqué, et NE confond
+    #    pas avec les barres de possession (bg-red-200).
+    sample = {
+        "1": {"tag": "nicegui-expansion", "slots": {"header": {"ids": ["2"]}},
+              "children": ["5"]},
+        "2": {"tag": "div", "children": ["3", "4"]},
+        "3": {"tag": "div", "class": ["w-2", "h-2", "rounded-full", "bg-red-500"]},
+        "4": {"tag": "div", "text": "0 - 0", "class": ["text-sm", "font-bold", "text-red-600"]},
+        "5": {"tag": "div", "text": "50% - 50%", "class": ["w-48", "h-3", "bg-red-200"]},
+    }
+    assert _subtree_has_class(sample, "2", LIVE_CLASS_MARKERS) is True
+    assert _subtree_has_class(sample, "5", LIVE_CLASS_MARKERS) is False  # possession ≠ live
+
+    # 2) un match 0-0 marqué live par le site est 'live' SANS aucun changement de score,
+    #    et un match terminé (non marqué) ne l'est pas.
+    tr = LiveTracker()
+    groups = [{"label": "Journée 1", "matches": [
+        dict(a="A", b="B", mid="0 - 0", status="result", poss=None, occ=None, site_live=True),
+        dict(a="C", b="D", mid="2 - 1", status="result", poss=None, occ=None, site_live=False),
+    ]}]
+    tr.update("X", groups)
+    assert groups[0]["matches"][0]["live"] is True, "0-0 marqué live non détecté"
+    assert groups[0]["matches"][1]["live"] is False, "match terminé marqué live à tort"
+
+    # 3) current_group_index privilégie le groupe contenant un match live.
+    g2 = [
+        {"label": "J1", "matches": [dict(status="result", site_live=False)]},
+        {"label": "J2", "matches": [dict(status="result", site_live=True)]},
+        {"label": "J3", "matches": [dict(status="scheduled", site_live=False)]},
+    ]
+    assert current_group_index(g2) == 1, "le groupe live devrait être 'en cours'"
+    print("  ✓ tests hors-ligne OK (marqueur visuel, 0-0 live, groupe en cours)")
+
+
 def selftest():
+    print("→ Tests hors-ligne…")
+    selftest_offline()
     print("→ Récupération du menu…")
     comps = parse_competitions(http_get(SAISON_PATH))
     print(f"  {len(comps)} compétitions : {', '.join(comps[:6])} …")
@@ -299,9 +337,13 @@ def selftest():
         cur = current_group_index(groups)
         print(f"  {len(groups)} groupes, classement={'oui' if standings else 'non'}, "
               f"journée en cours = {groups[cur]['label'] if cur is not None else '?'}")
+        n_live = sum(1 for g in groups for m in g["matches"] if m.get("site_live"))
         for gi, g in enumerate(groups):
+            gl = sum(1 for m in g["matches"] if m.get("site_live"))
             tag = "  <== EN COURS" if gi == cur else ""
+            tag += f"  🔴 {gl} live" if gl else ""
             print(f"   {g['label']} ({len(g['matches'])}){tag}")
+        print(f"  → {n_live} match(s) EN DIRECT selon le site (marqueur rouge)")
         # simulate a score change to prove live-detection works
         g = groups[cur]
         if g["matches"]:
