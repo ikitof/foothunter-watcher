@@ -19,6 +19,10 @@ plus besoin de faire F5 ni de cliquer pour déplier les matchs.
 - **Clique sur une équipe** (dans un match ou le classement) pour ouvrir son
   **historique** : chaque match (score, possession, occasions) et ses **moyennes**
   (buts pour/contre, possession, occasions) + son bilan **V-N-D** et ses points.
+- **Page « 📊 stats »** : un **classement complet triable** (points, buts, diff,
+  possession et occasions moyennes) + des faits marquants (meilleure attaque,
+  meilleure défense, possession, occasions). Reflète la compétition choisie, ou
+  **toutes** en vue « ★ Toutes (live) ». Trie en cliquant un en-tête de colonne.
 - **Classement** affiché pour les championnats.
 - Fenêtre **petite, épinglée au-dessus, déplaçable**, qui mémorise sa taille,
   sa position et tes réglages.
@@ -53,6 +57,7 @@ chemin à modifier à la main.
 |--------------------|-----------------------------------------------------------------|
 | Liste déroulante   | Choisir la compétition (ou « ★ Toutes (live) »)                 |
 | Clic sur une équipe| Ouvrir son historique de matchs + ses statistiques moyennes     |
+| `📊 stats`         | Ouvrir le classement triable + les faits marquants              |
 | `toutes les N s`   | Intervalle de rafraîchissement                                  |
 | `↻`                | Rafraîchir tout de suite                                        |
 | `live`             | N'afficher que le direct + la journée/tour en cours            |
