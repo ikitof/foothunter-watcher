@@ -36,6 +36,11 @@ LIVE_GRACE = 200                      # secondes pendant lesquelles un match res
 HTTP_TIMEOUT = 25
 USER_AGENT = "FootScores/1.0 (desktop widget)"
 
+# Le site marque un match en cours avec un point rouge (bg-red-500) et un score
+# rouge gras (text-red-600). C'est LE signal fiable d'un match "en direct"
+# (les barres de possession utilisent bg-red-200 / bg-blue-500, à ne pas confondre).
+LIVE_CLASS_MARKERS = ("text-red-600", "bg-red-500")
+
 CONFIG_PATH = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "foot_scores_config.json"
 )
@@ -98,6 +103,23 @@ def _all_texts(d, eid, acc=None):
     return acc
 
 
+def _subtree_has_class(d, eid, markers):
+    """True si un élément du sous-arbre (enfants + slots) porte une classe de `markers`."""
+    el = d.get(str(eid))
+    if not el:
+        return False
+    if any(c in markers for c in el.get("class") or []):
+        return True
+    for c in el.get("children") or []:
+        if _subtree_has_class(d, c, markers):
+            return True
+    for s in (el.get("slots") or {}).values():
+        for sid in s.get("ids", []):
+            if _subtree_has_class(d, sid, markers):
+                return True
+    return False
+
+
 def parse_competitions(menu_html):
     """Liste (nom, chemin) des compétitions depuis la page menu saison2."""
     d = parse_elements(menu_html)
@@ -118,9 +140,10 @@ def parse_competitions(menu_html):
 def parse_matches(d):
     """
     Renvoie une liste de groupes : [{'label': 'Journée 4', 'matches': [match, ...]}, ...]
-    où match = {a, b, mid, status, poss, occ}.
+    où match = {a, b, mid, status, poss, occ, site_live}.
       - status = 'result'    -> mid est un score "x - y"
       - status = 'scheduled' -> mid est une date "jj/mm/aaaa"
+      - site_live            -> True si le site marque le match "en direct"
     """
     groups = []
 
@@ -140,6 +163,8 @@ def parse_matches(d):
             team_a = _first_text(d, cells[0]) if len(cells) > 0 else None
             mid = _first_text(d, cells[1]) if len(cells) > 1 else None
             team_b = _first_text(d, cells[2]) if len(cells) > 2 else None
+            # Le site signale "en direct" via un marqueur rouge dans l'entête.
+            site_live = _subtree_has_class(d, hid, LIVE_CLASS_MARKERS)
             poss = occ = None
             for c in el.get("children") or []:
                 for t in _all_texts(d, c):
@@ -155,7 +180,8 @@ def parse_matches(d):
             else:
                 status = "?"
             group["matches"].append(
-                dict(a=team_a, b=team_b, mid=mid, status=status, poss=poss, occ=occ)
+                dict(a=team_a, b=team_b, mid=mid, status=status,
+                     poss=poss, occ=occ, site_live=site_live)
             )
             return
 
@@ -238,10 +264,11 @@ class LiveTracker:
                     self.changed_at[k] = now
                     changed_keys.append(k)
                 self.last_mid[k] = m["mid"]
-                # "live confirmé" : le score a changé récemment (seul signal fiable)
+                # Live = signal fiable du site (point/score rouge). Repli : un score
+                # qui a changé récemment (utile si le site tarde à marquer le match).
                 recent = (now - self.changed_at[k]) < LIVE_GRACE if k in self.changed_at else False
                 m["changed"] = changed
-                m["live"] = recent
+                m["live"] = bool(m.get("site_live")) or recent
                 # "en cours / récent" : un résultat dans la journée/tour en cours
                 m["current"] = (gi == cur_idx and m["status"] == "result")
                 m["is_today"] = (m["status"] == "scheduled" and m["mid"] == today)
