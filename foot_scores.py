@@ -6,8 +6,9 @@ http://foothunter.wiriath.com:6767/resultats/saison2/
 
 - Rafraîchissement automatique (plus besoin de F5)
 - Affiche tous les matchs (plus besoin de cliquer pour déplier)
-- Détecte les matchs EN DIRECT en comparant les scores entre deux rafraîchissements
-  (un score qui change => match live => surligné + clignote + petit "bip" optionnel)
+- Détecte les matchs EN DIRECT via l'indicateur visuel du site (point rouge +
+  score en rouge) — fiable même pour un 0-0 ou un match sans but depuis longtemps
+- Un score qui change entre deux rafraîchissements => clignote + petit "bip" optionnel
 - Choix de la compétition, ou vue "Toutes (live)" pour voir l'action partout
 - Zéro dépendance : uniquement la lib standard Python (urllib, json, re, tkinter)
 

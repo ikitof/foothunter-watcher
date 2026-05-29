@@ -10,9 +10,10 @@ plus besoin de faire F5 ni de cliquer pour déplier les matchs.
 
 - **Rafraîchissement auto** toutes les 10 à 120 s (réglable).
 - **Tous les matchs affichés** (score, possession, tirs) sans rien déplier.
-- **Détection « EN DIRECT »** : un score qui change entre deux rafraîchissements
-  est repéré tout seul → la ligne **clignote en jaune**, le score passe en **rouge**,
-  et un petit **bip** retentit (désactivable).
+- **Détection « EN DIRECT »** : reprend l'indicateur du site (point rouge + score
+  en rouge) → **fiable même pour un 0-0** ou un match sans but depuis longtemps.
+  Quand un score change, la ligne **clignote en jaune** et un petit **bip** retentit
+  (désactivable).
 - Vue **« ★ Toutes (live) »** : voit l'action de **toutes** les compétitions d'un coup,
   ou choisis une seule compétition (Premier League, Champions League, …).
 - **Classement** affiché pour les championnats.
@@ -76,5 +77,7 @@ python3 foot_scores.py --selftest
 Le site est une appli **NiceGUI** (FastAPI + Vue). Le HTML initial contient déjà
 tout l'arbre des éléments en JSON (`parseElements(...)`) — donc une simple requête
 HTTP suffit pour récupérer les scores, sans WebSocket ni navigateur.
-Le script ne fait que : `GET` la page → parser ce JSON → comparer les scores au
-tour précédent → afficher. Zéro dépendance externe.
+Le script ne fait que : `GET` la page → parser ce JSON → repérer les matchs en
+direct grâce au **marqueur visuel du site** (point rouge `bg-red-500` + score
+`text-red-600`) → comparer les scores au tour précédent (pour le clignotement et
+le bip) → afficher. Zéro dépendance externe.
