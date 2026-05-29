@@ -249,6 +249,66 @@ def today_str():
     return date.today().strftime("%d/%m/%Y")
 
 
+def _pair(s):
+    """'26% - 74%' ou '1 - 1' -> (int, int) (côté A, côté B), sinon None."""
+    m = re.match(r"^\s*(\d+)\s*%?\s*-\s*(\d+)\s*%?\s*$", s or "")
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def team_history(groups, team):
+    """Historique d'une équipe sur toutes les journées fournies (une compétition).
+
+    Renvoie {'played': [...], 'upcoming': [...], 'stats': {...}}, tout du point de
+    vue de l'équipe. Chaque match joué : {label, opp, home, gf, ga, score, res,
+    poss, occ} où res = 'V'/'N'/'D' et poss/occ = la part de l'équipe (None si le
+    site ne la fournit pas, typiquement pendant un match en cours).
+    """
+    played, upcoming = [], []
+    for g in groups:
+        for m in g["matches"]:
+            a, b = m.get("a"), m.get("b")
+            if team not in (a, b):
+                continue
+            home = (a == team)
+            opp = b if home else a
+            if m.get("status") == "result":
+                sc = _pair(m.get("mid"))
+                if not sc:
+                    continue
+                gf, ga = sc if home else (sc[1], sc[0])
+                pp = _pair(m.get("poss"))
+                oo = _pair(m.get("occ"))
+                played.append(dict(
+                    label=g["label"], opp=opp, home=home, gf=gf, ga=ga,
+                    score=m.get("mid"),
+                    res="V" if gf > ga else ("N" if gf == ga else "D"),
+                    poss=(pp[0] if home else pp[1]) if pp else None,
+                    occ=(oo[0] if home else oo[1]) if oo else None,
+                ))
+            elif m.get("status") == "scheduled":
+                upcoming.append(dict(label=g["label"], opp=opp, home=home,
+                                     date=m.get("mid")))
+
+    def avg(vals):
+        vals = [v for v in vals if v is not None]
+        return round(sum(vals) / len(vals), 1) if vals else None
+
+    stats = dict(
+        played=len(played),
+        wins=sum(1 for p in played if p["res"] == "V"),
+        draws=sum(1 for p in played if p["res"] == "N"),
+        losses=sum(1 for p in played if p["res"] == "D"),
+        gf=sum(p["gf"] for p in played),
+        ga=sum(p["ga"] for p in played),
+        avg_gf=avg([p["gf"] for p in played]),
+        avg_ga=avg([p["ga"] for p in played]),
+        avg_poss=avg([p["poss"] for p in played]),
+        avg_occ=avg([p["occ"] for p in played]),
+    )
+    stats["points"] = stats["wins"] * 3 + stats["draws"]
+    return dict(played=played, upcoming=upcoming, stats=stats)
+
+
 class LiveTracker:
     """Mémorise le dernier état des matchs et la date du dernier changement de score."""
 
@@ -320,6 +380,23 @@ def selftest_offline():
     ]
     assert current_group_index(g2) == 1, "le groupe live devrait être 'en cours'"
     print("  ✓ tests hors-ligne OK (marqueur visuel, 0-0 live, groupe en cours)")
+
+    # 4) team_history : bilan et moyennes du point de vue de l'équipe (dom. + ext.).
+    g3 = [
+        {"label": "J1", "matches": [dict(a="Alpha", b="Beta", mid="2 - 1",
+            status="result", poss="60% - 40%", occ="5 - 3", site_live=False)]},
+        {"label": "J2", "matches": [dict(a="Gamma", b="Alpha", mid="0 - 0",
+            status="result", poss="45% - 55%", occ="2 - 4", site_live=False)]},
+        {"label": "J3", "matches": [dict(a="Alpha", b="Gamma", mid="30/05/2026",
+            status="scheduled", poss=None, occ=None, site_live=False)]},
+    ]
+    h = team_history(g3, "Alpha")
+    st = h["stats"]
+    assert (st["played"], st["wins"], st["draws"], st["losses"]) == (2, 1, 1, 0)
+    assert st["points"] == 4 and st["gf"] == 2 and st["ga"] == 1
+    assert st["avg_poss"] == 57.5 and st["avg_occ"] == 4.5  # (60+55)/2 ; (5+4)/2
+    assert len(h["upcoming"]) == 1 and h["upcoming"][0]["opp"] == "Gamma"
+    print("  ✓ team_history OK (V/N/D, points, moyennes dom./ext., à venir)")
 
 
 def selftest():
