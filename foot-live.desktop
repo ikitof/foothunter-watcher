@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Foot Live
+GenericName=Scores en direct
+Comment=Suivi auto des scores foothunter (saison 2)
+Exec=python3 /home/awiriath/perso/score/foot_scores.py
+Icon=/home/awiriath/perso/score/foot-live.png
+Terminal=false
+Categories=Network;Utility;
+StartupNotify=false
