@@ -19,11 +19,11 @@ plus besoin de faire F5 ni de cliquer pour déplier les matchs.
 - **Clique sur une équipe** (dans un match ou le classement) pour ouvrir son
   **historique** : chaque match (score, possession, occasions) et ses **moyennes**
   (buts pour/contre, possession, occasions) + son bilan **V-N-D** et ses points.
-  La carte **« 💰 Effectif »** liste les **joueurs** (poste, nom, célébrité) et
-  donne la **célébrité moyenne et médiane** — pour **toutes** les équipes, y
-  compris la Ligue 2 (l'effectif est récupéré au besoin). Le **salaire** (moyenne
-  et médiane) n'apparaît que pour les clubs présents dans la base globale (sinon
-  « — » : le site ne publie pas le salaire joueur par joueur).
+  La carte **« 💰 Effectif »** liste les **joueurs** (poste, nom, célébrité,
+  salaire, âge) et donne le **salaire (M€), la célébrité et l'âge — en moyenne et
+  médiane**. Disponible pour **toutes** les équipes, y compris la Ligue 2 :
+  l'effectif est récupéré au besoin sur la page de l'équipe puis sur la fiche de
+  chaque joueur (où figure « Salaire annuel : … »).
 - **Page « 📊 stats »** : un **classement complet triable** (points, buts, diff,
   possession et occasions moyennes, **salaire et célébrité moyens**) + des faits
   marquants (meilleure attaque, meilleure défense, possession, occasions,
