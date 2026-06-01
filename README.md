@@ -19,9 +19,12 @@ plus besoin de faire F5 ni de cliquer pour déplier les matchs.
 - **Clique sur une équipe** (dans un match ou le classement) pour ouvrir son
   **historique** : chaque match (score, possession, occasions) et ses **moyennes**
   (buts pour/contre, possession, occasions) + son bilan **V-N-D** et ses points.
+  La carte **« 💰 Effectif »** y montre le salaire et la célébrité de l'équipe en
+  **moyenne et médiane** (d'après la base joueurs).
 - **Page « 📊 stats »** : un **classement complet triable** (points, buts, diff,
-  possession et occasions moyennes) + des faits marquants (meilleure attaque,
-  meilleure défense, possession, occasions). Reflète la compétition choisie, ou
+  possession et occasions moyennes, **salaire et célébrité moyens**) + des faits
+  marquants (meilleure attaque, meilleure défense, possession, occasions,
+  **plus gros salaires, plus célèbre**). Reflète la compétition choisie, ou
   **toutes** en vue « ★ Toutes (live) ». Trie en cliquant un en-tête de colonne.
 - **Classement** affiché pour les championnats.
 - Fenêtre **petite, épinglée au-dessus, déplaçable**, qui mémorise sa taille,
@@ -90,3 +93,6 @@ Le script ne fait que : `GET` la page → parser ce JSON → repérer les matchs
 direct grâce au **marqueur visuel du site** (point rouge `bg-red-500` + score
 `text-red-600`) → comparer les scores au tour précédent (pour le clignotement et
 le bip) → afficher. Zéro dépendance externe.
+
+Les stats d'effectif (salaire / célébrité) viennent de la page `/joueurs`,
+chargée une seule fois au démarrage puis agrégée par équipe.
