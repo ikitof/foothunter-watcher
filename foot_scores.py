@@ -753,6 +753,7 @@ def run_gui():
         "last": None,          # dernier (comp, payload) rendu (pour re-render rapide)
         "team_win": None,      # fenêtre "historique d'équipe" ouverte (réutilisée)
         "stats_win": None,     # fenêtre "stats & classement" ouverte (réutilisée)
+        "squads": None,        # {équipe: stats d'effectif} (salaire/célébrité), chargé une fois
     }
 
     # ---- rendu ------------------------------------------------------------
@@ -834,6 +835,28 @@ def run_gui():
         def fmt(v, suffix=""):
             return f"{v}{suffix}" if v is not None else "—"
 
+        # carte effectif (salaire / célébrité, moyenne + médiane) si données dispo
+        squad = (state.get("squads") or {}).get(team)
+        if squad:
+            sc = tk.Frame(box, bg=CARD)
+            sc.pack(fill="x", padx=8, pady=(6, 2))
+
+            def squad_line(label, value):
+                r = tk.Frame(sc, bg=CARD)
+                r.pack(fill="x")
+                tk.Label(r, text=label, bg=CARD, fg=MUTED, anchor="w",
+                         font=("TkDefaultFont", 9)).pack(side="left", padx=8, pady=2)
+                tk.Label(r, text=value, bg=CARD, fg=FG, anchor="e",
+                         font=("TkDefaultFont", 9, "bold")).pack(side="right", padx=8)
+
+            tk.Label(sc, text="💰 Effectif", bg=CARD, fg=ACCENT, anchor="w",
+                     font=("TkDefaultFont", 9, "bold")).pack(fill="x", padx=8, pady=(4, 0))
+            squad_line("Joueurs", str(squad["count"]))
+            squad_line("Salaire (moy. · méd.)",
+                       f"{fmt(squad['avg_salary'])} · {fmt(squad['med_salary'])}")
+            squad_line("Célébrité (moy. · méd.)",
+                       f"{fmt(squad['avg_celeb'])} · {fmt(squad['med_celeb'])}")
+
         if st["played"] == 0:
             tk.Label(box, text="Aucun match joué pour le moment.", bg=BG, fg=MUTED,
                      font=("TkDefaultFont", 9)).pack(padx=10, pady=14)
@@ -892,23 +915,32 @@ def run_gui():
 
     # ---- page "stats & classement" (bouton 📊) ----------------------------
     def _stats_rows():
-        """Classement à afficher d'après le dernier rendu (comp courante ou Toutes)."""
+        """Classement à afficher d'après le dernier rendu (comp courante ou Toutes).
+
+        Chaque ligne est enrichie du salaire / de la célébrité moyens de l'effectif
+        (None si l'équipe n'est pas dans la base joueurs ou pas encore chargée).
+        """
         if state["last"] is None:
             return None, None
+        squads = state.get("squads") or {}
+
+        def enrich(rows, comp_of):
+            for r in rows:
+                r["comp"] = comp_of(r)
+                sq = squads.get(r["team"])
+                r["avg_salary"] = sq["avg_salary"] if sq else None
+                r["avg_celeb"] = sq["avg_celeb"] if sq else None
+            return rows
+
         last_comp, payload = state["last"]
         if last_comp == ALL_KEY:
             rows = []
             for c, gs in (payload or {}).items():
-                for r in leaderboard(gs):
-                    r["comp"] = c
-                    rows.append(r)
+                rows += enrich(leaderboard(gs), lambda r, c=c: c)
             rows.sort(key=lambda t: (t["points"], t["gd"], t["gf"]), reverse=True)
             return "★ Toutes", rows
         groups, _ = payload
-        rows = leaderboard(groups)
-        for r in rows:
-            r["comp"] = last_comp
-        return last_comp, rows
+        return last_comp, enrich(leaderboard(groups), lambda r: last_comp)
 
     def open_stats():
         title, rows = _stats_rows()
@@ -923,8 +955,8 @@ def run_gui():
         state["stats_win"] = win
         win.title(f"📊 Stats — {title}")
         win.configure(bg=BG)
-        win.geometry("660x600")
-        win.minsize(440, 320)
+        win.geometry("760x620")
+        win.minsize(480, 320)
         try:
             win.attributes("-topmost", bool(topmost_var.get()))
         except tk.TclError:
@@ -972,6 +1004,12 @@ def run_gui():
             facts.append(("⚽ Possession", f"{pos['team']} ({pos['avg_poss']}%)"))
         if occ:
             facts.append(("🎯 Occasions", f"{occ['team']} ({occ['avg_occ']}/match)"))
+        sal = best("avg_salary", True)
+        cel = best("avg_celeb", True)
+        if sal:
+            facts.append(("💰 Plus gros salaires (moy.)", f"{sal['team']} ({sal['avg_salary']:.1f})"))
+        if cel:
+            facts.append(("🌟 Plus célèbre (moy.)", f"{cel['team']} ({cel['avg_celeb']:.1f})"))
         if facts:
             fc = tk.Frame(box, bg=CARD)
             fc.pack(fill="x", padx=8, pady=(2, 8))
@@ -990,7 +1028,8 @@ def run_gui():
         grid.pack(fill="both", expand=True, padx=6, pady=(0, 8))
         cols = [("#", None), ("Équipe", "team"), ("MJ", "played"), ("V-N-D", None),
                 ("Pts", "points"), ("BP", "gf"), ("BC", "ga"), ("Diff", "gd"),
-                ("Poss", "avg_poss"), ("Occ", "avg_occ")]
+                ("Poss", "avg_poss"), ("Occ", "avg_occ"),
+                ("Sal.", "avg_salary"), ("Célé.", "avg_celeb")]
         sortst = {"key": "points", "rev": True}
 
         def on_sort(key):
@@ -1046,6 +1085,8 @@ def run_gui():
                      GREEN if gd > 0 else (LIVE if gd < 0 else MUTED))
                 cell(8, f"{r['avg_poss']}%" if r["avg_poss"] is not None else "—")
                 cell(9, f"{r['avg_occ']}" if r["avg_occ"] is not None else "—")
+                cell(10, f"{r['avg_salary']:.1f}" if r.get("avg_salary") is not None else "—")
+                cell(11, f"{r['avg_celeb']:.1f}" if r.get("avg_celeb") is not None else "—")
             grid.grid_columnconfigure(1, weight=1)
 
         draw()
@@ -1317,6 +1358,15 @@ def run_gui():
         except Exception:
             pass
 
+    # ---- chargement des effectifs (salaire/célébrité) en tâche de fond ----
+    def load_squads():
+        try:
+            squads = squad_stats(fetch_players())
+            if squads:
+                state["squads"] = squads
+        except Exception:
+            pass
+
     # ---- démarrage --------------------------------------------------------
     def on_close():
         state["stop"] = True
@@ -1327,6 +1377,7 @@ def run_gui():
     root.protocol("WM_DELETE_WINDOW", on_close)
     section_header("chargement…", MUTED)
     threading.Thread(target=load_comp_list, daemon=True).start()
+    threading.Thread(target=load_squads, daemon=True).start()
     threading.Thread(target=poll_loop, daemon=True).start()
     root.mainloop()
 
