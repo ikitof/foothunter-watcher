@@ -220,3 +220,6 @@ __marimo__/
 
 # Foot Live — préférences locales (taille/position/réglages de la fenêtre)
 foot_scores_config.json
+
+# Manuel du jeu (doc de référence locale, non nécessaire au runtime)
+Présentation-générale.pdf

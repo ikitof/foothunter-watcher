@@ -1,0 +1,800 @@
+competition,Phase,Equipe dom,Equipe ext,Score dom,Score ext,Occas dom,Occas ext,Posses dom,Posses ext
+Bundesliga,Journée 1,RB Leipzig,Vfb Stuttgart,1,0,1,1,66,34
+Bundesliga,Journée 1,Werder Bremen,Hoffenheim,0,0,1,2,23,77
+Bundesliga,Journée 1,Wolfsburg,Eintracht Francfort,2,0,2,2,37,63
+Bundesliga,Journée 1,Bayern Munich,SC Fribourg,2,0,4,1,52,48
+Bundesliga,Journée 1,Borussia Dortmund,Bayer Leverkusen,1,1,1,2,40,60
+Bundesliga,Journée 2,Hoffenheim,Eintracht Francfort,2,0,2,0,68,32
+Bundesliga,Journée 2,Borussia Dortmund,Wolfsburg,1,0,1,0,77,23
+Bundesliga,Journée 2,Bayern Munich,Vfb Stuttgart,4,1,5,1,56,44
+Bundesliga,Journée 2,Bayer Leverkusen,Werder Bremen,1,0,1,1,33,67
+Bundesliga,Journée 2,RB Leipzig,SC Fribourg,3,1,4,3,39,61
+Bundesliga,Journée 3,Borussia Dortmund,Bayern Munich,4,2,5,7,58,42
+Bundesliga,Journée 3,Vfb Stuttgart,Bayer Leverkusen,1,1,1,1,42,58
+Bundesliga,Journée 3,RB Leipzig,Werder Bremen,2,1,3,2,56,44
+Bundesliga,Journée 3,Eintracht Francfort,SC Fribourg,1,0,1,0,41,59
+Bundesliga,Journée 3,Hoffenheim,Wolfsburg,1,1,3,1,38,62
+Bundesliga,Journée 4,Wolfsburg,Vfb Stuttgart,1,2,4,4,38,62
+Bundesliga,Journée 4,Eintracht Francfort,Bayer Leverkusen,3,2,4,3,53,47
+Bundesliga,Journée 4,SC Fribourg,Werder Bremen,0,3,3,3,48,52
+Bundesliga,Journée 4,Borussia Dortmund,Hoffenheim,2,0,4,2,84,16
+Bundesliga,Journée 4,RB Leipzig,Bayern Munich,1,3,1,3,33,67
+Bundesliga,Journée 5,Werder Bremen,Wolfsburg,1,2,2,4,37,63
+Bundesliga,Journée 5,RB Leipzig,Eintracht Francfort,3,1,3,2,56,44
+Bundesliga,Journée 5,Borussia Dortmund,SC Fribourg,4,0,5,0,62,38
+Bundesliga,Journée 5,Vfb Stuttgart,Hoffenheim,1,1,2,2,44,56
+Bundesliga,Journée 5,Bayern Munich,Bayer Leverkusen,6,0,7,3,62,38
+Bundesliga,Journée 6,Bayer Leverkusen,Hoffenheim,5,0,7,0,42,58
+Bundesliga,Journée 6,RB Leipzig,Borussia Dortmund,1,2,1,3,47,53
+Bundesliga,Journée 6,Werder Bremen,Bayern Munich,0,6,0,7,42,58
+Bundesliga,Journée 6,SC Fribourg,Wolfsburg,0,2,1,3,41,59
+Bundesliga,Journée 6,Eintracht Francfort,Vfb Stuttgart,3,1,4,2,56,44
+Bundesliga,Journée 7,Bayer Leverkusen,Wolfsburg,2,2,4,4,42,58
+Bundesliga,Journée 7,Bayern Munich,Eintracht Francfort,5,1,8,2,51,49
+Bundesliga,Journée 7,SC Fribourg,Vfb Stuttgart,1,1,1,3,64,36
+Bundesliga,Journée 7,Werder Bremen,Borussia Dortmund,1,1,1,1,53,47
+Bundesliga,Journée 7,RB Leipzig,Hoffenheim,1,0,1,0,50,50
+Bundesliga,Journée 8,Werder Bremen,Eintracht Francfort,0,1,0,2,58,42
+Bundesliga,Journée 8,RB Leipzig,Bayer Leverkusen,2,0,3,1,42,58
+Bundesliga,Journée 8,Wolfsburg,Bayern Munich,0,4,2,7,30,70
+Bundesliga,Journée 8,Vfb Stuttgart,Borussia Dortmund,0,3,0,5,26,74
+Bundesliga,Journée 8,SC Fribourg,Hoffenheim,2,1,3,2,71,29
+Bundesliga,Journée 9,Borussia Dortmund,Eintracht Francfort,1,0,1,0,77,23
+Bundesliga,Journée 9,SC Fribourg,Bayer Leverkusen,1,3,1,3,49,51
+Bundesliga,Journée 9,RB Leipzig,Wolfsburg,1,1,2,3,44,56
+Bundesliga,Journée 9,Bayern Munich,Hoffenheim,6,0,10,0,50,50
+Bundesliga,Journée 9,Werder Bremen,Vfb Stuttgart,0,2,1,4,34,66
+Bundesliga 2,Journée 1,FC Augsburg,Hamburger SV,0,1,1,2,62,38
+Bundesliga 2,Journée 1,Hannover 96,FC Saint Pauli,1,3,2,3,49,51
+Bundesliga 2,Journée 1,Herta Berlin,Union Berlin,1,2,2,2,34,66
+Bundesliga 2,Journée 1,SC Paderborn,Fc Köln,0,2,0,2,29,71
+Bundesliga 2,Journée 1,Mainz 05,Borussia Mönchengladbach,1,2,8,5,41,59
+Bundesliga 2,Journée 2,Union Berlin,Hannover 96,1,0,2,0,69,31
+Bundesliga 2,Journée 2,FC Augsburg,Herta Berlin,1,0,1,0,53,47
+Bundesliga 2,Journée 2,SC Paderborn,FC Saint Pauli,0,1,0,2,50,50
+Bundesliga 2,Journée 2,Hamburger SV,Mainz 05,1,3,1,3,28,72
+Bundesliga 2,Journée 2,Fc Köln,Borussia Mönchengladbach,0,0,0,1,57,43
+Bundesliga 2,Journée 3,Hamburger SV,Union Berlin,0,0,1,0,43,57
+Bundesliga 2,Journée 3,Herta Berlin,Borussia Mönchengladbach,2,2,2,2,58,42
+Bundesliga 2,Journée 3,Mainz 05,Fc Köln,2,0,5,0,50,50
+Bundesliga 2,Journée 3,SC Paderborn,Hannover 96,1,2,2,2,67,33
+Bundesliga 2,Journée 3,FC Augsburg,FC Saint Pauli,1,0,2,1,38,62
+Bundesliga 2,Journée 4,Mainz 05,Hannover 96,2,0,2,1,41,59
+Bundesliga 2,Journée 4,SC Paderborn,FC Augsburg,0,1,0,1,29,71
+Bundesliga 2,Journée 4,Borussia Mönchengladbach,FC Saint Pauli,1,0,4,1,37,63
+Bundesliga 2,Journée 4,Union Berlin,Fc Köln,0,1,1,1,54,46
+Bundesliga 2,Journée 4,Herta Berlin,Hamburger SV,2,3,2,3,68,32
+Bundesliga 2,Journée 5,FC Augsburg,Union Berlin,1,1,3,3,56,44
+Bundesliga 2,Journée 5,Herta Berlin,SC Paderborn,2,0,3,2,56,44
+Bundesliga 2,Journée 5,Fc Köln,Hamburger SV,1,3,2,3,40,60
+Bundesliga 2,Journée 5,Mainz 05,FC Saint Pauli,2,1,2,1,49,51
+Bundesliga 2,Journée 5,Borussia Mönchengladbach,Hannover 96,1,0,1,1,47,53
+Bundesliga 2,Journée 6,Hamburger SV,SC Paderborn,1,2,1,2,47,53
+Bundesliga 2,Journée 6,Mainz 05,Union Berlin,2,0,4,0,38,62
+Bundesliga 2,Journée 6,Hannover 96,Fc Köln,0,0,0,1,21,79
+Bundesliga 2,Journée 6,FC Saint Pauli,Herta Berlin,0,1,0,1,77,23
+Bundesliga 2,Journée 6,FC Augsburg,Borussia Mönchengladbach,2,0,2,2,56,44
+Bundesliga 2,Journée 7,FC Augsburg,Mainz 05,1,3,3,3,58,42
+Bundesliga 2,Journée 7,Herta Berlin,Fc Köln,0,4,0,4,39,61
+Bundesliga 2,Journée 7,Union Berlin,FC Saint Pauli,0,0,0,0,63,37
+Bundesliga 2,Journée 7,Hamburger SV,Hannover 96,1,1,2,1,49,51
+Bundesliga 2,Journée 7,SC Paderborn,Borussia Mönchengladbach,0,1,1,1,54,46
+Bundesliga 2,Journée 8,Union Berlin,SC Paderborn,4,0,4,2,78,22
+Bundesliga 2,Journée 8,Fc Köln,FC Saint Pauli,1,1,1,2,56,44
+Bundesliga 2,Journée 8,Hannover 96,FC Augsburg,0,3,1,4,43,57
+Bundesliga 2,Journée 8,Herta Berlin,Mainz 05,1,4,1,6,22,78
+Bundesliga 2,Journée 8,Borussia Mönchengladbach,Hamburger SV,1,2,4,3,42,58
+Bundesliga 2,Journée 9,Union Berlin,Borussia Mönchengladbach,0,1,0,3,44,56
+Bundesliga 2,Journée 9,Fc Köln,FC Augsburg,0,1,0,1,42,58
+Bundesliga 2,Journée 9,Hannover 96,Herta Berlin,0,3,1,3,57,43
+Bundesliga 2,Journée 9,FC Saint Pauli,Hamburger SV,1,3,2,5,46,54
+Bundesliga 2,Journée 9,Mainz 05,SC Paderborn,5,0,5,0,72,28
+Champions League,Qualifications,Fiorentina,Fenerbahce,1,2,1,2,69,31
+Champions League,Qualifications,Crystal Palace,Stade Rennais,2,1,3,1,54,46
+Champions League,Qualifications,Feynenoord Rotterdam,KRC Genk,2,1,1,1,38,62
+Champions League,Qualifications,FC Porto,SC Fribourg,2,1,3,1,63,37
+Champions League,Huitièmes,FC Barcelone,SSC Napoli,4,2,5,2,52,48
+Champions League,Huitièmes,PSG,Manchester City,3,4,8,5,58,42
+Champions League,Huitièmes,Real Madrid,Borussia Dortmund,5,2,8,4,58,42
+Champions League,Huitièmes,Fenerbahce,FC Porto,3,1,4,2,28,72
+Champions League,Huitièmes,Atlético Madrid,Aston Villa,3,1,5,1,52,48
+Champions League,Huitièmes,SL Benfica,Bayern Munich,1,4,3,6,47,53
+Champions League,Huitièmes,Inter Milan,Arsenal,3,4,7,4,41,59
+Champions League,Huitièmes,Feynenoord Rotterdam,Crystal Palace,4,3,4,3,68,32
+Champions League,Quarts,FC Barcelone,Manchester City,2,1,6,3,43,57
+Champions League,Quarts,Real Madrid,Fenerbahce,4,0,4,1,72,28
+Champions League,Quarts,Atlético Madrid,Bayern Munich,2,3,2,3,54,46
+Champions League,Quarts,Arsenal,Feynenoord Rotterdam,8,1,8,3,49,51
+Champions League,Demies,FC Barcelone,Real Madrid,1,6,5,7,49,51
+Champions League,Demies,Bayern Munich,Arsenal,3,4,3,7,58,42
+Champions League,Finale,Real Madrid,Arsenal,0,4,1,4,40,60
+Championship,Journée 1,Fulham FC,Burnley,0,1,0,2,51,49
+Championship,Journée 1,Brentford,Wolverhampton,1,0,2,2,58,42
+Championship,Journée 1,Sunderland,West Ham,0,1,0,1,59,41
+Championship,Journée 1,Nottingham Forest,Tottenham,0,1,1,2,54,46
+Championship,Journée 1,Everton FC,Leeds United,1,1,2,1,49,51
+Championship,Journée 2,Tottenham,Fulham FC,1,1,2,1,30,70
+Championship,Journée 2,Sunderland,Nottingham Forest,0,1,1,1,70,30
+Championship,Journée 2,Everton FC,Brentford,0,0,1,1,84,16
+Championship,Journée 2,Wolverhampton,West Ham,0,4,2,6,39,61
+Championship,Journée 2,Burnley,Leeds United,1,1,2,1,23,77
+Championship,Journée 3,West Ham,Everton FC,1,0,1,1,23,77
+Championship,Journée 3,Sunderland,Tottenham,0,2,1,2,56,44
+Championship,Journée 3,Fulham FC,Wolverhampton,2,2,2,2,47,53
+Championship,Journée 3,Brentford,Burnley,3,2,3,5,57,43
+Championship,Journée 3,Nottingham Forest,Leeds United,3,1,7,1,44,56
+Championship,Journée 4,West Ham,Burnley,1,0,2,0,38,62
+Championship,Journée 4,Nottingham Forest,Everton FC,0,0,2,1,19,81
+Championship,Journée 4,Sunderland,Fulham FC,0,0,1,1,63,37
+Championship,Journée 4,Leeds United,Wolverhampton,2,2,4,3,52,48
+Championship,Journée 4,Brentford,Tottenham,0,4,1,10,50,50
+Championship,Journée 5,Wolverhampton,Burnley,0,0,0,2,58,42
+Championship,Journée 5,Everton FC,Fulham FC,0,0,0,0,47,53
+Championship,Journée 5,West Ham,Tottenham,1,1,2,2,56,44
+Championship,Journée 5,Nottingham Forest,Brentford,2,0,3,0,60,40
+Championship,Journée 5,Leeds United,Sunderland,1,1,2,2,58,42
+Championship,Journée 6,West Ham,Brentford,4,5,5,6,50,50
+Championship,Journée 6,Tottenham,Wolverhampton,3,0,3,0,57,43
+Championship,Journée 6,Nottingham Forest,Burnley,3,1,4,1,63,37
+Championship,Journée 6,Fulham FC,Leeds United,1,0,2,0,51,49
+Championship,Journée 6,Everton FC,Sunderland,0,0,0,2,49,51
+Championship,Journée 7,Nottingham Forest,West Ham,1,1,1,2,48,52
+Championship,Journée 7,Everton FC,Burnley,0,2,0,2,67,33
+Championship,Journée 7,Sunderland,Wolverhampton,3,1,3,3,66,34
+Championship,Journée 7,Leeds United,Tottenham,1,1,2,2,57,43
+Championship,Journée 7,Brentford,Fulham FC,1,1,2,3,14,86
+Championship,Journée 8,Burnley,Sunderland,2,1,3,2,41,59
+Championship,Journée 8,Fulham FC,West Ham,2,2,3,4,28,72
+Championship,Journée 8,Brentford,Leeds United,1,0,2,2,43,57
+Championship,Journée 8,Everton FC,Tottenham,0,1,1,1,51,49
+Championship,Journée 8,Nottingham Forest,Wolverhampton,1,3,3,4,26,74
+Championship,Journée 9,West Ham,Leeds United,1,0,4,2,33,67
+Championship,Journée 9,Sunderland,Brentford,0,0,2,0,86,14
+Championship,Journée 9,Tottenham,Burnley,4,2,4,2,60,40
+Championship,Journée 9,Fulham FC,Nottingham Forest,0,0,1,0,40,60
+Championship,Journée 9,Wolverhampton,Everton FC,1,2,2,2,76,24
+Copa del Rey,Qualifications,Real Oviedo,UD Levante,2,3,2,2,37,63
+Copa del Rey,Qualifications,Elche CF,Séville FC,0,1,1,2,37,63
+Copa del Rey,Qualifications,CA Osasuna,Deportivo Alavés,0,1,1,2,68,32
+Copa del Rey,Qualifications,RCD Mallorca,Rayo Vallecano,0,1,0,0,57,43
+Copa del Rey,Huitièmes,Real Madrid,UD Levante,5,0,8,0,59,41
+Copa del Rey,Huitièmes,Valence FC,Girona FC,2,1,4,2,41,59
+Copa del Rey,Huitièmes,Celta Vigo,Rayo Vallecano,0,1,1,1,50,50
+Copa del Rey,Huitièmes,Getafe,Atlético Madrid,0,4,1,4,29,71
+Copa del Rey,Huitièmes,Deportivo Alavés,Athletic Bilbao,0,2,0,2,50,50
+Copa del Rey,Huitièmes,FC Barcelone,Real Betis,5,0,6,0,66,34
+Copa del Rey,Huitièmes,Villareal,Espanyol Barcelona,1,0,2,2,52,48
+Copa del Rey,Huitièmes,Séville FC,Real Sociedad,1,2,2,2,46,54
+Copa del Rey,Quarts,Real Madrid,Valence FC,4,0,6,1,43,57
+Copa del Rey,Quarts,Rayo Vallecano,Atlético Madrid,0,4,1,6,48,52
+Copa del Rey,Quarts,Athletic Bilbao,FC Barcelone,0,6,4,12,49,51
+Copa del Rey,Quarts,Villareal,Real Sociedad,1,2,3,2,44,56
+Copa del Rey,Demies,Real Madrid,Atlético Madrid,0,2,1,4,32,68
+Copa del Rey,Demies,FC Barcelone,Real Sociedad,3,2,7,2,43,57
+Copa del Rey,Finale,Atlético Madrid,FC Barcelone,4,3,4,6,61,39
+Coppa Italia,Qualifications,US Sassuolo,US Lecce,0,1,0,1,50,50
+Coppa Italia,Qualifications,Hellas Verona,Torino FC,1,0,3,3,41,59
+Coppa Italia,Qualifications,Genoa CFC,Parma Calcio,3,2,3,3,33,67
+Coppa Italia,Qualifications,Cagliari Calcio,Pisa SC,0,2,1,3,51,49
+Coppa Italia,Huitièmes,Atalanta,Fiorentina,1,2,1,2,38,62
+Coppa Italia,Huitièmes,Inter Milan,Hellas Verona,5,0,6,0,44,56
+Coppa Italia,Huitièmes,US Cremonese,Juventus Turin,0,2,0,4,44,56
+Coppa Italia,Huitièmes,AC Milan,US Lecce,2,0,2,2,70,30
+Coppa Italia,Huitièmes,AS Roma,Genoa CFC,1,0,3,0,39,61
+Coppa Italia,Huitièmes,FC Bologna,SSC Napoli,2,1,4,3,53,47
+Coppa Italia,Huitièmes,Pisa SC,Como,2,4,3,5,77,23
+Coppa Italia,Huitièmes,Lazio Rome,Udinese Calcio,2,0,2,3,56,44
+Coppa Italia,Quarts,Fiorentina,Inter Milan,2,3,3,5,58,42
+Coppa Italia,Quarts,Juventus Turin,AC Milan,3,1,5,2,49,51
+Coppa Italia,Quarts,AS Roma,FC Bologna,2,1,1,1,39,61
+Coppa Italia,Quarts,Como,Lazio Rome,1,2,2,1,37,63
+Coppa Italia,Demies,Inter Milan,Juventus Turin,2,1,3,2,34,66
+Coppa Italia,Demies,AS Roma,Lazio Rome,0,1,3,1,32,68
+Coppa Italia,Finale,Inter Milan,Lazio Rome,3,0,3,0,68,32
+Coupe de France,Qualifications,Rodez AF,AS Saint-Etienne,0,1,0,2,27,73
+Coupe de France,Qualifications,FC Nantes,Uchiha Palaiseau,1,0,0,0,44,56
+Coupe de France,Qualifications,AS Anus,SO Millau,2,0,2,2,64,36
+Coupe de France,Qualifications,Plouzané AC,Angers SCO,0,5,0,5,39,61
+Coupe de France,Huitièmes,Stade Rennais,Red Star FC,8,0,8,0,72,28
+Coupe de France,Huitièmes,Strasbourg,PSG,0,5,1,6,39,61
+Coupe de France,Huitièmes,AS Monaco,Olympique de Marseille,0,1,0,1,34,66
+Coupe de France,Huitièmes,AS Anus,FC Lorient,0,2,2,4,28,72
+Coupe de France,Huitièmes,RC Lens,AS Saint-Etienne,8,0,8,0,79,21
+Coupe de France,Huitièmes,LOSC,Toulouse FC,1,2,3,4,47,53
+Coupe de France,Huitièmes,Plouhinec FC,Angers SCO,0,2,1,3,40,60
+Coupe de France,Huitièmes,FC Nantes,Olympique Lyonnais,0,3,0,5,50,50
+Coupe de France,Quarts,Stade Rennais,PSG,3,4,4,4,48,52
+Coupe de France,Quarts,Olympique de Marseille,FC Lorient,1,0,4,0,36,64
+Coupe de France,Quarts,RC Lens,Toulouse FC,3,1,5,2,59,41
+Coupe de France,Quarts,Angers SCO,Olympique Lyonnais,1,0,1,1,80,20
+Coupe de France,Demies,PSG,Olympique de Marseille,2,0,5,3,33,67
+Coupe de France,Demies,RC Lens,Angers SCO,1,0,2,1,48,52
+Coupe de France,Finale,PSG,RC Lens,3,1,5,2,49,51
+Croky Cup,Qualifications,Standard de Liège,Sporting Charleroi,2,1,3,1,43,57
+Croky Cup,Qualifications,KV Mechelen,KVC Westerlo,0,1,1,2,29,71
+Croky Cup,Quarts,KAA La Gantoise,RSC Anderlecht,2,3,3,2,62,38
+Croky Cup,Quarts,Standard de Liège,Royal Anterwerp FC,2,1,1,1,51,49
+Croky Cup,Quarts,Club Brugge,KVC Westerlo,1,0,3,0,56,44
+Croky Cup,Quarts,KRC Genk,Union Saint-Gilloise,0,2,2,2,41,59
+Croky Cup,Demies,RSC Anderlecht,Standard de Liège,2,0,3,0,27,73
+Croky Cup,Demies,Club Brugge,Union Saint-Gilloise,1,0,1,1,41,59
+Croky Cup,Finale,RSC Anderlecht,Club Brugge,1,2,1,1,50,50
+DFB-Pokal,Qualifications,Fc Köln,Union Berlin,2,1,1,1,30,70
+DFB-Pokal,Qualifications,SC Paderborn,Hamburger SV,0,1,0,1,49,51
+DFB-Pokal,Qualifications,Herta Berlin,FC Augsburg,1,3,2,5,32,68
+DFB-Pokal,Qualifications,FC Saint Pauli,Hannover 96,0,2,0,2,52,48
+DFB-Pokal,Huitièmes,Wolfsburg,Hoffenheim,1,2,2,2,66,34
+DFB-Pokal,Huitièmes,Vfb Stuttgart,Mainz 05,4,1,5,3,50,50
+DFB-Pokal,Huitièmes,Hamburger SV,Borussia Dortmund,1,5,2,5,14,86
+DFB-Pokal,Huitièmes,Eintracht Francfort,Hannover 96,1,3,2,3,71,29
+DFB-Pokal,Huitièmes,FC Augsburg,Bayern Munich,0,2,1,2,56,44
+DFB-Pokal,Huitièmes,Werder Bremen,Fc Köln,1,2,1,4,54,46
+DFB-Pokal,Huitièmes,Borussia Mönchengladbach,Bayer Leverkusen,3,2,3,2,34,66
+DFB-Pokal,Huitièmes,SC Fribourg,RB Leipzig,1,3,1,3,58,42
+DFB-Pokal,Quarts,Hoffenheim,Vfb Stuttgart,0,2,0,2,29,71
+DFB-Pokal,Quarts,Borussia Dortmund,Hannover 96,2,0,3,2,60,40
+DFB-Pokal,Quarts,Bayern Munich,Fc Köln,3,0,7,0,66,34
+DFB-Pokal,Quarts,Borussia Mönchengladbach,RB Leipzig,1,2,2,2,48,52
+DFB-Pokal,Demies,Vfb Stuttgart,Borussia Dortmund,1,3,1,3,34,66
+DFB-Pokal,Demies,Bayern Munich,RB Leipzig,3,0,6,0,44,56
+DFB-Pokal,Finale,Borussia Dortmund,Bayern Munich,1,2,1,3,63,37
+Eredivisie,Journée 1,GO Ahead Eagles,FC Utrecht,0,0,0,0,47,53
+Eredivisie,Journée 1,Feynenoord Rotterdam,Ajax Amsterdam,3,0,4,1,56,44
+Eredivisie,Journée 1,Sparta Rotterdam,FC Twente,0,0,0,1,47,53
+Eredivisie,Journée 1,SC Heerenveen,PSV Eindhoven,1,3,2,3,29,71
+Eredivisie,Journée 1,FC Groningen,AZ Alkmaar,0,2,0,3,44,56
+Eredivisie,Journée 2,FC Twente,Ajax Amsterdam,0,4,0,4,70,30
+Eredivisie,Journée 2,FC Groningen,PSV Eindhoven,0,3,0,5,46,54
+Eredivisie,Journée 2,GO Ahead Eagles,AZ Alkmaar,0,2,0,4,62,38
+Eredivisie,Journée 2,Feynenoord Rotterdam,Sparta Rotterdam,3,2,4,3,39,61
+Eredivisie,Journée 2,SC Heerenveen,FC Utrecht,2,1,3,1,29,71
+Eredivisie,Journée 3,AZ Alkmaar,PSV Eindhoven,1,2,1,3,70,30
+Eredivisie,Journée 3,GO Ahead Eagles,Sparta Rotterdam,0,1,0,2,66,34
+Eredivisie,Journée 3,FC Groningen,FC Utrecht,0,2,2,2,48,52
+Eredivisie,Journée 3,Ajax Amsterdam,SC Heerenveen,4,0,4,1,51,49
+Eredivisie,Journée 3,Feynenoord Rotterdam,FC Twente,2,0,3,2,47,53
+Eredivisie,Journée 4,PSV Eindhoven,FC Twente,5,1,5,2,43,57
+Eredivisie,Journée 4,GO Ahead Eagles,Ajax Amsterdam,0,1,0,1,61,39
+Eredivisie,Journée 4,AZ Alkmaar,SC Heerenveen,1,0,2,0,48,52
+Eredivisie,Journée 4,FC Groningen,Feynenoord Rotterdam,0,1,0,3,59,41
+Eredivisie,Journée 4,Sparta Rotterdam,FC Utrecht,2,0,2,0,68,32
+Eredivisie,Journée 5,Feynenoord Rotterdam,SC Heerenveen,8,1,8,2,59,41
+Eredivisie,Journée 5,PSV Eindhoven,Ajax Amsterdam,4,2,4,4,48,52
+Eredivisie,Journée 5,GO Ahead Eagles,FC Groningen,1,1,1,2,43,57
+Eredivisie,Journée 5,Sparta Rotterdam,AZ Alkmaar,4,3,4,5,36,64
+Eredivisie,Journée 5,FC Utrecht,FC Twente,0,0,0,1,53,47
+Eredivisie,Journée 6,Feynenoord Rotterdam,FC Utrecht,1,0,2,1,41,59
+Eredivisie,Journée 6,PSV Eindhoven,Sparta Rotterdam,1,1,2,2,61,39
+Eredivisie,Journée 6,FC Groningen,FC Twente,1,1,1,3,66,34
+Eredivisie,Journée 6,AZ Alkmaar,Ajax Amsterdam,3,2,6,3,62,38
+Eredivisie,Journée 6,SC Heerenveen,GO Ahead Eagles,1,3,2,3,49,51
+Eredivisie,Journée 7,Ajax Amsterdam,FC Utrecht,0,0,1,0,26,74
+Eredivisie,Journée 7,FC Groningen,Sparta Rotterdam,1,1,2,2,28,72
+Eredivisie,Journée 7,PSV Eindhoven,GO Ahead Eagles,1,2,1,2,51,49
+Eredivisie,Journée 7,AZ Alkmaar,Feynenoord Rotterdam,2,2,3,3,37,63
+Eredivisie,Journée 7,FC Twente,SC Heerenveen,0,2,0,2,59,41
+Eredivisie,Journée 8,Feynenoord Rotterdam,PSV Eindhoven,2,3,3,3,27,73
+Eredivisie,Journée 8,Ajax Amsterdam,Sparta Rotterdam,0,1,1,3,31,69
+Eredivisie,Journée 8,FC Utrecht,AZ Alkmaar,0,1,0,2,47,53
+Eredivisie,Journée 8,FC Groningen,SC Heerenveen,0,1,0,2,77,23
+Eredivisie,Journée 8,GO Ahead Eagles,FC Twente,2,0,2,1,54,46
+Eredivisie,Journée 9,PSV Eindhoven,FC Utrecht,1,1,2,2,24,76
+Eredivisie,Journée 9,AZ Alkmaar,FC Twente,1,1,1,1,42,58
+Eredivisie,Journée 9,GO Ahead Eagles,Feynenoord Rotterdam,0,5,0,6,46,54
+Eredivisie,Journée 9,FC Groningen,Ajax Amsterdam,0,3,0,3,53,47
+Eredivisie,Journée 9,Sparta Rotterdam,SC Heerenveen,6,0,7,0,60,40
+Europa League,Qualifications,KAA La Gantoise,PSV Eindhoven,0,2,0,4,53,47
+Europa League,Qualifications,Samsunspor,Strasbourg,0,3,0,3,41,59
+Europa League,Qualifications,FC Utrecht,SC Braga,2,1,4,4,32,68
+Europa League,Qualifications,Union Saint-Gilloise,Besiktas JK,1,2,2,2,53,47
+Europa League,Huitièmes,KRC Genk,Ajax Amsterdam,2,1,4,3,30,70
+Europa League,Huitièmes,KVC Westerlo,Galatasaray,2,3,2,3,49,51
+Europa League,Huitièmes,Stade Rennais,Fiorentina,2,0,4,2,58,42
+Europa League,Huitièmes,Besiktas JK,Strasbourg,0,1,2,1,43,57
+Europa League,Huitièmes,AS Roma,RC Lens,1,5,2,5,40,60
+Europa League,Huitièmes,PSV Eindhoven,FC Utrecht,3,1,4,1,37,63
+Europa League,Huitièmes,Sporting CP,Athletic Bilbao,1,3,3,3,56,44
+Europa League,Huitièmes,Vfb Stuttgart,SC Fribourg,1,0,3,1,37,63
+Europa League,Quarts,KRC Genk,Galatasaray,0,3,1,3,43,57
+Europa League,Quarts,Stade Rennais,Strasbourg,2,1,2,3,61,39
+Europa League,Quarts,RC Lens,PSV Eindhoven,3,4,6,7,37,63
+Europa League,Quarts,Athletic Bilbao,Vfb Stuttgart,1,0,0,0,29,71
+Europa League,Demies,Galatasaray,Stade Rennais,0,2,1,2,58,42
+Europa League,Demies,PSV Eindhoven,Athletic Bilbao,3,6,3,6,46,54
+Europa League,Finale,Stade Rennais,Athletic Bilbao,0,2,2,6,39,61
+FA Cup,Qualifications,Wolverhampton,West Ham,0,2,2,2,56,44
+FA Cup,Qualifications,Burnley,Nottingham Forest,2,1,5,1,43,57
+FA Cup,Qualifications,Fulham FC,Leeds United,0,1,0,0,43,57
+FA Cup,Qualifications,Sunderland,Everton FC,0,1,1,3,42,58
+FA Cup,Huitièmes,Tottenham,Brighton,3,1,3,4,53,47
+FA Cup,Huitièmes,Brentford,Liverpool FC,0,6,1,8,42,58
+FA Cup,Huitièmes,Manchester United,Chelsea,3,4,3,6,48,52
+FA Cup,Huitièmes,Newcastle,Crystal Palace,0,1,1,2,68,32
+FA Cup,Huitièmes,Burnley,Aston Villa,0,1,2,2,27,73
+FA Cup,Huitièmes,Bournemouth,West Ham,4,0,6,1,60,40
+FA Cup,Huitièmes,Everton FC,Arsenal,0,6,0,6,41,59
+FA Cup,Huitièmes,Leeds United,Manchester City,2,4,2,5,38,62
+FA Cup,Quarts,Tottenham,Liverpool FC,2,4,3,4,34,66
+FA Cup,Quarts,Chelsea,Crystal Palace,6,0,7,0,56,44
+FA Cup,Quarts,Aston Villa,Bournemouth,1,2,3,1,39,61
+FA Cup,Quarts,Arsenal,Manchester City,3,2,6,3,46,54
+FA Cup,Demies,Liverpool FC,Chelsea,2,3,2,5,49,51
+FA Cup,Demies,Bournemouth,Arsenal,0,2,1,4,43,57
+FA Cup,Finale,Chelsea,Arsenal,3,6,6,8,49,51
+Jupiler Pro League,Journée 1,RSC Anderlecht,Royal Anterwerp FC,1,1,1,1,43,57
+Jupiler Pro League,Journée 1,Club Brugge,KV Mechelen,3,0,6,0,60,40
+Jupiler Pro League,Journée 1,KVC Westerlo,KRC Genk,0,1,1,2,37,63
+Jupiler Pro League,Journée 1,Standard de Liège,Sporting Charleroi,0,0,1,1,52,48
+Jupiler Pro League,Journée 1,KAA La Gantoise,Union Saint-Gilloise,0,0,2,0,60,40
+Jupiler Pro League,Journée 2,RSC Anderlecht,Sporting Charleroi,0,2,2,3,53,47
+Jupiler Pro League,Journée 2,KRC Genk,Club Brugge,6,0,6,3,54,46
+Jupiler Pro League,Journée 2,Royal Anterwerp FC,KVC Westerlo,0,0,0,0,42,58
+Jupiler Pro League,Journée 2,Union Saint-Gilloise,Standard de Liège,2,1,2,1,40,60
+Jupiler Pro League,Journée 2,KAA La Gantoise,KV Mechelen,3,0,4,0,70,30
+Jupiler Pro League,Journée 3,KVC Westerlo,KAA La Gantoise,1,0,1,1,69,31
+Jupiler Pro League,Journée 3,Club Brugge,Union Saint-Gilloise,1,1,2,1,66,34
+Jupiler Pro League,Journée 3,Standard de Liège,RSC Anderlecht,3,1,4,1,77,23
+Jupiler Pro League,Journée 3,Royal Anterwerp FC,KRC Genk,1,2,1,2,40,60
+Jupiler Pro League,Journée 3,KV Mechelen,Sporting Charleroi,0,3,0,3,34,66
+Jupiler Pro League,Journée 4,Club Brugge,Royal Anterwerp FC,3,0,4,0,44,56
+Jupiler Pro League,Journée 4,Standard de Liège,KAA La Gantoise,0,1,1,1,47,53
+Jupiler Pro League,Journée 4,KVC Westerlo,KV Mechelen,3,0,4,0,66,34
+Jupiler Pro League,Journée 4,Sporting Charleroi,Union Saint-Gilloise,1,1,2,2,30,70
+Jupiler Pro League,Journée 4,KRC Genk,RSC Anderlecht,1,0,4,0,57,43
+Jupiler Pro League,Journée 5,RSC Anderlecht,KVC Westerlo,0,1,0,2,23,77
+Jupiler Pro League,Journée 5,KRC Genk,Sporting Charleroi,1,0,1,1,74,26
+Jupiler Pro League,Journée 5,Standard de Liège,Royal Anterwerp FC,4,1,4,2,63,37
+Jupiler Pro League,Journée 5,Union Saint-Gilloise,KV Mechelen,1,0,1,0,77,23
+Jupiler Pro League,Journée 5,Club Brugge,KAA La Gantoise,1,0,2,3,69,31
+Jupiler Pro League,Journée 6,Standard de Liège,KRC Genk,0,2,2,5,44,56
+Jupiler Pro League,Journée 6,Sporting Charleroi,KAA La Gantoise,1,0,2,0,41,59
+Jupiler Pro League,Journée 6,RSC Anderlecht,Union Saint-Gilloise,1,3,1,4,39,61
+Jupiler Pro League,Journée 6,KV Mechelen,Royal Anterwerp FC,1,0,1,1,50,50
+Jupiler Pro League,Journée 6,KVC Westerlo,Club Brugge,0,0,0,0,47,53
+Jupiler Pro League,Journée 7,Union Saint-Gilloise,Royal Anterwerp FC,2,0,2,0,47,53
+Jupiler Pro League,Journée 7,KRC Genk,KAA La Gantoise,1,1,4,1,60,40
+Jupiler Pro League,Journée 7,Sporting Charleroi,Club Brugge,1,0,1,2,33,67
+Jupiler Pro League,Journée 7,Standard de Liège,KVC Westerlo,0,0,0,1,42,58
+Jupiler Pro League,Journée 7,RSC Anderlecht,KV Mechelen,0,1,2,1,56,44
+Jupiler Pro League,Journée 8,Union Saint-Gilloise,KVC Westerlo,0,1,1,2,78,22
+Jupiler Pro League,Journée 8,Sporting Charleroi,Royal Anterwerp FC,0,0,0,1,61,39
+Jupiler Pro League,Journée 8,KRC Genk,KV Mechelen,1,0,1,0,78,22
+Jupiler Pro League,Journée 8,Standard de Liège,Club Brugge,0,0,2,1,62,38
+Jupiler Pro League,Journée 8,KAA La Gantoise,RSC Anderlecht,2,1,4,1,38,62
+Jupiler Pro League,Journée 9,Club Brugge,RSC Anderlecht,4,0,6,0,64,36
+Jupiler Pro League,Journée 9,Standard de Liège,KV Mechelen,4,0,5,1,58,42
+Jupiler Pro League,Journée 9,Sporting Charleroi,KVC Westerlo,0,0,1,0,58,42
+Jupiler Pro League,Journée 9,KAA La Gantoise,Royal Anterwerp FC,2,0,2,0,59,41
+Jupiler Pro League,Journée 9,KRC Genk,Union Saint-Gilloise,2,0,2,0,54,46
+KNVB Beker,Qualifications,FC Twente,GO Ahead Eagles,0,1,1,2,58,42
+KNVB Beker,Qualifications,SC Heerenveen,Sparta Rotterdam,0,1,2,2,52,48
+KNVB Beker,Quarts,GO Ahead Eagles,AZ Alkmaar,0,4,0,4,54,46
+KNVB Beker,Quarts,Ajax Amsterdam,FC Utrecht,0,1,0,1,33,67
+KNVB Beker,Quarts,Sparta Rotterdam,PSV Eindhoven,1,4,1,4,72,28
+KNVB Beker,Quarts,FC Groningen,Feynenoord Rotterdam,3,4,4,6,56,44
+KNVB Beker,Demies,AZ Alkmaar,FC Utrecht,1,0,2,1,68,32
+KNVB Beker,Demies,PSV Eindhoven,Feynenoord Rotterdam,2,1,4,2,57,43
+KNVB Beker,Finale,AZ Alkmaar,PSV Eindhoven,0,2,2,3,53,47
+Liga,Journée 1,Real Sociedad,FC Barcelone,0,2,1,6,68,32
+Liga,Journée 1,Athletic Bilbao,Real Madrid,0,2,1,4,47,53
+Liga,Journée 1,Getafe,Atlético Madrid,1,5,3,7,46,54
+Liga,Journée 1,Girona FC,Real Betis,3,2,3,2,34,66
+Liga,Journée 1,Valence FC,Villareal,0,0,1,1,44,56
+Liga,Journée 2,Valence FC,Atlético Madrid,1,1,2,3,48,52
+Liga,Journée 2,Real Madrid,Villareal,3,0,3,0,41,59
+Liga,Journée 2,Real Sociedad,Real Betis,0,1,1,4,56,44
+Liga,Journée 2,FC Barcelone,Getafe,7,0,7,2,44,56
+Liga,Journée 2,Athletic Bilbao,Girona FC,6,3,7,3,43,57
+Liga,Journée 3,Valence FC,Real Madrid,1,5,2,5,66,34
+Liga,Journée 3,Villareal,Athletic Bilbao,4,2,4,3,52,48
+Liga,Journée 3,FC Barcelone,Girona FC,6,1,7,1,50,50
+Liga,Journée 3,Getafe,Real Betis,0,0,1,1,67,33
+Liga,Journée 3,Atlético Madrid,Real Sociedad,4,1,5,1,71,29
+Liga,Journée 4,Athletic Bilbao,FC Barcelone,2,3,3,9,42,58
+Liga,Journée 4,Girona FC,Valence FC,1,2,2,2,43,57
+Liga,Journée 4,Getafe,Real Sociedad,3,1,4,4,44,56
+Liga,Journée 4,Real Madrid,Real Betis,4,2,4,3,43,57
+Liga,Journée 4,Atlético Madrid,Villareal,1,1,2,2,69,31
+Liga,Journée 5,Getafe,Girona FC,1,1,1,1,43,57
+Liga,Journée 5,Athletic Bilbao,Atlético Madrid,0,3,3,5,56,44
+Liga,Journée 5,Real Sociedad,Villareal,0,2,1,4,58,42
+Liga,Journée 5,Real Madrid,FC Barcelone,4,4,4,7,53,47
+Liga,Journée 5,Valence FC,Real Betis,4,2,5,3,57,43
+Liga,Journée 6,Girona FC,Villareal,0,2,2,2,53,47
+Liga,Journée 6,Real Sociedad,Athletic Bilbao,3,1,4,6,49,51
+Liga,Journée 6,FC Barcelone,Valence FC,4,1,7,1,22,78
+Liga,Journée 6,Real Betis,Atlético Madrid,2,2,4,2,36,64
+Liga,Journée 6,Real Madrid,Getafe,7,0,8,1,46,54
+Liga,Journée 7,Villareal,Getafe,1,2,4,2,56,44
+Liga,Journée 7,Valence FC,Athletic Bilbao,0,0,0,1,53,47
+Liga,Journée 7,Real Betis,FC Barcelone,0,4,1,5,36,64
+Liga,Journée 7,Real Madrid,Atlético Madrid,4,1,4,4,53,47
+Liga,Journée 7,Real Sociedad,Girona FC,1,1,1,1,48,52
+Liga,Journée 8,Villareal,FC Barcelone,0,4,1,6,44,56
+Liga,Journée 8,Valence FC,Getafe,1,2,1,4,56,44
+Liga,Journée 8,Athletic Bilbao,Real Betis,2,1,3,4,39,61
+Liga,Journée 8,Real Sociedad,Real Madrid,0,3,1,4,46,54
+Liga,Journée 8,Atlético Madrid,Girona FC,2,0,3,0,67,33
+Liga,Journée 9,Getafe,Athletic Bilbao,0,4,0,7,63,37
+Liga,Journée 9,Real Betis,Villareal,3,2,4,4,36,64
+Liga,Journée 9,Atlético Madrid,FC Barcelone,1,1,3,3,49,51
+Liga,Journée 9,Valence FC,Real Sociedad,3,2,3,5,64,36
+Liga,Journée 9,Girona FC,Real Madrid,0,4,0,5,49,51
+Liga 2,Journée 1,RCD Mallorca,UD Levante,0,1,0,1,57,43
+Liga 2,Journée 1,Celta Vigo,Deportivo Alavés,1,1,2,5,60,40
+Liga 2,Journée 1,Elche CF,Rayo Vallecano,2,1,2,1,24,76
+Liga 2,Journée 1,Real Oviedo,Séville FC,1,1,2,3,40,60
+Liga 2,Journée 1,Espanyol Barcelona,CA Osasuna,0,2,1,3,52,48
+Liga 2,Journée 2,Elche CF,UD Levante,0,4,1,4,34,66
+Liga 2,Journée 2,Deportivo Alavés,Rayo Vallecano,0,3,0,3,50,50
+Liga 2,Journée 2,CA Osasuna,Real Oviedo,2,1,3,1,52,48
+Liga 2,Journée 2,Séville FC,Celta Vigo,1,1,2,2,48,52
+Liga 2,Journée 2,Espanyol Barcelona,RCD Mallorca,1,2,1,3,59,41
+Liga 2,Journée 3,Rayo Vallecano,Séville FC,0,0,0,1,36,64
+Liga 2,Journée 3,CA Osasuna,Celta Vigo,2,0,2,1,51,49
+Liga 2,Journée 3,Espanyol Barcelona,UD Levante,1,4,2,5,56,44
+Liga 2,Journée 3,Elche CF,RCD Mallorca,2,3,2,5,51,49
+Liga 2,Journée 3,Real Oviedo,Deportivo Alavés,1,0,3,2,64,36
+Liga 2,Journée 4,RCD Mallorca,CA Osasuna,3,1,4,2,52,48
+Liga 2,Journée 4,Deportivo Alavés,Espanyol Barcelona,2,1,4,1,37,63
+Liga 2,Journée 4,Séville FC,UD Levante,1,0,1,0,27,73
+Liga 2,Journée 4,Elche CF,Real Oviedo,0,0,2,1,56,44
+Liga 2,Journée 4,Celta Vigo,Rayo Vallecano,2,2,4,4,46,54
+Liga 2,Journée 5,CA Osasuna,Elche CF,2,1,3,2,42,58
+Liga 2,Journée 5,Celta Vigo,UD Levante,1,2,2,2,29,71
+Liga 2,Journée 5,Séville FC,Espanyol Barcelona,2,1,2,2,54,46
+Liga 2,Journée 5,Deportivo Alavés,RCD Mallorca,1,0,3,0,59,41
+Liga 2,Journée 5,Rayo Vallecano,Real Oviedo,4,0,4,1,48,52
+Liga 2,Journée 6,CA Osasuna,Rayo Vallecano,1,1,1,2,69,31
+Liga 2,Journée 6,Espanyol Barcelona,Celta Vigo,0,1,0,1,58,42
+Liga 2,Journée 6,Deportivo Alavés,Elche CF,0,0,0,0,57,43
+Liga 2,Journée 6,RCD Mallorca,Séville FC,2,2,2,2,57,43
+Liga 2,Journée 6,Real Oviedo,UD Levante,0,1,0,1,48,52
+Liga 2,Journée 7,UD Levante,CA Osasuna,1,2,3,4,30,70
+Liga 2,Journée 7,Deportivo Alavés,Séville FC,1,1,2,2,52,48
+Liga 2,Journée 7,Elche CF,Celta Vigo,2,0,2,1,41,59
+Liga 2,Journée 7,Rayo Vallecano,Espanyol Barcelona,1,2,2,2,51,49
+Liga 2,Journée 7,Real Oviedo,RCD Mallorca,1,1,1,3,52,48
+Liga 2,Journée 8,CA Osasuna,Deportivo Alavés,4,1,5,2,39,61
+Liga 2,Journée 8,Rayo Vallecano,UD Levante,0,1,0,5,62,38
+Liga 2,Journée 8,Espanyol Barcelona,Real Oviedo,1,0,1,0,80,20
+Liga 2,Journée 8,Séville FC,Elche CF,3,3,4,3,61,39
+Liga 2,Journée 8,Celta Vigo,RCD Mallorca,0,1,0,2,38,62
+Liga 2,Journée 9,CA Osasuna,Séville FC,2,2,2,2,67,33
+Liga 2,Journée 9,Celta Vigo,Real Oviedo,0,0,0,3,74,26
+Liga 2,Journée 9,Espanyol Barcelona,Elche CF,0,2,2,3,71,29
+Liga 2,Journée 9,Deportivo Alavés,UD Levante,0,2,0,2,36,64
+Liga 2,Journée 9,RCD Mallorca,Rayo Vallecano,0,1,0,1,52,48
+Liga Nos,Journée 1,Gil Vicente,Vitória Guimarães SC,0,0,0,3,34,66
+Liga Nos,Journée 1,Sporting CP,SL Benfica,1,1,4,3,43,57
+Liga Nos,Journée 1,GD Estoril Praia,CD Santa Clara,0,3,0,3,59,41
+Liga Nos,Journée 1,FC Famalicao,FC Porto,0,1,1,3,29,71
+Liga Nos,Journée 1,SC Braga,Moreirense FC,0,1,0,1,59,41
+Liga Nos,Journée 2,Vitória Guimarães SC,Sporting CP,0,3,0,3,32,68
+Liga Nos,Journée 2,FC Porto,GD Estoril Praia,2,0,3,0,66,34
+Liga Nos,Journée 2,SL Benfica,SC Braga,3,0,5,1,44,56
+Liga Nos,Journée 2,Moreirense FC,FC Famalicao,1,0,2,0,72,28
+Liga Nos,Journée 2,Gil Vicente,CD Santa Clara,1,2,1,4,61,39
+Liga Nos,Journée 3,SL Benfica,Vitória Guimarães SC,3,0,4,0,59,41
+Liga Nos,Journée 3,GD Estoril Praia,Sporting CP,0,3,2,4,22,78
+Liga Nos,Journée 3,Gil Vicente,Moreirense FC,2,2,2,2,66,34
+Liga Nos,Journée 3,SC Braga,FC Famalicao,3,0,3,0,51,49
+Liga Nos,Journée 3,FC Porto,CD Santa Clara,1,2,2,3,57,43
+Liga Nos,Journée 4,Vitória Guimarães SC,GD Estoril Praia,0,0,2,1,73,27
+Liga Nos,Journée 4,Moreirense FC,FC Porto,0,3,3,4,50,50
+Liga Nos,Journée 4,SL Benfica,CD Santa Clara,4,1,5,2,73,27
+Liga Nos,Journée 4,SC Braga,Gil Vicente,2,0,2,1,61,39
+Liga Nos,Journée 4,Sporting CP,FC Famalicao,0,1,2,2,60,40
+Liga Nos,Journée 5,FC Famalicao,Vitória Guimarães SC,0,0,1,0,57,43
+Liga Nos,Journée 5,Moreirense FC,GD Estoril Praia,0,1,0,1,73,27
+Liga Nos,Journée 5,Gil Vicente,Sporting CP,0,4,2,7,40,60
+Liga Nos,Journée 5,SL Benfica,FC Porto,2,2,3,4,59,41
+Liga Nos,Journée 5,SC Braga,CD Santa Clara,0,2,3,4,43,57
+Liga Nos,Journée 6,SL Benfica,Gil Vicente,4,1,7,2,37,63
+Liga Nos,Journée 6,SC Braga,Vitória Guimarães SC,0,0,2,0,47,53
+Liga Nos,Journée 6,FC Porto,Sporting CP,0,1,1,5,50,50
+Liga Nos,Journée 6,FC Famalicao,GD Estoril Praia,2,0,2,0,39,61
+Liga Nos,Journée 6,Moreirense FC,CD Santa Clara,4,2,4,4,50,50
+Liga Nos,Journée 7,FC Famalicao,SL Benfica,1,1,1,3,41,59
+Liga Nos,Journée 7,Gil Vicente,FC Porto,1,3,1,5,31,69
+Liga Nos,Journée 7,Sporting CP,Moreirense FC,4,1,5,1,47,53
+Liga Nos,Journée 7,GD Estoril Praia,SC Braga,0,3,0,4,40,60
+Liga Nos,Journée 7,CD Santa Clara,Vitória Guimarães SC,1,0,1,1,42,58
+Liga Nos,Journée 8,SC Braga,FC Porto,1,2,2,4,64,36
+Liga Nos,Journée 8,FC Famalicao,Gil Vicente,1,2,1,2,50,50
+Liga Nos,Journée 8,Vitória Guimarães SC,Moreirense FC,2,2,2,4,47,53
+Liga Nos,Journée 8,GD Estoril Praia,SL Benfica,0,3,0,4,44,56
+Liga Nos,Journée 8,CD Santa Clara,Sporting CP,0,3,0,3,41,59
+Liga Nos,Journée 9,GD Estoril Praia,Gil Vicente,1,0,1,1,71,29
+Liga Nos,Journée 9,FC Famalicao,CD Santa Clara,0,1,1,2,56,44
+Liga Nos,Journée 9,Sporting CP,SC Braga,2,1,2,1,76,24
+Liga Nos,Journée 9,Moreirense FC,SL Benfica,2,6,3,6,44,56
+Liga Nos,Journée 9,FC Porto,Vitória Guimarães SC,1,0,3,0,63,37
+Ligue 1,Journée 1,FC Lorient,Toulouse FC,1,2,1,3,56,44
+Ligue 1,Journée 1,Strasbourg,LOSC,1,1,3,2,39,61
+Ligue 1,Journée 1,Stade Rennais,RC Lens,1,1,2,2,54,46
+Ligue 1,Journée 1,Olympique de Marseille,PSG,1,3,3,6,48,52
+Ligue 1,Journée 1,AS Monaco,Olympique Lyonnais,3,0,6,2,56,44
+Ligue 1,Journée 2,Olympique Lyonnais,FC Lorient,3,1,4,3,47,53
+Ligue 1,Journée 2,RC Lens,Olympique de Marseille,0,3,1,3,50,50
+Ligue 1,Journée 2,Stade Rennais,PSG,0,9,4,11,46,54
+Ligue 1,Journée 2,AS Monaco,Strasbourg,0,1,1,2,44,56
+Ligue 1,Journée 2,LOSC,Toulouse FC,0,1,1,2,38,62
+Ligue 1,Journée 3,LOSC,PSG,1,5,1,7,44,56
+Ligue 1,Journée 3,Toulouse FC,AS Monaco,0,0,1,0,36,64
+Ligue 1,Journée 3,Olympique Lyonnais,RC Lens,1,1,2,2,50,50
+Ligue 1,Journée 3,FC Lorient,Olympique de Marseille,0,5,0,5,56,44
+Ligue 1,Journée 3,Stade Rennais,Strasbourg,0,2,1,2,58,42
+Ligue 1,Journée 4,Stade Rennais,Toulouse FC,1,0,2,1,54,46
+Ligue 1,Journée 4,PSG,Olympique Lyonnais,5,1,6,1,69,31
+Ligue 1,Journée 4,Strasbourg,Olympique de Marseille,0,1,1,2,20,80
+Ligue 1,Journée 4,AS Monaco,RC Lens,0,1,2,2,43,57
+Ligue 1,Journée 4,LOSC,FC Lorient,2,1,3,1,26,74
+Ligue 1,Journée 5,PSG,FC Lorient,12,0,12,0,54,46
+Ligue 1,Journée 5,AS Monaco,Stade Rennais,0,1,2,2,42,58
+Ligue 1,Journée 5,Olympique Lyonnais,Toulouse FC,1,1,3,2,57,43
+Ligue 1,Journée 5,Olympique de Marseille,LOSC,3,1,7,1,43,57
+Ligue 1,Journée 5,Strasbourg,RC Lens,3,0,3,0,47,53
+Ligue 1,Journée 6,FC Lorient,AS Monaco,1,1,1,2,58,42
+Ligue 1,Journée 6,Stade Rennais,LOSC,1,2,4,2,77,23
+Ligue 1,Journée 6,PSG,RC Lens,7,1,8,2,53,47
+Ligue 1,Journée 6,Strasbourg,Olympique Lyonnais,1,1,1,2,50,50
+Ligue 1,Journée 6,Toulouse FC,Olympique de Marseille,1,3,1,5,44,56
+Ligue 1,Journée 7,Stade Rennais,FC Lorient,3,1,3,1,50,50
+Ligue 1,Journée 7,PSG,Strasbourg,3,2,3,2,40,60
+Ligue 1,Journée 7,RC Lens,Toulouse FC,3,2,4,4,56,44
+Ligue 1,Journée 7,LOSC,AS Monaco,1,0,2,1,29,71
+Ligue 1,Journée 7,Olympique de Marseille,Olympique Lyonnais,3,0,4,1,66,34
+Ligue 1,Journée 8,LOSC,RC Lens,0,2,0,4,29,71
+Ligue 1,Journée 8,Olympique Lyonnais,Stade Rennais,2,3,2,7,59,41
+Ligue 1,Journée 8,PSG,Toulouse FC,5,0,7,1,57,43
+Ligue 1,Journée 8,FC Lorient,Strasbourg,0,2,0,3,59,41
+Ligue 1,Journée 8,AS Monaco,Olympique de Marseille,2,2,3,3,42,58
+Ligue 1,Journée 9,Olympique de Marseille,Stade Rennais,2,2,3,5,54,46
+Ligue 1,Journée 9,Toulouse FC,Strasbourg,0,2,0,4,26,74
+Ligue 1,Journée 9,AS Monaco,PSG,1,4,2,5,32,68
+Ligue 1,Journée 9,Olympique Lyonnais,LOSC,0,1,1,1,54,46
+Ligue 1,Journée 9,RC Lens,FC Lorient,2,2,4,2,47,53
+Ligue 2,Journée 1,Plouzané AC,AS Saint-Etienne,1,1,2,1,53,47
+Ligue 2,Journée 1,SO Millau,FC Nantes,1,1,1,1,51,49
+Ligue 2,Journée 1,Angers SCO,AS Anus,3,0,6,0,61,39
+Ligue 2,Journée 1,Uchiha Palaiseau,Plouhinec FC,0,0,0,0,56,44
+Ligue 2,Journée 1,Red Star FC,Rodez AF,1,1,1,1,48,52
+Ligue 2,Journée 2,Red Star FC,Angers SCO,0,3,0,4,49,51
+Ligue 2,Journée 2,Plouzané AC,FC Nantes,0,2,0,2,56,44
+Ligue 2,Journée 2,Rodez AF,SO Millau,1,1,1,1,70,30
+Ligue 2,Journée 2,Plouhinec FC,AS Anus,0,1,0,1,23,77
+Ligue 2,Journée 2,AS Saint-Etienne,Uchiha Palaiseau,1,3,1,3,27,73
+Ligue 2,Journée 3,Uchiha Palaiseau,Plouzané AC,0,1,0,1,62,38
+Ligue 2,Journée 3,Angers SCO,Rodez AF,1,0,1,0,68,32
+Ligue 2,Journée 3,SO Millau,AS Anus,0,0,0,0,44,56
+Ligue 2,Journée 3,FC Nantes,Plouhinec FC,0,0,0,1,32,68
+Ligue 2,Journée 3,Red Star FC,AS Saint-Etienne,0,0,0,0,70,30
+Ligue 2,Journée 4,Angers SCO,Plouzané AC,1,0,2,0,84,16
+Ligue 2,Journée 4,AS Saint-Etienne,Rodez AF,0,0,1,0,42,58
+Ligue 2,Journée 4,AS Anus,FC Nantes,0,0,0,0,66,34
+Ligue 2,Journée 4,Red Star FC,Uchiha Palaiseau,1,0,1,0,34,66
+Ligue 2,Journée 4,SO Millau,Plouhinec FC,0,1,0,1,18,82
+Ligue 2,Journée 5,Rodez AF,Plouzané AC,1,0,1,0,46,54
+Ligue 2,Journée 5,Angers SCO,Plouhinec FC,1,0,2,0,66,34
+Ligue 2,Journée 5,Red Star FC,AS Anus,0,0,1,2,74,26
+Ligue 2,Journée 5,Uchiha Palaiseau,SO Millau,1,0,1,0,71,29
+Ligue 2,Journée 5,AS Saint-Etienne,FC Nantes,0,1,0,1,58,42
+Ligue 2,Journée 6,SO Millau,Red Star FC,0,0,1,0,21,79
+Ligue 2,Journée 6,Plouhinec FC,Plouzané AC,0,0,0,0,89,11
+Ligue 2,Journée 6,Rodez AF,Uchiha Palaiseau,1,1,1,1,41,59
+Ligue 2,Journée 6,AS Anus,AS Saint-Etienne,0,1,0,1,42,58
+Ligue 2,Journée 6,FC Nantes,Angers SCO,1,3,1,3,49,51
+Ligue 2,Journée 7,Plouhinec FC,Rodez AF,0,1,1,2,32,68
+Ligue 2,Journée 7,AS Saint-Etienne,Angers SCO,0,3,0,4,30,70
+Ligue 2,Journée 7,SO Millau,Plouzané AC,1,0,1,0,41,59
+Ligue 2,Journée 7,Red Star FC,FC Nantes,1,0,2,0,48,52
+Ligue 2,Journée 7,AS Anus,Uchiha Palaiseau,0,1,1,1,59,41
+Ligue 2,Journée 8,FC Nantes,Rodez AF,2,1,2,2,66,34
+Ligue 2,Journée 8,SO Millau,AS Saint-Etienne,1,2,1,2,59,41
+Ligue 2,Journée 8,AS Anus,Plouzané AC,0,0,0,0,74,26
+Ligue 2,Journée 8,Angers SCO,Uchiha Palaiseau,3,1,3,1,67,33
+Ligue 2,Journée 8,Plouhinec FC,Red Star FC,3,1,3,1,56,44
+Ligue 2,Journée 9,Plouhinec FC,AS Saint-Etienne,3,1,3,1,73,27
+Ligue 2,Journée 9,Rodez AF,AS Anus,0,2,0,2,40,60
+Ligue 2,Journée 9,Plouzané AC,Red Star FC,0,0,0,0,40,60
+Ligue 2,Journée 9,Angers SCO,SO Millau,1,0,1,0,89,11
+Ligue 2,Journée 9,Uchiha Palaiseau,FC Nantes,1,0,2,0,60,40
+Premier League,Journée 1,Manchester City,Crystal Palace,1,3,1,3,46,54
+Premier League,Journée 1,Newcastle,Liverpool FC,2,0,3,0,72,28
+Premier League,Journée 1,Chelsea,Arsenal,1,2,3,3,38,62
+Premier League,Journée 1,Manchester United,Bournemouth,2,4,3,4,34,66
+Premier League,Journée 1,Aston Villa,Brighton,0,1,2,3,22,78
+Premier League,Journée 2,Arsenal,Crystal Palace,4,1,4,5,52,48
+Premier League,Journée 2,Manchester City,Brighton,3,3,5,4,50,50
+Premier League,Journée 2,Aston Villa,Liverpool FC,2,5,3,7,61,39
+Premier League,Journée 2,Bournemouth,Chelsea,2,2,2,4,49,51
+Premier League,Journée 2,Manchester United,Newcastle,3,4,4,4,38,62
+Premier League,Journée 3,Manchester United,Arsenal,3,2,3,3,31,69
+Premier League,Journée 3,Aston Villa,Newcastle,2,2,2,4,38,62
+Premier League,Journée 3,Crystal Palace,Bournemouth,1,1,2,1,63,37
+Premier League,Journée 3,Liverpool FC,Manchester City,2,5,5,6,44,56
+Premier League,Journée 3,Brighton,Chelsea,0,3,2,6,40,60
+Premier League,Journée 4,Liverpool FC,Arsenal,2,5,4,6,64,36
+Premier League,Journée 4,Bournemouth,Aston Villa,2,2,4,4,48,52
+Premier League,Journée 4,Brighton,Manchester United,2,1,4,2,47,53
+Premier League,Journée 4,Chelsea,Manchester City,3,1,5,1,56,44
+Premier League,Journée 4,Newcastle,Crystal Palace,2,2,3,3,48,52
+Premier League,Journée 5,Bournemouth,Brighton,3,0,4,0,53,47
+Premier League,Journée 5,Newcastle,Arsenal,0,3,2,4,69,31
+Premier League,Journée 5,Aston Villa,Chelsea,3,0,3,1,47,53
+Premier League,Journée 5,Liverpool FC,Crystal Palace,5,0,5,1,33,67
+Premier League,Journée 5,Manchester United,Manchester City,1,1,2,3,47,53
+Premier League,Journée 6,Brighton,Newcastle,0,3,0,3,56,44
+Premier League,Journée 6,Aston Villa,Arsenal,0,2,1,4,39,61
+Premier League,Journée 6,Bournemouth,Manchester City,1,1,2,3,37,63
+Premier League,Journée 6,Crystal Palace,Manchester United,1,1,5,2,37,63
+Premier League,Journée 6,Chelsea,Liverpool FC,2,3,4,4,56,44
+Premier League,Journée 7,Liverpool FC,Bournemouth,1,2,2,3,39,61
+Premier League,Journée 7,Manchester City,Arsenal,3,2,5,3,54,46
+Premier League,Journée 7,Crystal Palace,Brighton,0,1,1,2,43,57
+Premier League,Journée 7,Manchester United,Aston Villa,2,2,5,3,37,63
+Premier League,Journée 7,Newcastle,Chelsea,1,4,2,6,48,52
+Premier League,Journée 8,Arsenal,Bournemouth,4,1,6,1,49,51
+Premier League,Journée 8,Chelsea,Manchester United,6,3,7,3,47,53
+Premier League,Journée 8,Newcastle,Manchester City,2,6,3,7,53,47
+Premier League,Journée 8,Brighton,Liverpool FC,2,4,3,7,57,43
+Premier League,Journée 8,Aston Villa,Crystal Palace,3,1,4,2,48,52
+Premier League,Journée 9,Aston Villa,Manchester City,2,3,3,5,42,58
+Premier League,Journée 9,Brighton,Arsenal,2,5,3,5,41,59
+Premier League,Journée 9,Manchester United,Liverpool FC,3,3,6,6,43,57
+Premier League,Journée 9,Newcastle,Bournemouth,3,4,4,5,64,36
+Premier League,Journée 9,Chelsea,Crystal Palace,2,1,3,2,47,53
+Serie A,Journée 1,Atalanta,Fiorentina,1,1,1,6,36,64
+Serie A,Journée 1,Como,AS Roma,4,4,6,7,67,33
+Serie A,Journée 1,Juventus Turin,FC Bologna,1,0,3,2,58,42
+Serie A,Journée 1,Inter Milan,SSC Napoli,3,3,3,3,73,27
+Serie A,Journée 1,AC Milan,Lazio Rome,4,1,6,2,59,41
+Serie A,Journée 2,SSC Napoli,Juventus Turin,4,1,7,2,58,42
+Serie A,Journée 2,Como,FC Bologna,1,0,2,0,33,67
+Serie A,Journée 2,AS Roma,Atalanta,2,1,8,2,41,59
+Serie A,Journée 2,Fiorentina,AC Milan,0,2,0,2,70,30
+Serie A,Journée 2,Lazio Rome,Inter Milan,0,1,0,2,33,67
+Serie A,Journée 3,AS Roma,Lazio Rome,1,0,2,3,27,73
+Serie A,Journée 3,AC Milan,Como,2,0,4,1,46,54
+Serie A,Journée 3,SSC Napoli,Fiorentina,4,1,4,1,61,39
+Serie A,Journée 3,FC Bologna,Atalanta,2,3,2,4,72,28
+Serie A,Journée 3,Juventus Turin,Inter Milan,1,0,2,0,41,59
+Serie A,Journée 4,Lazio Rome,Como,1,1,3,1,68,32
+Serie A,Journée 4,Inter Milan,Fiorentina,1,0,1,0,47,53
+Serie A,Journée 4,AS Roma,AC Milan,2,3,2,4,28,72
+Serie A,Journée 4,Atalanta,Juventus Turin,2,2,5,3,51,49
+Serie A,Journée 4,SSC Napoli,FC Bologna,2,0,3,0,47,53
+Serie A,Journée 5,FC Bologna,AC Milan,1,2,2,4,38,62
+Serie A,Journée 5,AS Roma,SSC Napoli,3,2,5,2,23,77
+Serie A,Journée 5,Juventus Turin,Lazio Rome,0,2,0,4,33,67
+Serie A,Journée 5,Atalanta,Inter Milan,0,2,0,5,47,53
+Serie A,Journée 5,Fiorentina,Como,0,0,0,2,42,58
+Serie A,Journée 6,Inter Milan,AC Milan,2,3,4,3,50,50
+Serie A,Journée 6,Juventus Turin,Como,2,1,3,1,56,44
+Serie A,Journée 6,AS Roma,FC Bologna,1,1,2,1,23,77
+Serie A,Journée 6,SSC Napoli,Atalanta,2,0,3,0,72,28
+Serie A,Journée 6,Fiorentina,Lazio Rome,2,1,2,3,33,67
+Serie A,Journée 7,Como,SSC Napoli,2,3,4,5,50,50
+Serie A,Journée 7,Atalanta,AC Milan,2,7,3,8,42,58
+Serie A,Journée 7,Fiorentina,Juventus Turin,3,2,3,5,39,61
+Serie A,Journée 7,AS Roma,Inter Milan,0,4,1,5,64,36
+Serie A,Journée 7,FC Bologna,Lazio Rome,0,3,1,3,41,59
+Serie A,Journée 8,AS Roma,Fiorentina,1,1,1,2,36,64
+Serie A,Journée 8,FC Bologna,Inter Milan,0,2,0,4,43,57
+Serie A,Journée 8,Lazio Rome,SSC Napoli,0,3,0,3,69,31
+Serie A,Journée 8,Como,Atalanta,1,0,2,0,68,32
+Serie A,Journée 8,AC Milan,Juventus Turin,3,2,3,8,52,48
+Serie A,Journée 9,Fiorentina,FC Bologna,3,1,3,5,61,39
+Serie A,Journée 9,Juventus Turin,AS Roma,1,2,3,4,53,47
+Serie A,Journée 9,AC Milan,SSC Napoli,1,1,2,2,59,41
+Serie A,Journée 9,Lazio Rome,Atalanta,1,1,6,4,71,29
+Serie A,Journée 9,Como,Inter Milan,0,3,0,4,37,63
+Serie B,Journée 1,Hellas Verona,Pisa SC,1,1,1,2,13,87
+Serie B,Journée 1,Genoa CFC,Torino FC,1,1,1,1,20,80
+Serie B,Journée 1,Udinese Calcio,US Lecce,0,0,2,0,53,47
+Serie B,Journée 1,Parma Calcio,US Cremonese,1,0,2,0,61,39
+Serie B,Journée 1,US Sassuolo,Cagliari Calcio,3,0,4,1,62,38
+Serie B,Journée 2,Torino FC,Cagliari Calcio,1,0,1,1,63,37
+Serie B,Journée 2,Udinese Calcio,Parma Calcio,3,0,3,1,56,44
+Serie B,Journée 2,Hellas Verona,US Sassuolo,4,2,4,3,44,56
+Serie B,Journée 2,US Cremonese,Genoa CFC,2,0,2,2,69,31
+Serie B,Journée 2,US Lecce,Pisa SC,2,4,4,7,54,46
+Serie B,Journée 3,Torino FC,US Sassuolo,1,0,3,1,44,56
+Serie B,Journée 3,Pisa SC,Cagliari Calcio,3,1,3,1,56,44
+Serie B,Journée 3,Genoa CFC,US Lecce,0,4,1,4,52,48
+Serie B,Journée 3,US Cremonese,Udinese Calcio,1,1,1,1,53,47
+Serie B,Journée 3,Parma Calcio,Hellas Verona,1,2,1,3,33,67
+Serie B,Journée 4,Pisa SC,US Sassuolo,0,1,0,1,51,49
+Serie B,Journée 4,Udinese Calcio,Hellas Verona,1,0,2,2,34,66
+Serie B,Journée 4,Torino FC,US Cremonese,1,0,2,1,23,77
+Serie B,Journée 4,US Lecce,Cagliari Calcio,1,3,1,4,73,27
+Serie B,Journée 4,Parma Calcio,Genoa CFC,3,0,3,0,59,41
+Serie B,Journée 5,US Lecce,Torino FC,1,1,1,4,59,41
+Serie B,Journée 5,US Cremonese,Cagliari Calcio,1,0,1,1,61,39
+Serie B,Journée 5,Parma Calcio,Pisa SC,0,1,2,1,56,44
+Serie B,Journée 5,US Sassuolo,Udinese Calcio,1,1,1,2,63,37
+Serie B,Journée 5,Genoa CFC,Hellas Verona,1,1,1,1,73,27
+Serie B,Journée 6,Pisa SC,Genoa CFC,4,1,4,2,49,51
+Serie B,Journée 6,US Lecce,Hellas Verona,0,0,1,2,27,73
+Serie B,Journée 6,Cagliari Calcio,Parma Calcio,1,1,1,2,49,51
+Serie B,Journée 6,Udinese Calcio,Torino FC,0,2,0,3,63,37
+Serie B,Journée 6,US Cremonese,US Sassuolo,1,2,2,2,57,43
+Serie B,Journée 7,Torino FC,Parma Calcio,3,3,3,3,42,58
+Serie B,Journée 7,Cagliari Calcio,Genoa CFC,0,1,2,2,50,50
+Serie B,Journée 7,Hellas Verona,US Cremonese,2,2,5,2,32,68
+Serie B,Journée 7,Pisa SC,Udinese Calcio,1,0,1,2,66,34
+Serie B,Journée 7,US Sassuolo,US Lecce,2,2,2,2,51,49
+Serie B,Journée 8,Pisa SC,Torino FC,1,1,1,2,43,57
+Serie B,Journée 8,Cagliari Calcio,Hellas Verona,0,0,0,0,51,49
+Serie B,Journée 8,Udinese Calcio,Genoa CFC,0,1,2,1,56,44
+Serie B,Journée 8,US Lecce,US Cremonese,1,1,2,3,50,50
+Serie B,Journée 8,Parma Calcio,US Sassuolo,1,1,2,2,31,69
+Serie B,Journée 9,Pisa SC,US Cremonese,1,1,3,4,47,53
+Serie B,Journée 9,US Sassuolo,Genoa CFC,2,0,2,0,63,37
+Serie B,Journée 9,Parma Calcio,US Lecce,0,0,3,1,70,30
+Serie B,Journée 9,Torino FC,Hellas Verona,3,2,3,2,46,54
+Serie B,Journée 9,Udinese Calcio,Cagliari Calcio,3,1,4,1,44,56
+Süper Lig,Journée 1,Caykur Rizespor,Besiktas JK,1,0,1,0,70,30
+Süper Lig,Journée 1,Galatasaray,Fenerbahce,0,0,0,1,53,47
+Süper Lig,Journée 1,Trabzonspor,Basaksehir FK,2,3,2,6,66,34
+Süper Lig,Journée 1,Alanyaspor,Göztepe,0,0,0,0,39,61
+Süper Lig,Journée 1,Gaziantep FK,Samsunspor,0,2,0,2,57,43
+Süper Lig,Journée 2,Göztepe,Gaziantep FK,0,2,0,3,43,57
+Süper Lig,Journée 2,Galatasaray,Samsunspor,1,1,1,2,49,51
+Süper Lig,Journée 2,Caykur Rizespor,Fenerbahce,0,2,2,5,50,50
+Süper Lig,Journée 2,Besiktas JK,Basaksehir FK,3,2,5,3,32,68
+Süper Lig,Journée 2,Alanyaspor,Trabzonspor,1,2,1,2,46,54
+Süper Lig,Journée 3,Caykur Rizespor,Göztepe,1,2,2,4,58,42
+Süper Lig,Journée 3,Alanyaspor,Besiktas JK,0,3,1,4,53,47
+Süper Lig,Journée 3,Fenerbahce,Basaksehir FK,2,1,2,1,63,37
+Süper Lig,Journée 3,Gaziantep FK,Galatasaray,1,3,3,3,49,51
+Süper Lig,Journée 3,Trabzonspor,Samsunspor,2,1,3,3,42,58
+Süper Lig,Journée 4,Galatasaray,Alanyaspor,5,0,5,0,50,50
+Süper Lig,Journée 4,Göztepe,Samsunspor,0,0,0,0,42,58
+Süper Lig,Journée 4,Gaziantep FK,Besiktas JK,3,4,5,5,33,67
+Süper Lig,Journée 4,Fenerbahce,Trabzonspor,2,1,4,3,54,46
+Süper Lig,Journée 4,Caykur Rizespor,Basaksehir FK,0,1,0,1,47,53
+Süper Lig,Journée 5,Basaksehir FK,Alanyaspor,4,1,4,1,47,53
+Süper Lig,Journée 5,Besiktas JK,Göztepe,0,0,1,0,53,47
+Süper Lig,Journée 5,Samsunspor,Fenerbahce,0,2,1,2,52,48
+Süper Lig,Journée 5,Gaziantep FK,Caykur Rizespor,1,1,1,2,32,68
+Süper Lig,Journée 5,Galatasaray,Trabzonspor,1,0,1,2,57,43
+Süper Lig,Journée 6,Basaksehir FK,Samsunspor,4,3,5,4,60,40
+Süper Lig,Journée 6,Galatasaray,Göztepe,2,0,3,0,88,12
+Süper Lig,Journée 6,Trabzonspor,Gaziantep FK,2,0,2,0,47,53
+Süper Lig,Journée 6,Fenerbahce,Besiktas JK,1,1,1,1,31,69
+Süper Lig,Journée 6,Caykur Rizespor,Alanyaspor,0,1,0,1,58,42
+Süper Lig,Journée 7,Alanyaspor,Gaziantep FK,0,0,0,1,69,31
+Süper Lig,Journée 7,Caykur Rizespor,Samsunspor,0,5,2,5,36,64
+Süper Lig,Journée 7,Fenerbahce,Göztepe,5,1,5,1,41,59
+Süper Lig,Journée 7,Basaksehir FK,Galatasaray,0,3,0,6,29,71
+Süper Lig,Journée 7,Besiktas JK,Trabzonspor,1,1,2,3,68,32
+Süper Lig,Journée 8,Göztepe,Trabzonspor,0,2,1,2,61,39
+Süper Lig,Journée 8,Samsunspor,Besiktas JK,2,4,2,5,59,41
+Süper Lig,Journée 8,Basaksehir FK,Gaziantep FK,2,3,3,4,34,66
+Süper Lig,Journée 8,Alanyaspor,Fenerbahce,0,3,0,3,40,60
+Süper Lig,Journée 8,Galatasaray,Caykur Rizespor,5,0,6,0,57,43
+Süper Lig,Journée 9,Basaksehir FK,Göztepe,1,1,1,2,53,47
+Süper Lig,Journée 9,Fenerbahce,Gaziantep FK,3,0,3,0,38,62
+Süper Lig,Journée 9,Samsunspor,Alanyaspor,1,1,1,1,73,27
+Süper Lig,Journée 9,Caykur Rizespor,Trabzonspor,0,2,0,3,40,60
+Süper Lig,Journée 9,Besiktas JK,Galatasaray,2,3,2,5,42,58
+Taça de Portugal,Qualifications,Moreirense FC,Vitória Guimarães SC,0,1,0,2,68,32
+Taça de Portugal,Qualifications,FC Famalicao,GD Estoril Praia,1,0,2,0,74,26
+Taça de Portugal,Quarts,FC Famalicao,Sporting CP,0,1,0,1,38,62
+Taça de Portugal,Quarts,FC Porto,Vitória Guimarães SC,2,0,2,0,59,41
+Taça de Portugal,Quarts,SL Benfica,SC Braga,2,1,1,2,48,52
+Taça de Portugal,Quarts,Gil Vicente,CD Santa Clara,0,1,0,2,60,40
+Taça de Portugal,Demies,Sporting CP,FC Porto,0,1,2,1,48,52
+Taça de Portugal,Demies,SL Benfica,CD Santa Clara,3,2,5,3,59,41
+Taça de Portugal,Finale,FC Porto,SL Benfica,2,3,3,2,62,38
+Türk Kupasi,Qualifications,Gaziantep FK,Göztepe,2,1,2,2,48,52
+Türk Kupasi,Qualifications,Alanyaspor,Caykur Rizespor,1,0,0,0,63,37
+Türk Kupasi,Quarts,Alanyaspor,Fenerbahce,1,2,1,2,52,48
+Türk Kupasi,Quarts,Samsunspor,Trabzonspor,0,1,0,2,68,32
+Türk Kupasi,Quarts,Besiktas JK,Basaksehir FK,0,3,1,4,48,52
+Türk Kupasi,Quarts,Gaziantep FK,Galatasaray,0,3,0,3,38,62
+Türk Kupasi,Demies,Fenerbahce,Trabzonspor,2,0,3,1,56,44
+Türk Kupasi,Demies,Basaksehir FK,Galatasaray,0,4,1,4,34,66
+Türk Kupasi,Finale,Fenerbahce,Galatasaray,0,1,2,2,52,48
