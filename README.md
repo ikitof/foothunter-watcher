@@ -24,6 +24,15 @@ plus besoin de faire F5 ni de cliquer pour déplier les matchs.
   médiane**. Disponible pour **toutes** les équipes, y compris la Ligue 2 :
   l'effectif est récupéré au besoin sur la page de l'équipe puis sur la fiche de
   chaque joueur (où figure « Salaire annuel : … »).
+- **Clique sur un joueur** (dans la carte Effectif) pour sa **fiche** : des
+  **stats pertinentes selon son poste** (gardien → % d'arrêts, clean sheets ;
+  attaquant → buts/match, taux de finition ; etc.), avec son **rang dans la
+  compétition**, sa comparaison salaire/célébrité au poste, et ses
+  **performances par saison** (club + stat clé, saisons passées via les données
+  historiques). Stats dérivées du modèle de match du jeu (cf. le manuel).
+- **Page « 👤 joueurs »** : les **joueurs d'une ligue par poste**, triables —
+  choisis la compétition et le poste, chaque joueur ouvre sa fiche. (Accessible
+  aussi en cliquant une stat dans une fiche.)
 - **Page « 📊 stats »** : un **classement complet triable** (points, buts, diff,
   possession et occasions moyennes, **salaire et célébrité moyens**) + des faits
   marquants (meilleure attaque, meilleure défense, possession, occasions,
@@ -99,6 +108,8 @@ $env:FOOT_LIVE_DISABLE_AUTO_UPDATE = "1"
 |--------------------|-----------------------------------------------------------------|
 | Liste déroulante   | Choisir la compétition (ou « ★ Toutes (live) »)                 |
 | Clic sur une équipe| Ouvrir son historique de matchs + ses statistiques moyennes     |
+| Clic sur un joueur | Ouvrir sa fiche (stats par poste, rang, perfs par saison)       |
+| `👤 joueurs`       | Joueurs d'une ligue par poste (triable)                         |
 | `📊 stats`         | Ouvrir le classement triable + les faits marquants              |
 | `toutes les N s`   | Intervalle de rafraîchissement                                  |
 | `↻`                | Rafraîchir tout de suite                                        |
