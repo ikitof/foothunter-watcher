@@ -214,6 +214,24 @@ def parse_standings(d):
     return None
 
 
+def parse_players(html):
+    """Joueurs depuis la page /joueurs.
+
+    Renvoie la liste des lignes du tableau (dicts avec nom, poste, nom_equipe,
+    age, celebrite, salaire). Liste vide si la page n'a pas le tableau attendu.
+    """
+    d = parse_elements(html)
+    if not d:
+        return []
+    for v in d.values():
+        if v.get("tag") == "nicegui-table":
+            props = v.get("props") or {}
+            fields = {(c.get("field") or c.get("name")) for c in (props.get("columns") or [])}
+            if "salaire" in fields or "celebrite" in fields:
+                return props.get("rows") or []
+    return []
+
+
 def fetch_competition(name):
     """Récupère et parse une compétition. Renvoie (groups, standings)."""
     html = http_get(SAISON_PATH + "/" + urllib.parse.quote(name))
@@ -221,6 +239,11 @@ def fetch_competition(name):
     if d is None:
         raise ValueError("Réponse inattendue (pas de parseElements)")
     return parse_matches(d), parse_standings(d)
+
+
+def fetch_players():
+    """Récupère et parse la liste globale des joueurs (page /joueurs)."""
+    return parse_players(http_get("/joueurs"))
 
 
 # ----------------------------------------------------------------------------
@@ -369,6 +392,44 @@ def leaderboard(groups):
     return out
 
 
+def _median(vals):
+    """Médiane d'une liste (None ignorés), arrondie ; None si vide."""
+    vals = sorted(v for v in vals if v is not None)
+    n = len(vals)
+    if n == 0:
+        return None
+    mid = n // 2
+    return round(vals[mid] if n % 2 else (vals[mid - 1] + vals[mid]) / 2, 2)
+
+
+def squad_stats(players):
+    """Stats d'effectif par équipe à partir de la liste globale des joueurs.
+
+    Renvoie {nom_equipe: {count, avg_salary, med_salary, avg_celeb, med_celeb}}.
+    Les valeurs sont None si aucune donnée chiffrée n'est disponible.
+    """
+    by_team = {}
+    for p in players:
+        team = p.get("nom_equipe")
+        if team:
+            by_team.setdefault(team, []).append(p)
+
+    def avg(vals):
+        vals = [v for v in vals if v is not None]
+        return round(sum(vals) / len(vals), 2) if vals else None
+
+    out = {}
+    for team, ps in by_team.items():
+        sal = [p.get("salaire") for p in ps]
+        cel = [p.get("celebrite") for p in ps]
+        out[team] = dict(
+            count=len(ps),
+            avg_salary=avg(sal), med_salary=_median(sal),
+            avg_celeb=avg(cel), med_celeb=_median(cel),
+        )
+    return out
+
+
 class LiveTracker:
     """Mémorise le dernier état des matchs et la date du dernier changement de score."""
 
@@ -480,6 +541,23 @@ def selftest_offline():
     beta = next(r for r in lb if r["team"] == "Beta")
     assert beta["points"] == 3 and beta["gd"] == 2
     print("  ✓ leaderboard OK (tri points/diff, moyennes)")
+
+    # 6) squad_stats : moyenne ET médiane du salaire / de la célébrité par équipe.
+    players = [
+        dict(nom_equipe="Alpha", salaire=10.0, celebrite=50.0),
+        dict(nom_equipe="Alpha", salaire=20.0, celebrite=60.0),
+        dict(nom_equipe="Alpha", salaire=30.0, celebrite=100.0),
+        dict(nom_equipe="Beta", salaire=10.0, celebrite=40.0),
+        dict(nom_equipe="Beta", salaire=20.0, celebrite=None),  # célébrité manquante ignorée
+    ]
+    sq = squad_stats(players)
+    assert sq["Alpha"]["count"] == 3
+    assert sq["Alpha"]["avg_salary"] == 20.0 and sq["Alpha"]["med_salary"] == 20  # impair
+    assert sq["Alpha"]["avg_celeb"] == 70.0 and sq["Alpha"]["med_celeb"] == 60
+    assert sq["Beta"]["med_salary"] == 15.0                       # pair -> (10+20)/2
+    assert sq["Beta"]["avg_celeb"] == 40.0 and sq["Beta"]["med_celeb"] == 40
+    assert _median([]) is None
+    print("  ✓ squad_stats OK (moyenne + médiane salaire/célébrité, pair/impair)")
 
 
 def selftest():
