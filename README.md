@@ -29,6 +29,9 @@ plus besoin de faire F5 ni de cliquer pour déplier les matchs.
   marquants (meilleure attaque, meilleure défense, possession, occasions,
   **plus gros salaires, plus célèbre**). Reflète la compétition choisie, ou
   **toutes** en vue « ★ Toutes (live) ». Trie en cliquant un en-tête de colonne.
+  Salaire et célébrité couvrent **toutes** les équipes : les effectifs sont
+  **préchargés en arrière-plan** (la page s'ouvre tout de suite et se remplit au
+  fur et à mesure, sans attente).
 - **Classement** affiché pour les championnats.
 - Fenêtre **petite, épinglée au-dessus, déplaçable**, qui mémorise sa taille,
   sa position et tes réglages.
