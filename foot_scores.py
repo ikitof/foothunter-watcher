@@ -1215,6 +1215,12 @@ def run_gui():
                           command=lambda: open_stats())
     stats_btn.pack(side="right", padx=(0, 6))
 
+    players_btn = tk.Button(bar2, text="👤 joueurs", bg=CARD, fg=FG, bd=0, relief="flat",
+                            activebackground=ACCENT, activeforeground="#fff",
+                            font=("TkDefaultFont", 8), cursor="hand2",
+                            command=lambda: open_league_players())
+    players_btn.pack(side="right", padx=(0, 4))
+
     # ---- zone défilante ---------------------------------------------------
     body_wrap = tk.Frame(root, bg=BG)
     body_wrap.pack(fill="both", expand=True)
@@ -1260,6 +1266,12 @@ def run_gui():
         "rosters": {},         # cache {équipe: [joueurs]} (effectifs récupérés à la demande)
         "roster_lock": threading.Lock(),   # protège roster_inflight
         "roster_inflight": set(),           # équipes en cours de récupération (anti-doublon)
+        "player_win": None,    # fenêtre "fiche joueur" ouverte (réutilisée)
+        "league_win": None,    # fenêtre "joueurs de la ligue par poste" (réutilisée)
+        "domstats": {},        # cache {compétition: {équipe: stats par domaine}}, invalidé au poll
+        "domstats_inflight": set(),   # compétitions en cours de récupération (anti-doublon)
+        "history": None,       # {n_saison: {équipe: stats par domaine}} (CSV saisons passées)
+        "player_clubs": {},    # cache {nom joueur: {n_saison: club}}
     }
 
     # ---- rendu ------------------------------------------------------------
@@ -1282,7 +1294,59 @@ def run_gui():
         if last_comp == ALL_KEY:
             return (payload or {}).get(comp)
         groups, _ = payload
-        return groups
+        return groups if comp == last_comp else None   # seulement la compé affichée
+
+    def _domain_stats_for(comp):
+        """Stats d'équipe par domaine pour une compétition (lecture cache).
+
+        Calcule depuis le dernier rendu si dispo, sinon renvoie {} (sans le mettre
+        en cache) — un fetch éventuel passe par ensure_domstats. Le cache est purgé
+        par le poll quand de nouvelles données arrivent.
+        """
+        cached = state["domstats"].get(comp)
+        if cached is not None:
+            return cached
+        groups = _groups_for(comp)
+        if groups:
+            ds = team_domain_stats(groups)
+            state["domstats"][comp] = ds
+            return ds
+        return {}
+
+    def ensure_domstats(comp, on_ready=None):
+        """Garantit la présence en cache des stats par domaine de `comp`.
+
+        Calcule depuis le dernier rendu si possible, sinon récupère la compétition
+        en arrière-plan (puis précharge ses effectifs) et appelle `on_ready`.
+        """
+        if not comp or state["domstats"].get(comp):
+            return
+        groups = _groups_for(comp)
+        if groups:
+            state["domstats"][comp] = team_domain_stats(groups)
+            return
+        with state["roster_lock"]:
+            if comp in state["domstats_inflight"]:
+                return
+            state["domstats_inflight"].add(comp)
+
+        def work():
+            try:
+                g, _ = fetch_competition(comp)
+                ds = team_domain_stats(g)
+            except Exception:
+                ds = {}
+            if ds:
+                state["domstats"][comp] = ds
+                prefetch_squads(list(ds.keys()))
+            with state["roster_lock"]:
+                state["domstats_inflight"].discard(comp)
+            if on_ready:
+                try:
+                    root.after(0, on_ready)
+                except (RuntimeError, tk.TclError):
+                    pass
+        threading.Thread(target=work, daemon=True).start()
 
     # ---- effectifs : cache + préchargement en tâche de fond ---------------
     def _team_squad_agg(team):
@@ -1294,8 +1358,13 @@ def run_gui():
         return squad_stats(rows).get(team) if rows else None
 
     def ensure_team_cached(team):
-        """Récupère et met en cache l'effectif d'une équipe absente de la table globale."""
-        if not team or team in state["rosters"] or team in (state.get("squads") or {}):
+        """Met en cache l'effectif d'une équipe (table globale si présente, sinon fetch)."""
+        if not team or team in state["rosters"]:
+            return
+        # équipe de la table globale : son effectif est déjà connu, pas de fetch
+        glob = [p for p in (state.get("players") or []) if p.get("nom_equipe") == team]
+        if glob:
+            state["rosters"][team] = glob
             return
         with state["roster_lock"]:
             if team in state["rosters"] or team in state["roster_inflight"]:
@@ -1310,10 +1379,8 @@ def run_gui():
             state["roster_inflight"].discard(team)
 
     def prefetch_squads(teams):
-        """Précharge (en arrière-plan) les effectifs manquants pour `teams`."""
-        squads = state.get("squads") or {}
-        todo = [t for t in dict.fromkeys(teams)
-                if t and t not in squads and t not in state["rosters"]]
+        """Précharge (en arrière-plan) les effectifs manquants pour `teams` (toutes équipes)."""
+        todo = [t for t in dict.fromkeys(teams) if t and t not in state["rosters"]]
         if not todo:
             return
 
@@ -1420,8 +1487,9 @@ def run_gui():
                                                  -(r.get("celebrite") or 0))):
                 pr = tk.Frame(eff_body, bg=CARD)
                 pr.pack(fill="x", padx=8)
-                tk.Label(pr, text=f"{(p.get('poste') or '').ljust(4)} {p.get('nom') or '?'}",
-                         bg=CARD, fg=FG, anchor="w", font=("TkDefaultFont", 8)).pack(side="left")
+                nm = tk.Label(pr, text=f"{(p.get('poste') or '').ljust(4)} {p.get('nom') or '?'}",
+                              bg=CARD, fg=FG, anchor="w", font=("TkDefaultFont", 8))
+                nm.pack(side="left")
                 det = []
                 if p.get("celebrite") is not None:
                     det.append(f"célé {p['celebrite']}")
@@ -1429,8 +1497,15 @@ def run_gui():
                     det.append(f"sal {p['salaire']}M€")
                 if p.get("age") is not None:
                     det.append(f"{p['age']}a")
-                tk.Label(pr, text="   ".join(det), bg=CARD, fg=MUTED, anchor="e",
-                         font=("TkDefaultFont", 8)).pack(side="right")
+                dl = tk.Label(pr, text="   ".join(det), bg=CARD, fg=MUTED, anchor="e",
+                              font=("TkDefaultFont", 8))
+                dl.pack(side="right")
+                # clic sur un joueur -> sa fiche (stats par poste)
+                for w in (pr, nm, dl):
+                    w.configure(cursor="hand2")
+                    w.bind("<Enter>", lambda _e, n=nm: n.configure(fg=ACCENT))
+                    w.bind("<Leave>", lambda _e, n=nm: n.configure(fg=FG))
+                    w.bind("<Button-1>", lambda _e, pp=p: open_player(comp, team, pp))
 
         cached = state["rosters"].get(team)
         glob = [p for p in (state.get("players") or []) if p.get("nom_equipe") == team]
@@ -1511,6 +1586,351 @@ def run_gui():
                                    f"{u['opp']}  ({u['date']})",
                          bg=BG, fg=MUTED, anchor="w",
                          font=("TkDefaultFont", 8)).pack(fill="x", padx=12, pady=1)
+
+    # ---- fiche joueur : stats pertinentes selon le poste (clic) -----------
+    def open_player(comp, team, prow):
+        if prow and prow.get("nom"):
+            show_player_window(comp, team, prow)
+
+    def show_player_window(comp, team, prow):
+        old = state.get("player_win")
+        if old is not None and old.winfo_exists():
+            old.destroy()
+        win = tk.Toplevel(root)
+        state["player_win"] = win
+        nom = prow.get("nom") or "?"
+        poste = prow.get("poste")
+        win.title(f"👤 {nom}")
+        win.configure(bg=BG)
+        win.geometry("460x600")
+        win.minsize(340, 320)
+        try:
+            win.attributes("-topmost", bool(topmost_var.get()))
+        except tk.TclError:
+            pass
+        win.lift()
+
+        cv = tk.Canvas(win, bg=BG, highlightthickness=0, bd=0)
+        sb = tk.Scrollbar(win, orient="vertical", command=cv.yview)
+        cv.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        cv.pack(side="left", fill="both", expand=True)
+        box = tk.Frame(cv, bg=BG)
+        bid = cv.create_window((0, 0), window=box, anchor="nw")
+        box.bind("<Configure>", lambda _e: cv.configure(scrollregion=cv.bbox("all")))
+        cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
+
+        def _wheel(e):
+            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            return "break"
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            win.bind(seq, _wheel)
+
+        age = prow.get("age")
+        tk.Label(box, text=nom, bg=BG, fg=ACCENT, anchor="w",
+                 font=("TkDefaultFont", 13, "bold")).pack(fill="x", padx=10, pady=(10, 0))
+        tk.Label(box, text=f"{poste or '?'} · {team}" + (f" · {age} ans" if age is not None else ""),
+                 bg=BG, fg=MUTED, anchor="w", font=("TkDefaultFont", 8)).pack(fill="x", padx=10)
+
+        def card():
+            c = tk.Frame(box, bg=CARD)
+            c.pack(fill="x", padx=8, pady=(6, 2))
+            return c
+
+        def line(parent, label, value, value_fg=FG, note=None, on_click=None):
+            r = tk.Frame(parent, bg=CARD)
+            r.pack(fill="x")
+            lbl = tk.Label(r, text=label + (" ›" if on_click else ""), bg=CARD, fg=MUTED,
+                           anchor="w", font=("TkDefaultFont", 9))
+            lbl.pack(side="left", padx=8, pady=1)
+            val = tk.Label(r, text=value, bg=CARD, fg=value_fg, anchor="e",
+                           font=("TkDefaultFont", 9, "bold"))
+            val.pack(side="right", padx=8)
+            note_lbl = None
+            if note:
+                note_lbl = tk.Label(parent, text=note, bg=CARD, fg=MUTED, anchor="e",
+                                    font=("TkDefaultFont", 7))
+                note_lbl.pack(fill="x", padx=8)
+            if on_click:
+                for w in (r, lbl, val) + ((note_lbl,) if note_lbl else ()):
+                    w.configure(cursor="hand2")
+                    w.bind("<Button-1>", lambda _e: on_click())
+                    w.bind("<Enter>", lambda _e: lbl.configure(fg=ACCENT))
+                    w.bind("<Leave>", lambda _e: lbl.configure(fg=MUTED))
+
+        # Profil + comparaison au poste (salaire / célébrité via la table globale)
+        pool = state.get("players") or []
+        prof = card()
+        tk.Label(prof, text="Profil", bg=CARD, fg=ACCENT, anchor="w",
+                 font=("TkDefaultFont", 9, "bold")).pack(fill="x", padx=8, pady=(4, 0))
+        for label, field, val, unit in (("Salaire", "salaire", prow.get("salaire"), " M€"),
+                                        ("Célébrité", "celebrite", prow.get("celebrite"), "")):
+            pc = position_percentile(pool, poste, field, val)
+            note = (f"méd. {poste} {pc['median']}{unit} · > {pc['pct']}% des {poste}"
+                    if pc else None)
+            line(prof, label, f"{val}{unit}" if val is not None else "—", note=note)
+
+        # Stats par poste = rendement de l'équipe dans les domaines du poste
+        ds = _domain_stats_for(comp)
+        tds = ds.get(team)
+        tk.Label(box, text=f"Stats par poste — {poste or '?'}", bg=BG, fg=ACCENT, anchor="w",
+                 font=("TkDefaultFont", 10, "bold")).pack(fill="x", padx=10, pady=(8, 0))
+        tk.Label(box, text="rendement de l'équipe dans les domaines du poste · "
+                           "rang dans la compétition",
+                 bg=BG, fg=MUTED, anchor="w", font=("TkDefaultFont", 7)).pack(fill="x", padx=10)
+
+        metrics = POSTE_STATS.get(poste, [("Buts / match", "gf_pm", True),
+                                          ("Buts encaissés / match", "ga_pm", False),
+                                          ("Possession moy.", "poss", True)])
+        if not tds:
+            tk.Label(box, text="Pas encore de match joué cette saison.", bg=BG, fg=MUTED,
+                     font=("TkDefaultFont", 9)).pack(anchor="w", padx=12, pady=6)
+        else:
+            sc = card()
+
+            def fmt_metric(key, v):
+                if v is None:
+                    return "—"
+                if key == "clean":
+                    return f"{v}/{tds['played']}"
+                return f"{v}%" if key in PERCENT_STATS else f"{v}"
+
+            def rank(key, high):
+                vals = [s[key] for s in ds.values() if s.get(key) is not None]
+                me = tds.get(key)
+                if me is None or not vals:
+                    return None
+                better = sum(1 for v in vals if (v > me if high else v < me))
+                return better + 1, len(vals)
+
+            for label, key, high in metrics:
+                rk = rank(key, high)
+                if rk:
+                    pos, n = rk
+                    col = GREEN if pos <= max(1, n / 3) else (LIVE if pos > 2 * n / 3 else FG)
+                    note = f"{pos}ᵉ/{n} de la compétition — voir tous les {poste}"
+                else:
+                    col, note = FG, None
+                line(sc, label, fmt_metric(key, tds.get(key)), value_fg=col, note=note,
+                     on_click=lambda k=key, h=high: show_league_window(comp, poste, k, h))
+
+        # Performances par saison : clubs successifs + stat clé du poste, par saison
+        prim = (POSTE_STATS.get(poste) or [("Buts / match", "gf_pm", True)])[0]
+        prim_label, prim_key, _ = prim
+        tk.Label(box, text="Performances par saison", bg=BG, fg=ACCENT, anchor="w",
+                 font=("TkDefaultFont", 10, "bold")).pack(fill="x", padx=10, pady=(8, 0))
+        tk.Label(box, text=f"club de la saison · {prim_label} (rendement de l'équipe)",
+                 bg=BG, fg=MUTED, anchor="w", font=("TkDefaultFont", 7)).pack(fill="x", padx=10)
+        seas = tk.Frame(box, bg=BG)
+        seas.pack(fill="x")
+
+        def fill_seasons(clubs):
+            if not seas.winfo_exists():
+                return
+            for w in seas.winfo_children():
+                w.destroy()
+            if not clubs:
+                tk.Label(seas, text="Parcours indisponible.", bg=BG, fg=MUTED,
+                         font=("TkDefaultFont", 8)).pack(anchor="w", padx=12, pady=2)
+                return
+            hist = state.get("history") or {}
+            cur_ds = _domain_stats_for(comp)
+            for n in sorted(clubs):
+                club = clubs[n]
+                tds_n = cur_ds.get(club) if n == 2 else (hist.get(n) or {}).get(club)
+                v = tds_n.get(prim_key) if tds_n else None
+                vtxt = "—" if v is None else (f"{v}%" if prim_key in PERCENT_STATS else f"{v}")
+                row = tk.Frame(seas, bg=CARD)
+                row.pack(fill="x", padx=8, pady=1)
+                suffix = " (en cours)" if n == 2 else ""
+                tk.Label(row, text=f"Saison {n} · {club}{suffix}", bg=CARD, fg=FG, anchor="w",
+                         font=("TkDefaultFont", 8)).pack(side="left", padx=8, pady=2)
+                tk.Label(row, text=f"{prim_label} {vtxt}" if tds_n else "données indispo.",
+                         bg=CARD, fg=MUTED, anchor="e",
+                         font=("TkDefaultFont", 8)).pack(side="right", padx=8)
+
+        cached_clubs = state["player_clubs"].get(nom)
+        if cached_clubs is not None:
+            fill_seasons(cached_clubs)
+        else:
+            tk.Label(seas, text="chargement du parcours…", bg=BG, fg=MUTED,
+                     font=("TkDefaultFont", 8)).pack(anchor="w", padx=12, pady=2)
+
+            def load_clubs():
+                try:
+                    clubs = parse_player_clubs(http_get("/joueurs/" + urllib.parse.quote(nom)))
+                except Exception:
+                    clubs = {}
+                state["player_clubs"][nom] = clubs
+                try:
+                    root.after(0, lambda: win.winfo_exists() and fill_seasons(clubs))
+                except (RuntimeError, tk.TclError):
+                    pass
+
+            threading.Thread(target=load_clubs, daemon=True).start()
+
+    # ---- joueurs de la ligue par poste (bouton 👤 / clic sur une stat) ----
+    def open_league_players():
+        comp = comp_var.get()
+        if comp == ALL_KEY:
+            names = competitions[1:]
+            comp = names[0] if names else None
+        if comp:
+            show_league_window(comp)
+
+    def show_league_window(comp, poste=None, sort_key=None, sort_high=True):
+        old = state.get("league_win")
+        if old is not None and old.winfo_exists():
+            old.destroy()
+        win = tk.Toplevel(root)
+        state["league_win"] = win
+        win.title("👤 Joueurs par poste")
+        win.configure(bg=BG)
+        win.geometry("640x620")
+        win.minsize(460, 320)
+        try:
+            win.attributes("-topmost", bool(topmost_var.get()))
+        except tk.TclError:
+            pass
+        win.lift()
+
+        real_comps = competitions[1:]
+        comp_v = tk.StringVar(value=comp if comp in real_comps else (real_comps[0] if real_comps else comp))
+        poste_v = tk.StringVar(value=poste or "GAR")
+
+        bar = tk.Frame(win, bg=HDR)
+        bar.pack(fill="x", side="top")
+        tk.Label(bar, text="Compétition", bg=HDR, fg=MUTED,
+                 font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
+        comp_box = ttk.Combobox(bar, textvariable=comp_v, values=real_comps, state="readonly", width=16)
+        comp_box.pack(side="left", padx=(0, 8), pady=4)
+        tk.Label(bar, text="Poste", bg=HDR, fg=MUTED,
+                 font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+        poste_box = ttk.Combobox(bar, textvariable=poste_v, values=list(PLAYER_POSTES),
+                                 state="readonly", width=6)
+        poste_box.pack(side="left", pady=4)
+
+        tk.Label(win, text="Stats d'équipe selon le poste · clique un en-tête pour trier · "
+                           "clique un joueur pour sa fiche",
+                 bg=BG, fg=MUTED, anchor="w", font=("TkDefaultFont", 8)).pack(fill="x", padx=8, pady=(4, 0))
+
+        cv = tk.Canvas(win, bg=BG, highlightthickness=0, bd=0)
+        sb = tk.Scrollbar(win, orient="vertical", command=cv.yview)
+        cv.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        cv.pack(side="left", fill="both", expand=True)
+        content = tk.Frame(cv, bg=BG)
+        bid = cv.create_window((0, 0), window=content, anchor="nw")
+        content.bind("<Configure>", lambda _e: cv.configure(scrollregion=cv.bbox("all")))
+        cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
+
+        def _wheel(e):
+            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            return "break"
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            win.bind(seq, _wheel)
+
+        def metrics_for(p):
+            return POSTE_STATS.get(p, [("Buts / match", "gf_pm", True),
+                                      ("Buts encaissés / match", "ga_pm", False),
+                                      ("Possession moy.", "poss", True)])
+
+        def fmt(key, v):
+            if v is None:
+                return "—"
+            return f"{v}%" if key in PERCENT_STATS else f"{v}"
+
+        sortst = {"key": sort_key, "rev": sort_high}
+
+        prog = {"gen": 0, "sig": None}
+
+        def render(*_):
+            for w in content.winfo_children():
+                w.destroy()
+            cur_comp, cur_poste = comp_v.get(), poste_v.get()
+            ensure_domstats(cur_comp, on_ready=lambda: win.winfo_exists() and render())
+            ds = state["domstats"].get(cur_comp) or {}
+            if ds:
+                prefetch_squads(list(ds.keys()))
+            mets = metrics_for(cur_poste)
+            highs = {k: h for _, k, h in mets}
+            if sortst["key"] not in highs:
+                sortst["key"], sortst["rev"] = mets[0][1], mets[0][2]
+            key = sortst["key"]
+            rows = league_players(ds, state["rosters"], cur_poste)
+            rows.sort(key=lambda r: (r["stats"].get(key) is None,
+                                     -(r["stats"].get(key) or 0) if sortst["rev"]
+                                     else (r["stats"].get(key) or 0)))
+
+            grid = tk.Frame(content, bg=BG)
+            grid.pack(fill="both", expand=True, padx=6, pady=(4, 8))
+            cols = [("#", None), ("Joueur", None), ("Équipe", None)] + [(lbl, k) for lbl, k, _ in mets]
+            for ci, (lbl, k) in enumerate(cols):
+                arrow = (" ▾" if sortst["rev"] else " ▴") if (k and k == key) else ""
+                h = tk.Label(grid, text=lbl + arrow, bg=HDR, fg=ACCENT if k else MUTED,
+                             font=("TkDefaultFont", 8, "bold"),
+                             anchor="w" if lbl in ("Joueur", "Équipe") else "center", padx=4)
+                h.grid(row=0, column=ci, sticky="we", padx=1, pady=1)
+                if k:
+                    h.configure(cursor="hand2")
+                    h.bind("<Button-1>", lambda _e, kk=k: (sortst.update(
+                        key=kk, rev=(not sortst["rev"]) if sortst["key"] == kk else highs[kk]), render()))
+
+            if not rows:
+                if cur_comp not in state["domstats"]:
+                    msg = "Chargement de la compétition…"
+                elif any(t not in state["rosters"] for t in ds):
+                    msg = "Chargement des effectifs…"
+                else:
+                    msg = "Aucun joueur à ce poste."
+                tk.Label(content, text=msg, bg=BG, fg=MUTED,
+                         font=("TkDefaultFont", 9)).pack(anchor="w", padx=10, pady=6)
+            for ri, r in enumerate(rows, start=1):
+                rowbg = CARD if ri % 2 else BG
+
+                def cell(ci, text, fg=FG, left=False):
+                    lab = tk.Label(grid, text=text, bg=rowbg, fg=fg, font=("TkDefaultFont", 8),
+                                   anchor="w" if left else "center", padx=4)
+                    lab.grid(row=ri, column=ci, sticky="we", padx=1)
+                    return lab
+                cells = [cell(0, str(ri), MUTED), cell(1, r["nom"] or "?", FG, left=True),
+                         cell(2, r["team"], MUTED, left=True)]
+                for j, (_, k, _) in enumerate(mets):
+                    cells.append(cell(3 + j, fmt(k, r["stats"].get(k))))
+                for w in cells:
+                    w.configure(cursor="hand2")
+                    w.bind("<Button-1>",
+                           lambda _e, c=cur_comp, t=r["team"], p=r["player"]: open_player(c, t, p))
+            grid.grid_columnconfigure(1, weight=1)
+
+        def arm_refresh():
+            prog["gen"] += 1
+            g = prog["gen"]
+
+            def tick(n):
+                if not win.winfo_exists() or g != prog["gen"]:
+                    return
+                cur = comp_v.get()
+                ds = state["domstats"].get(cur) or {}
+                loaded = sum(1 for t in ds if t in state["rosters"])
+                sig = (cur, poste_v.get(), len(ds), loaded)
+                if sig != prog["sig"]:
+                    prog["sig"] = sig
+                    render()
+                incomplete = (not ds) or (loaded < len(ds))
+                if incomplete and n < 120:
+                    win.after(1000, lambda: tick(n + 1))
+            win.after(900, lambda: tick(0))
+
+        def reload(*_):          # changement de compétition : recharge + relance le suivi
+            prog["sig"] = None
+            render()
+            arm_refresh()
+
+        comp_box.bind("<<ComboboxSelected>>", reload)
+        poste_box.bind("<<ComboboxSelected>>", lambda *_: (sortst.update(key=None), render()))
+        render()
+        arm_refresh()
 
     # ---- page "stats & classement" (bouton 📊) ----------------------------
     def _stats_rows():
@@ -1933,6 +2353,7 @@ def run_gui():
                             except Exception:
                                 pass
                     payload = boards
+                    state["domstats"].clear()   # données rafraîchies -> recalcul à la demande
                     n_live = sum(1 for g in boards.values()
                                  for grp in g for m in grp["matches"] if m.get("live"))
                     summary = f"{len(boards)}/{len(names)} compés · {n_live} live"
@@ -1940,6 +2361,7 @@ def run_gui():
                     groups, standings = fetch_competition(comp)
                     n_changed = len(tracker.update(comp, groups))
                     payload = (groups, standings)
+                    state["domstats"].pop(comp, None)   # données rafraîchies -> recalcul à la demande
                     n_live = sum(1 for g in groups for m in g["matches"] if m.get("live"))
                     summary = f"{n_live} live"
                     # précharge les effectifs de cette compé pour la page stats
@@ -2025,6 +2447,18 @@ def run_gui():
         except Exception:
             pass
 
+    def load_history():
+        """Charge les saisons passées depuis les CSV embarqués (resource_path), si présents."""
+        hist = {}
+        for n in (0, 1):
+            try:
+                with open(resource_path(f"matchs_saison_{n}.csv"), encoding="utf-8") as f:
+                    hist[n] = season_domstats_from_csv(f.read())
+            except Exception:
+                pass
+        if hist:
+            state["history"] = hist
+
     # ---- démarrage --------------------------------------------------------
     def on_close():
         state["stop"] = True
@@ -2037,6 +2471,7 @@ def run_gui():
     start_update_check()
     threading.Thread(target=load_comp_list, daemon=True).start()
     threading.Thread(target=load_squads, daemon=True).start()
+    threading.Thread(target=load_history, daemon=True).start()
     threading.Thread(target=poll_loop, daemon=True).start()
     root.mainloop()
 
