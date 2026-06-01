@@ -25,6 +25,7 @@ import threading
 import urllib.request
 import urllib.parse
 from datetime import date
+from html import unescape
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # ----------------------------------------------------------------------------
@@ -50,6 +51,9 @@ SCORE_RE = re.compile(r"^\s*(\d+)\s*-\s*(\d+)\s*$")
 DATE_RE = re.compile(r"^\s*\d{1,2}/\d{1,2}/\d{2,4}\s*$")
 POSS_RE = re.compile(r"^\s*\d+%\s*-\s*\d+%\s*$")
 CELEB_RE = re.compile(r"[Cc]élébrité\s*:\s*([\d.]+)")
+SALARY_RE = re.compile(r"Salaire\s+annuel\s*:\s*([\d.]+)")
+AGE_RE = re.compile(r"Âge\s*:\s*(\d+)")
+POSTE_RE = re.compile(r"Poste\s*:\s*([A-Z]+)")
 
 # Postes affichés sur les pages d'équipe (sert à apparier joueur ↔ poste).
 PLAYER_POSTES = ("GAR", "DC", "LAT", "MDEF", "MOFF", "AIL", "AC")
@@ -281,16 +285,32 @@ def parse_team_roster(html):
     return roster
 
 
-def parse_player_celebrity(html):
-    """Célébrité (float) depuis la fiche /joueurs/<nom>, ou None."""
+def parse_player_info(html):
+    """Infos d'un joueur depuis la fiche /joueurs/<nom>.
+
+    Renvoie {celebrite, salaire, poste, age} (None pour ce qui manque). La
+    célébrité est un nœud texte ; le salaire annuel (M€), le poste et l'âge sont
+    dans des blocs markdown (innerHTML échappé) — on les dé-échappe puis on retire
+    les balises avant de chercher les valeurs.
+    """
     d = parse_elements(html)
+    info = {"celebrite": None, "salaire": None, "poste": None, "age": None}
     if not d:
-        return None
+        return info
+    parts = []
     for v in d.values():
-        m = CELEB_RE.search(v.get("text") or "")
+        if v.get("text"):
+            parts.append(v["text"])
+        inner = (v.get("props") or {}).get("innerHTML")
+        if inner:
+            parts.append(re.sub(r"<[^>]+>", " ", unescape(inner)))
+    blob = "\n".join(parts)
+    for key, rx, cast in (("celebrite", CELEB_RE, float), ("salaire", SALARY_RE, float),
+                          ("age", AGE_RE, int), ("poste", POSTE_RE, str)):
+        m = rx.search(blob)
         if m:
-            return float(m.group(1))
-    return None
+            info[key] = cast(m.group(1))
+    return info
 
 
 def fetch_competition(name):
@@ -307,24 +327,22 @@ def fetch_players():
     return parse_players(http_get("/joueurs"))
 
 
-def fetch_team_squad(team, salary_index=None):
-    """Effectif d'une équipe enrichi de la célébrité (et du salaire si connu).
+def fetch_team_squad(team):
+    """Effectif complet d'une équipe, enrichi depuis les fiches joueurs.
 
     Combine /equipes/<team> (liste des joueurs) et chaque fiche /joueurs/<nom>
-    (célébrité), en parallèle. Le salaire vient de `salary_index` (table globale)
-    quand le joueur y figure, sinon None — le site ne le publie pas par joueur.
-    Renvoie une liste de dicts {nom_equipe, nom, poste, celebrite, salaire}.
+    (célébrité, salaire annuel, âge, poste), en parallèle. Disponible pour toutes
+    les équipes, y compris celles absentes de la table globale (ex. Ligue 2).
+    Renvoie une liste de dicts {nom_equipe, nom, poste, celebrite, salaire, age}.
     """
     roster = parse_team_roster(http_get("/equipes/" + urllib.parse.quote(team)))
     if not roster:
         return []
-    salary_index = salary_index or {}
 
     def enrich(p):
-        celeb = parse_player_celebrity(http_get("/joueurs/" + urllib.parse.quote(p["nom"])))
-        sal = (salary_index.get(p["nom"]) or {}).get("salaire")
-        return dict(nom_equipe=team, nom=p["nom"], poste=p.get("poste"),
-                    celebrite=celeb, salaire=sal)
+        info = parse_player_info(http_get("/joueurs/" + urllib.parse.quote(p["nom"])))
+        return dict(nom_equipe=team, nom=p["nom"], poste=info["poste"] or p.get("poste"),
+                    celebrite=info["celebrite"], salaire=info["salaire"], age=info["age"])
 
     with ThreadPoolExecutor(max_workers=8) as ex:
         return list(ex.map(enrich, roster))
@@ -487,10 +505,10 @@ def _median(vals):
 
 
 def squad_stats(players):
-    """Stats d'effectif par équipe à partir de la liste globale des joueurs.
+    """Stats d'effectif par équipe à partir d'une liste de joueurs.
 
-    Renvoie {nom_equipe: {count, avg_salary, med_salary, avg_celeb, med_celeb}}.
-    Les valeurs sont None si aucune donnée chiffrée n'est disponible.
+    Renvoie {nom_equipe: {count, avg_salary, med_salary, avg_celeb, med_celeb,
+    avg_age, med_age}}. Les valeurs sont None si la donnée n'est pas disponible.
     """
     by_team = {}
     for p in players:
@@ -506,10 +524,12 @@ def squad_stats(players):
     for team, ps in by_team.items():
         sal = [p.get("salaire") for p in ps]
         cel = [p.get("celebrite") for p in ps]
+        age = [p.get("age") for p in ps]
         out[team] = dict(
             count=len(ps),
             avg_salary=avg(sal), med_salary=_median(sal),
             avg_celeb=avg(cel), med_celeb=_median(cel),
+            avg_age=avg(age), med_age=_median(age),
         )
     return out
 
@@ -626,24 +646,26 @@ def selftest_offline():
     assert beta["points"] == 3 and beta["gd"] == 2
     print("  ✓ leaderboard OK (tri points/diff, moyennes)")
 
-    # 6) squad_stats : moyenne ET médiane du salaire / de la célébrité par équipe.
+    # 6) squad_stats : moyenne ET médiane du salaire / de la célébrité / de l'âge.
     players = [
-        dict(nom_equipe="Alpha", salaire=10.0, celebrite=50.0),
-        dict(nom_equipe="Alpha", salaire=20.0, celebrite=60.0),
-        dict(nom_equipe="Alpha", salaire=30.0, celebrite=100.0),
-        dict(nom_equipe="Beta", salaire=10.0, celebrite=40.0),
-        dict(nom_equipe="Beta", salaire=20.0, celebrite=None),  # célébrité manquante ignorée
+        dict(nom_equipe="Alpha", salaire=10.0, celebrite=50.0, age=20),
+        dict(nom_equipe="Alpha", salaire=20.0, celebrite=60.0, age=24),
+        dict(nom_equipe="Alpha", salaire=30.0, celebrite=100.0, age=28),
+        dict(nom_equipe="Beta", salaire=10.0, celebrite=40.0, age=30),
+        dict(nom_equipe="Beta", salaire=20.0, celebrite=None, age=None),  # valeurs manquantes ignorées
     ]
     sq = squad_stats(players)
     assert sq["Alpha"]["count"] == 3
     assert sq["Alpha"]["avg_salary"] == 20.0 and sq["Alpha"]["med_salary"] == 20  # impair
     assert sq["Alpha"]["avg_celeb"] == 70.0 and sq["Alpha"]["med_celeb"] == 60
+    assert sq["Alpha"]["avg_age"] == 24.0 and sq["Alpha"]["med_age"] == 24
     assert sq["Beta"]["med_salary"] == 15.0                       # pair -> (10+20)/2
     assert sq["Beta"]["avg_celeb"] == 40.0 and sq["Beta"]["med_celeb"] == 40
+    assert sq["Beta"]["avg_age"] == 30.0                          # le None est ignoré
     assert _median([]) is None
-    print("  ✓ squad_stats OK (moyenne + médiane salaire/célébrité, pair/impair)")
+    print("  ✓ squad_stats OK (moyenne + médiane salaire/célébrité/âge, pair/impair)")
 
-    # 7) parse_team_roster (joueur suivi de son poste) et parse_player_celebrity.
+    # 7) parse_team_roster (joueur suivi de son poste) et parse_player_info.
     def _wrap(obj):
         return "x parseElements(String.raw`" + json.dumps(obj) + "`) y"
     roster_dom = {
@@ -656,9 +678,19 @@ def selftest_offline():
     }
     r = parse_team_roster(_wrap(roster_dom))
     assert [(x["nom"], x["poste"]) for x in r] == [("Max Wei", "GAR"), ("Jo Do", "DC")], r
-    assert parse_player_celebrity(_wrap({"0": {"tag": "div", "text": "Célébrité : 47.4"}})) == 47.4
-    assert parse_player_celebrity(_wrap({"0": {"tag": "div", "text": "rien"}})) is None
-    print("  ✓ parse_team_roster / parse_player_celebrity OK")
+    # célébrité dans un nœud texte ; salaire/âge/poste dans un bloc markdown échappé.
+    player_dom = {
+        "0": {"tag": "div", "text": "Célébrité : 47.4"},
+        "1": {"tag": "nicegui-markdown",
+              "props": {"innerHTML": "&lt;p&gt;&lt;strong&gt;Salaire annuel :&lt;/strong&gt; 6.22 M€&lt;/p&gt;"}},
+        "2": {"tag": "nicegui-markdown",
+              "props": {"innerHTML": "&lt;p&gt;Poste : GAR&lt;/p&gt;&lt;p&gt;Âge : 30&lt;/p&gt;"}},
+    }
+    info = parse_player_info(_wrap(player_dom))
+    assert info == {"celebrite": 47.4, "salaire": 6.22, "poste": "GAR", "age": 30}, info
+    assert parse_player_info(_wrap({"0": {"tag": "div", "text": "rien"}})) == \
+        {"celebrite": None, "salaire": None, "poste": None, "age": None}
+    print("  ✓ parse_team_roster / parse_player_info OK")
 
 
 def selftest():
