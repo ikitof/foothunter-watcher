@@ -50,10 +50,10 @@ CONFIG_PATH = os.path.join(
 SCORE_RE = re.compile(r"^\s*(\d+)\s*-\s*(\d+)\s*$")
 DATE_RE = re.compile(r"^\s*\d{1,2}/\d{1,2}/\d{2,4}\s*$")
 POSS_RE = re.compile(r"^\s*\d+%\s*-\s*\d+%\s*$")
-CELEB_RE = re.compile(r"[Cc]élébrité\s*:\s*([\d.]+)")
-SALARY_RE = re.compile(r"Salaire\s+annuel\s*:\s*([\d.]+)")
+CELEB_RE = re.compile(r"[Cc]élébrité\s*:\s*([\d.,]+)")
+SALARY_RE = re.compile(r"Salaire\s+annuel\s*:\s*([\d.,]+)")
 AGE_RE = re.compile(r"Âge\s*:\s*(\d+)")
-POSTE_RE = re.compile(r"Poste\s*:\s*([A-Z]+)")
+POSTE_RE = re.compile(r"Poste\s*:\s*([A-Za-z]+)")
 
 # Postes affichés sur les pages d'équipe (sert à apparier joueur ↔ poste).
 PLAYER_POSTES = ("GAR", "DC", "LAT", "MDEF", "MOFF", "AIL", "AC")
@@ -308,8 +308,13 @@ def parse_player_info(html):
     for key, rx, cast in (("celebrite", CELEB_RE, float), ("salaire", SALARY_RE, float),
                           ("age", AGE_RE, int), ("poste", POSTE_RE, str)):
         m = rx.search(blob)
-        if m:
-            info[key] = cast(m.group(1))
+        if not m:
+            continue
+        raw = m.group(1)
+        try:
+            info[key] = cast(raw.replace(",", ".") if cast is float else raw)
+        except (ValueError, TypeError):
+            pass   # valeur inattendue : on laisse None plutôt que de planter
     return info
 
 
@@ -340,7 +345,10 @@ def fetch_team_squad(team):
         return []
 
     def enrich(p):
-        info = parse_player_info(http_get("/joueurs/" + urllib.parse.quote(p["nom"])))
+        try:   # une fiche en échec (404 après promotion, réseau, format) ne fait
+            info = parse_player_info(http_get("/joueurs/" + urllib.parse.quote(p["nom"])))
+        except Exception:   # ...pas perdre tout l'effectif : ce joueur garde des stats vides
+            info = {"celebrite": None, "salaire": None, "poste": None, "age": None}
         return dict(nom_equipe=team, nom=p["nom"], poste=info["poste"] or p.get("poste"),
                     celebrite=info["celebrite"], salaire=info["salaire"], age=info["age"])
 
@@ -690,7 +698,10 @@ def selftest_offline():
     assert info == {"celebrite": 47.4, "salaire": 6.22, "poste": "GAR", "age": 30}, info
     assert parse_player_info(_wrap({"0": {"tag": "div", "text": "rien"}})) == \
         {"celebrite": None, "salaire": None, "poste": None, "age": None}
-    print("  ✓ parse_team_roster / parse_player_info OK")
+    # robustesse : décimale à virgule acceptée, valeur aberrante ignorée sans planter
+    assert parse_player_info(_wrap({"0": {"tag": "div", "text": "Salaire annuel : 6,22"}}))["salaire"] == 6.22
+    assert parse_player_info(_wrap({"0": {"tag": "div", "text": "Célébrité : ."}}))["celebrite"] is None
+    print("  ✓ parse_team_roster / parse_player_info OK (+ robustesse valeurs)")
 
 
 def selftest():
