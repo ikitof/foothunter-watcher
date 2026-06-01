@@ -17,8 +17,10 @@ Self-test (sans fenêtre) :  python3 foot_scores.py --selftest
 """
 
 import os
+import io
 import sys
 import re
+import csv
 import json
 import time
 import threading
@@ -196,6 +198,7 @@ CELEB_RE = re.compile(r"[Cc]élébrité\s*:\s*([\d.,]+)")
 SALARY_RE = re.compile(r"Salaire\s+annuel\s*:\s*([\d.,]+)")
 AGE_RE = re.compile(r"Âge\s*:\s*(\d+)")
 POSTE_RE = re.compile(r"Poste\s*:\s*([A-Za-z]+)")
+CLUB_RE = re.compile(r"Saison\s+(\d+)\s*:\s*(.+)")   # historique des clubs sur la fiche
 
 # Postes affichés sur les pages d'équipe (sert à apparier joueur ↔ poste).
 PLAYER_POSTES = ("GAR", "DC", "LAT", "MDEF", "MOFF", "AIL", "AC")
@@ -460,6 +463,26 @@ def parse_player_info(html):
     return info
 
 
+def parse_player_clubs(html):
+    """Historique des clubs depuis la fiche /joueurs/<nom> : {n_saison: club}."""
+    d = parse_elements(html)
+    clubs = {}
+    if not d:
+        return clubs
+    for v in d.values():
+        parts = []
+        if v.get("text"):
+            parts.append(v["text"])
+        inner = (v.get("props") or {}).get("innerHTML")
+        if inner:
+            parts.append(re.sub(r"<[^>]+>", " ", unescape(inner)))
+        for t in parts:
+            m = CLUB_RE.search(t)
+            if m:
+                clubs[int(m.group(1))] = m.group(2).strip()
+    return clubs
+
+
 def fetch_competition(name):
     """Récupère et parse une compétition. Renvoie (groups, standings)."""
     html = http_get(SAISON_PATH + "/" + urllib.parse.quote(name))
@@ -684,6 +707,142 @@ def squad_stats(players):
     return out
 
 
+def position_percentile(players, poste, field, value):
+    """Situe `value` parmi les joueurs de `poste` pour `field` (table globale).
+
+    Renvoie {n, median, mean, pct} (pct = % de joueurs du poste sous `value`),
+    ou None si pas d'échantillon / pas de valeur.
+    """
+    pool = [p.get(field) for p in players
+            if p.get("poste") == poste and p.get(field) is not None]
+    if not pool or value is None:
+        return None
+    n = len(pool)
+    return {"n": n, "median": _median(pool), "mean": round(sum(pool) / n, 2),
+            "pct": round(sum(1 for v in pool if v < value) / n * 100)}
+
+
+# Le modèle du jeu : un match est un entonnoir Possession -> Création -> Occasion
+# -> But, et chaque poste alimente des domaines (manuel p.20). On dérive donc des
+# stats d'équipe par domaine, et on les présente selon le poste du joueur.
+POSTE_STATS = {
+    "GAR":  [("% d'arrêts", "save", True), ("Arrêts / match", "arrets_pm", True),
+             ("Clean sheets", "clean", True), ("Buts encaissés / match", "ga_pm", False)],
+    "DC":   [("Occasions concédées / match", "occ_against_pm", False),
+             ("Buts encaissés / match", "ga_pm", False), ("Clean sheets", "clean", True)],
+    "LAT":  [("Occasions concédées / match", "occ_against_pm", False),
+             ("Buts encaissés / match", "ga_pm", False), ("Occasions créées / match", "occ_for_pm", True)],
+    "MDEF": [("Possession moy.", "poss", True), ("Occasions concédées / match", "occ_against_pm", False),
+             ("Buts encaissés / match", "ga_pm", False)],
+    "MOFF": [("Occasions créées / match", "occ_for_pm", True), ("Possession moy.", "poss", True),
+             ("Taux de finition", "conv", True)],
+    "AIL":  [("Occasions créées / match", "occ_for_pm", True), ("Taux de finition", "conv", True),
+             ("Buts / match", "gf_pm", True)],
+    "AC":   [("Buts / match", "gf_pm", True), ("Taux de finition", "conv", True),
+             ("Occasions créées / match", "occ_for_pm", True)],
+}
+PERCENT_STATS = {"save", "conv", "poss"}   # affichés en %
+
+
+def team_domain_stats(groups):
+    """Stats d'équipe par domaine de jeu sur une compétition (toutes journées).
+
+    Pour chaque équipe : matchs joués, buts ±/match, occasions ±/match, possession
+    moyenne, clean sheets, taux de finition (buts/occasions) et taux d'arrêt
+    (1 − buts encaissés/occasions concédées). Les métriques liées aux occasions
+    n'utilisent que les matchs où le site les publie (les matchs en cours ne les
+    ont pas encore). Renvoie {équipe: {...}}.
+    """
+    teams = {}
+
+    def slot(t):
+        if t not in teams:
+            teams[t] = dict(played=0, gf=0, ga=0, clean=0, occ_n=0,
+                            occ_for=0, occ_against=0, occ_gf=0, occ_ga=0,
+                            poss_n=0, poss_sum=0)
+        return teams[t]
+
+    for g in groups:
+        for m in g["matches"]:
+            if m.get("status") != "result":
+                continue
+            sc = _pair(m.get("mid"))
+            a, b = m.get("a"), m.get("b")
+            if not sc or not a or not b:
+                continue
+            occ, poss = _pair(m.get("occ")), _pair(m.get("poss"))
+            for t, gf, ga, i in ((a, sc[0], sc[1], 0), (b, sc[1], sc[0], 1)):
+                s = slot(t)
+                s["played"] += 1
+                s["gf"] += gf
+                s["ga"] += ga
+                if ga == 0:
+                    s["clean"] += 1
+                if occ:
+                    s["occ_n"] += 1
+                    s["occ_for"] += occ[i]
+                    s["occ_against"] += occ[1 - i]
+                    s["occ_gf"] += gf
+                    s["occ_ga"] += ga
+                if poss:
+                    s["poss_n"] += 1
+                    s["poss_sum"] += poss[i]
+
+    def r1(x):
+        return round(x, 1)
+
+    out = {}
+    for t, s in teams.items():
+        n, on, pn = s["played"], s["occ_n"], s["poss_n"]
+        out[t] = dict(
+            team=t, played=n, clean=s["clean"], diff=s["gf"] - s["ga"],
+            gf_pm=r1(s["gf"] / n) if n else None,
+            ga_pm=r1(s["ga"] / n) if n else None,
+            occ_for_pm=r1(s["occ_for"] / on) if on else None,
+            occ_against_pm=r1(s["occ_against"] / on) if on else None,
+            arrets_pm=r1((s["occ_against"] - s["occ_ga"]) / on) if on else None,
+            poss=r1(s["poss_sum"] / pn) if pn else None,
+            conv=r1(s["occ_gf"] / s["occ_for"] * 100) if s["occ_for"] else None,
+            save=r1((1 - s["occ_ga"] / s["occ_against"]) * 100) if s["occ_against"] else None,
+        )
+    return out
+
+
+def league_players(domstats, rosters, poste):
+    """Joueurs d'un poste dans une ligue, avec les stats d'équipe par domaine.
+
+    domstats = {équipe: stats} (team_domain_stats), rosters = {équipe: [joueurs]}.
+    Renvoie [{nom, team, player, stats}] pour chaque joueur du poste dont l'équipe
+    figure dans domstats. Non trié — l'UI trie selon la métrique choisie.
+    """
+    out = []
+    for team, stats in domstats.items():
+        for p in rosters.get(team) or []:
+            if p.get("poste") == poste:
+                out.append({"nom": p.get("nom"), "team": team, "player": p, "stats": stats})
+    return out
+
+
+def season_domstats_from_csv(text):
+    """Stats par domaine et par équipe pour une saison, depuis un CSV de matchs.
+
+    Colonnes attendues : Equipe dom, Equipe ext, Score dom/ext, Occas dom/ext,
+    Posses dom/ext (toutes compétitions confondues). Renvoie {équipe: stats}.
+    """
+    matches = []
+    for row in csv.DictReader(io.StringIO(text)):
+        try:
+            matches.append(dict(
+                a=row["Equipe dom"], b=row["Equipe ext"],
+                mid=f"{row['Score dom']} - {row['Score ext']}", status="result",
+                occ=f"{row['Occas dom']} - {row['Occas ext']}",
+                poss=f"{row['Posses dom']}% - {row['Posses ext']}%",
+            ))
+        except (KeyError, TypeError):
+            continue
+    return team_domain_stats([{"label": "saison", "matches": matches}])
+
+
 class LiveTracker:
     """Mémorise le dernier état des matchs et la date du dernier changement de score."""
 
@@ -844,6 +1003,58 @@ def selftest_offline():
     assert parse_player_info(_wrap({"0": {"tag": "div", "text": "Salaire annuel : 6,22"}}))["salaire"] == 6.22
     assert parse_player_info(_wrap({"0": {"tag": "div", "text": "Célébrité : ."}}))["celebrite"] is None
     print("  ✓ parse_team_roster / parse_player_info OK (+ robustesse valeurs)")
+
+    # 8) team_domain_stats : taux de finition / d'arrêt, clean sheets, occasions.
+    gd = [
+        {"label": "J1", "matches": [dict(a="A", b="B", mid="2 - 1", status="result",
+            occ="4 - 2", poss="60% - 40%", site_live=False)]},
+        {"label": "J2", "matches": [dict(a="B", b="A", mid="0 - 0", status="result",
+            occ="1 - 3", poss="45% - 55%", site_live=False)]},
+    ]
+    ds = team_domain_stats(gd)
+    A = ds["A"]
+    assert A["played"] == 2 and A["clean"] == 1 and A["diff"] == 1
+    assert A["gf_pm"] == 1.0 and A["ga_pm"] == 0.5
+    assert A["occ_for_pm"] == 3.5 and A["occ_against_pm"] == 1.5 and A["arrets_pm"] == 1.0
+    assert A["poss"] == 57.5
+    assert A["conv"] == 28.6        # 2 buts / 7 occasions
+    assert A["save"] == 66.7        # 1 - 1 encaissé / 3 occ concédées
+    print("  ✓ team_domain_stats OK (finition, arrêts, clean sheets, occasions)")
+
+    # 9) position_percentile : situe une valeur parmi les joueurs d'un poste.
+    pool = [{"poste": "GAR", "salaire": s} for s in (10.0, 20.0, 30.0, 40.0)]
+    pc = position_percentile(pool, "GAR", "salaire", 25.0)
+    assert pc["n"] == 4 and pc["median"] == 25.0 and pc["pct"] == 50
+    assert position_percentile(pool, "GAR", "salaire", None) is None
+    assert position_percentile(pool, "AC", "salaire", 25.0) is None
+    print("  ✓ position_percentile OK")
+
+    # 10) league_players : joueurs d'un poste dans la ligue + stats d'équipe.
+    domstats = {"A": {"save": 60.0}, "B": {"save": 40.0}}
+    rosters = {"A": [{"poste": "GAR", "nom": "x"}],
+               "B": [{"poste": "GAR", "nom": "y"}, {"poste": "AC", "nom": "z"}]}
+    gk = league_players(domstats, rosters, "GAR")
+    assert {(r["nom"], r["team"], r["stats"]["save"]) for r in gk} == {("x", "A", 60.0), ("y", "B", 40.0)}
+    assert league_players(domstats, rosters, "AC") == [
+        {"nom": "z", "team": "B", "player": {"poste": "AC", "nom": "z"}, "stats": {"save": 40.0}}]
+    print("  ✓ league_players OK")
+
+    # 11) parse_player_clubs : historique des clubs (et pas le menu "Saison n°0").
+    clubs_dom = {
+        "0": {"tag": "nicegui-markdown", "props": {"innerHTML": "&lt;p&gt;Saison n°0&lt;/p&gt;"}},
+        "1": {"tag": "nicegui-markdown", "props": {"innerHTML": "&lt;p&gt;Saison 0 : Real Betis&lt;/p&gt;"}},
+        "2": {"tag": "div", "text": "Saison 1 : US Lecce"},
+    }
+    assert parse_player_clubs(_wrap(clubs_dom)) == {0: "Real Betis", 1: "US Lecce"}
+
+    # 12) season_domstats_from_csv : agrège un CSV de saison par équipe.
+    csv_text = ("competition,Phase,Equipe dom,Equipe ext,Score dom,Score ext,"
+                "Occas dom,Occas ext,Posses dom,Posses ext\n"
+                "L,J1,A,B,2,1,4,2,60,40\n"
+                "L,J2,B,A,0,0,1,3,45,55\n")
+    sd = season_domstats_from_csv(csv_text)
+    assert sd["A"]["save"] == 66.7 and sd["A"]["conv"] == 28.6 and sd["A"]["clean"] == 1
+    print("  ✓ parse_player_clubs / season_domstats_from_csv OK")
 
 
 def selftest():
