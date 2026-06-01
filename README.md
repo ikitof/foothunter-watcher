@@ -60,6 +60,39 @@ chemin à modifier à la main.
 ./install.sh ~/Bureau     # ou  ./install.sh ~/Desktop
 ```
 
+## Windows `.exe`
+
+Oui, c'est prévu via **PyInstaller**. Le build Windows doit être fait sur Windows
+(ou par GitHub Actions) :
+
+```powershell
+pwsh ./scripts/build_windows.ps1
+```
+
+Le fichier sort dans `dist/FootLive.exe`.
+
+Le workflow GitHub Actions `.github/workflows/windows-exe.yml` construit aussi
+`FootLive.exe` à chaque push sur `main`, l'ajoute comme artefact, puis publie une
+release roulante `main-latest` avec l'asset `FootLive.exe`.
+La mise à jour automatique devient active après le premier run réussi de ce
+workflow, quand la release `main-latest` existe.
+
+### Mise à jour automatique
+
+L'exécutable Windows vérifie au démarrage le dernier build publié depuis `main`
+sur GitHub. S'il est plus récent que le commit inclus dans l'exe, il télécharge
+automatiquement `FootLive.exe` depuis la release `main-latest`, puis propose de
+redémarrer pour remplacer l'exe courant.
+
+Il n'y a pas besoin d'installer Git sur le PC de l'utilisateur. En pratique,
+l'app ne fait pas un `git pull` directement : elle récupère l'exe reconstruit
+depuis `main`. Pour désactiver cette vérification :
+
+```powershell
+$env:FOOT_LIVE_DISABLE_AUTO_UPDATE = "1"
+.\FootLive.exe
+```
+
 ## Utilisation
 
 | Contrôle           | Effet                                                            |

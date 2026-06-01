@@ -22,6 +22,8 @@ import re
 import json
 import time
 import threading
+import tempfile
+import subprocess
 import urllib.request
 import urllib.parse
 from datetime import date
@@ -43,9 +45,149 @@ USER_AGENT = "FootScores/1.0 (desktop widget)"
 # (les barres de possession utilisent bg-red-200 / bg-blue-500, à ne pas confondre).
 LIVE_CLASS_MARKERS = ("text-red-600", "bg-red-500")
 
-CONFIG_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "foot_scores_config.json"
+SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
+GITHUB_REPO = os.environ.get("FOOT_LIVE_GITHUB_REPO", "ikitof/foothunter-watcher")
+UPDATE_RELEASE_TAG = os.environ.get("FOOT_LIVE_UPDATE_TAG", "main-latest")
+UPDATE_ASSET_NAME = os.environ.get("FOOT_LIVE_UPDATE_ASSET", "FootLive.exe")
+UPDATE_TIMEOUT = 20
+
+try:
+    from build_info import APP_COMMIT, APP_BRANCH, APP_BUILD_TIME
+except Exception:
+    APP_COMMIT = ""
+    APP_BRANCH = ""
+    APP_BUILD_TIME = ""
+
+
+def resource_path(name):
+    """Chemin d'une ressource, compatible source Python et exécutable PyInstaller."""
+    base = getattr(sys, "_MEIPASS", SOURCE_DIR)
+    return os.path.join(base, name)
+
+
+def _config_dir():
+    if not getattr(sys, "frozen", False):
+        return SOURCE_DIR
+    if os.name == "nt":
+        base = os.environ.get("APPDATA") or os.path.expanduser(r"~\AppData\Roaming")
+        return os.path.join(base, "Foot Live")
+    return os.path.join(os.path.expanduser("~"), ".config", "foot-live")
+
+
+CONFIG_PATH = os.path.join(_config_dir(), "foot_scores_config.json")
+
+
+def write_config_file(cfg):
+    os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(cfg, f)
+
+
+def _env_truthy(name):
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def is_windows_frozen():
+    return os.name == "nt" and bool(getattr(sys, "frozen", False))
+
+
+def auto_update_enabled():
+    return is_windows_frozen() and not _env_truthy("FOOT_LIVE_DISABLE_AUTO_UPDATE")
+
+
+def current_build_commit():
+    if APP_COMMIT:
+        return APP_COMMIT.strip()
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=SOURCE_DIR,
+            stderr=subprocess.DEVNULL, text=True
+        ).strip()
+    except Exception:
+        return ""
+
+
+def _http_get_url(url, timeout=HTTP_TIMEOUT, binary=False):
+    req = urllib.request.Request(url, headers={
+        "User-Agent": USER_AGENT,
+        "Accept": "application/vnd.github+json,*/*",
+        "Cache-Control": "no-cache",
+    })
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        data = r.read()
+    return data if binary else data.decode("utf-8", "replace")
+
+
+def latest_published_build():
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/tags/{UPDATE_RELEASE_TAG}"
+    data = json.loads(_http_get_url(url, timeout=UPDATE_TIMEOUT))
+    commit = (data.get("target_commitish") or "").strip()
+    asset_url = ""
+    for asset in data.get("assets") or []:
+        if asset.get("name") == UPDATE_ASSET_NAME:
+            asset_url = asset.get("browser_download_url") or ""
+            break
+    if not commit or not asset_url:
+        raise ValueError("build Windows GitHub introuvable")
+    return commit, asset_url
+
+
+def _same_commit(a, b):
+    return bool(a and b and (a == b or a.startswith(b) or b.startswith(a)))
+
+
+def download_update_exe(commit, url):
+    """Télécharge le build Windows publié par la release roulante `main-latest`."""
+    suffix = commit[:12] if commit else str(int(time.time()))
+    target = os.path.join(tempfile.gettempdir(), f"FootLive-{suffix}.exe")
+    req = urllib.request.Request(url, headers={
+        "User-Agent": USER_AGENT,
+        "Cache-Control": "no-cache",
+    })
+    with urllib.request.urlopen(req, timeout=UPDATE_TIMEOUT) as r, open(target, "wb") as f:
+        while True:
+            chunk = r.read(1024 * 256)
+            if not chunk:
+                break
+            f.write(chunk)
+    if os.path.getsize(target) < 100 * 1024:
+        raise ValueError("exécutable téléchargé trop petit")
+    with open(target, "rb") as f:
+        if f.read(2) != b"MZ":
+            raise ValueError("fichier téléchargé invalide")
+    return target
+
+
+def launch_self_update(new_exe_path):
+    """Remplace l'exe courant après fermeture, puis relance l'application."""
+    if not is_windows_frozen():
+        return
+    current_exe = os.path.abspath(sys.executable)
+    pid = os.getpid()
+    script = os.path.join(tempfile.gettempdir(), f"FootLive-update-{pid}.cmd")
+    batch = f"""@echo off
+setlocal
+set "SRC={new_exe_path}"
+set "DST={current_exe}"
+set "PID={pid}"
+
+:wait
+tasklist /FI "PID eq %PID%" | find "%PID%" >nul
+if not errorlevel 1 (
+    timeout /t 1 /nobreak >nul
+    goto wait
 )
+
+move /Y "%SRC%" "%DST%" >nul
+if errorlevel 1 exit /b 1
+start "" "%DST%"
+del "%~f0" >nul 2>nul
+"""
+    with open(script, "w", encoding="utf-8") as f:
+        f.write(batch)
+    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    subprocess.Popen(["cmd.exe", "/c", script], close_fds=True,
+                     creationflags=creationflags)
 
 SCORE_RE = re.compile(r"^\s*(\d+)\s*-\s*(\d+)\s*$")
 DATE_RE = re.compile(r"^\s*\d{1,2}/\d{1,2}/\d{2,4}\s*$")
@@ -746,7 +888,7 @@ def selftest():
 # ----------------------------------------------------------------------------
 def run_gui():
     import tkinter as tk
-    from tkinter import ttk
+    from tkinter import ttk, messagebox
 
     # ---- couleurs / thème -------------------------------------------------
     BG = "#0f1115"
@@ -778,8 +920,7 @@ def run_gui():
             "geometry": root.geometry(),
         }
         try:
-            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-                json.dump(cfg, f)
+            write_config_file(cfg)
         except Exception:
             pass
 
@@ -789,6 +930,12 @@ def run_gui():
     root = tk.Tk()
     root.title("⚽ Foot Live")
     root.configure(bg=BG)
+    try:
+        icon_img = tk.PhotoImage(file=resource_path("foot-live.png"))
+        root.iconphoto(True, icon_img)
+        root._foot_live_icon = icon_img
+    except Exception:
+        pass
     root.geometry(cfg.get("geometry", "470x620"))
     root.minsize(360, 300)
 
@@ -1514,6 +1661,47 @@ def run_gui():
         except (RuntimeError, tk.TclError):
             pass
 
+    def start_update_check():
+        if not auto_update_enabled():
+            return
+
+        def work():
+            current = current_build_commit()
+            if not current:
+                return
+            try:
+                latest, asset_url = latest_published_build()
+                if _same_commit(current, latest):
+                    return
+                ui(lambda: status_var.set(
+                    f"mise à jour {latest[:7]} en téléchargement…"
+                ))
+                exe_path = download_update_exe(latest, asset_url)
+            except Exception:
+                return
+
+            def prompt():
+                if not root.winfo_exists():
+                    return
+                ok = messagebox.askyesno(
+                    "Mise à jour Foot Live",
+                    "Une nouvelle version est disponible depuis la branche main.\n"
+                    "Redémarrer maintenant pour l'installer ?",
+                    parent=root,
+                )
+                if ok:
+                    state["stop"] = True
+                    state["wake"].set()
+                    save_config()
+                    launch_self_update(exe_path)
+                    root.destroy()
+                else:
+                    status_var.set(f"mise à jour prête ({latest[:7]})")
+
+            ui(prompt)
+
+        threading.Thread(target=work, daemon=True).start()
+
     def poll_loop():
         while not state["stop"]:
             gen = state["generation"]
@@ -1609,8 +1797,7 @@ def run_gui():
                     cfg2 = load_config()
                     cfg2["competitions"] = names
                     try:
-                        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
-                            json.dump(cfg2, f)
+                        write_config_file(cfg2)
                     except Exception:
                         pass
                 root.after(0, apply)
@@ -1636,6 +1823,7 @@ def run_gui():
 
     root.protocol("WM_DELETE_WINDOW", on_close)
     section_header("chargement…", MUTED)
+    start_update_check()
     threading.Thread(target=load_comp_list, daemon=True).start()
     threading.Thread(target=load_squads, daemon=True).start()
     threading.Thread(target=poll_loop, daemon=True).start()
