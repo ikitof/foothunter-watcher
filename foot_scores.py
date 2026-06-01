@@ -889,6 +889,8 @@ def run_gui():
         "squads": None,        # {équipe: stats d'effectif} (salaire/célébrité), chargé une fois
         "players": None,       # liste globale brute des joueurs (table /joueurs)
         "rosters": {},         # cache {équipe: [joueurs]} (effectifs récupérés à la demande)
+        "roster_lock": threading.Lock(),   # protège roster_inflight
+        "roster_inflight": set(),           # équipes en cours de récupération (anti-doublon)
     }
 
     # ---- rendu ------------------------------------------------------------
@@ -912,6 +914,44 @@ def run_gui():
             return (payload or {}).get(comp)
         groups, _ = payload
         return groups
+
+    # ---- effectifs : cache + préchargement en tâche de fond ---------------
+    def _team_squad_agg(team):
+        """Stats d'effectif d'une équipe : table globale, sinon effectif en cache."""
+        g = (state.get("squads") or {}).get(team)
+        if g:
+            return g
+        rows = state["rosters"].get(team)
+        return squad_stats(rows).get(team) if rows else None
+
+    def ensure_team_cached(team):
+        """Récupère et met en cache l'effectif d'une équipe absente de la table globale."""
+        if not team or team in state["rosters"] or team in (state.get("squads") or {}):
+            return
+        with state["roster_lock"]:
+            if team in state["rosters"] or team in state["roster_inflight"]:
+                return
+            state["roster_inflight"].add(team)
+        try:
+            rows = fetch_team_squad(team)
+        except Exception:
+            rows = []
+        state["rosters"][team] = rows
+        with state["roster_lock"]:
+            state["roster_inflight"].discard(team)
+
+    def prefetch_squads(teams):
+        """Précharge (en arrière-plan) les effectifs manquants pour `teams`."""
+        squads = state.get("squads") or {}
+        todo = [t for t in dict.fromkeys(teams)
+                if t and t not in squads and t not in state["rosters"]]
+        if not todo:
+            return
+
+        def work():
+            for t in todo:
+                ensure_team_cached(t)
+        threading.Thread(target=work, daemon=True).start()
 
     def open_team(comp, team):
         groups = _groups_for(comp)
@@ -1107,35 +1147,33 @@ def run_gui():
     def _stats_rows():
         """Classement à afficher d'après le dernier rendu (comp courante ou Toutes).
 
-        Chaque ligne est enrichie du salaire / de la célébrité moyens de l'effectif
-        (None si l'équipe n'est pas dans la base joueurs ou pas encore chargée).
+        Le salaire / la célébrité sont lus en direct depuis le cache des effectifs
+        au moment du rendu (et se remplissent au fil du préchargement).
         """
         if state["last"] is None:
             return None, None
-        squads = state.get("squads") or {}
 
-        def enrich(rows, comp_of):
+        def tag(rows, comp_of):
             for r in rows:
                 r["comp"] = comp_of(r)
-                sq = squads.get(r["team"])
-                r["avg_salary"] = sq["avg_salary"] if sq else None
-                r["avg_celeb"] = sq["avg_celeb"] if sq else None
             return rows
 
         last_comp, payload = state["last"]
         if last_comp == ALL_KEY:
             rows = []
             for c, gs in (payload or {}).items():
-                rows += enrich(leaderboard(gs), lambda r, c=c: c)
+                rows += tag(leaderboard(gs), lambda r, c=c: c)
             rows.sort(key=lambda t: (t["points"], t["gd"], t["gf"]), reverse=True)
             return "★ Toutes", rows
         groups, _ = payload
-        return last_comp, enrich(leaderboard(groups), lambda r: last_comp)
+        return last_comp, tag(leaderboard(groups), lambda r: last_comp)
 
     def open_stats():
         title, rows = _stats_rows()
-        if rows:
-            show_stats_window(title, rows)
+        if not rows:
+            return
+        prefetch_squads([r["team"] for r in rows])   # salaire/célébrité en arrière-plan
+        show_stats_window(title, rows)
 
     def show_stats_window(title, rows):
         old = state.get("stats_win")
@@ -1172,50 +1210,12 @@ def run_gui():
         tk.Label(box, text=f"📊 Classement & stats — {title}", bg=BG, fg=ACCENT,
                  anchor="w", font=("TkDefaultFont", 12, "bold")).pack(fill="x", padx=10, pady=(10, 2))
 
-        # faits marquants
-        played = [r for r in rows if r["played"]]
-
-        def best(metric, biggest=True):
-            pool = [r for r in played if r.get(metric) is not None]
-            if not pool:
-                return None
-            return (max if biggest else min)(pool, key=lambda r: r[metric])
-
-        facts = []
-        atk = best("gf", True)
-        dfn = best("ga", False)
-        pos = best("avg_poss", True)
-        occ = best("avg_occ", True)
-        if atk:
-            facts.append(("🥇 Meilleure attaque", f"{atk['team']} ({atk['gf']} buts)"))
-        if dfn:
-            facts.append(("🛡️ Meilleure défense", f"{dfn['team']} ({dfn['ga']} encaissés)"))
-        if pos:
-            facts.append(("⚽ Possession", f"{pos['team']} ({pos['avg_poss']}%)"))
-        if occ:
-            facts.append(("🎯 Occasions", f"{occ['team']} ({occ['avg_occ']}/match)"))
-        sal = best("avg_salary", True)
-        cel = best("avg_celeb", True)
-        if sal:
-            facts.append(("💰 Plus gros salaires (moy.)", f"{sal['team']} ({sal['avg_salary']:.1f})"))
-        if cel:
-            facts.append(("🌟 Plus célèbre (moy.)", f"{cel['team']} ({cel['avg_celeb']:.1f})"))
-        if facts:
-            fc = tk.Frame(box, bg=CARD)
-            fc.pack(fill="x", padx=8, pady=(2, 8))
-            for label, value in facts:
-                r = tk.Frame(fc, bg=CARD)
-                r.pack(fill="x")
-                tk.Label(r, text=label, bg=CARD, fg=MUTED, anchor="w",
-                         font=("TkDefaultFont", 9)).pack(side="left", padx=8, pady=2)
-                tk.Label(r, text=value, bg=CARD, fg=FG, anchor="e",
-                         font=("TkDefaultFont", 9, "bold")).pack(side="right", padx=8)
-
-        tk.Label(box, text="Clique un en-tête pour trier · clique une équipe pour son historique",
+        tk.Label(box, text="Trie en cliquant un en-tête · clique une équipe pour son "
+                           "historique · salaire/célébrité chargés en arrière-plan",
                  bg=BG, fg=MUTED, anchor="w", font=("TkDefaultFont", 8)).pack(fill="x", padx=10, pady=(0, 4))
 
-        grid = tk.Frame(box, bg=BG)
-        grid.pack(fill="both", expand=True, padx=6, pady=(0, 8))
+        content = tk.Frame(box, bg=BG)
+        content.pack(fill="both", expand=True)
         cols = [("#", None), ("Équipe", "team"), ("MJ", "played"), ("V-N-D", None),
                 ("Pts", "points"), ("BP", "gf"), ("BC", "ga"), ("Diff", "gd"),
                 ("Poss", "avg_poss"), ("Occ", "avg_occ"),
@@ -1228,11 +1228,51 @@ def run_gui():
             else:
                 sortst["key"] = key
                 sortst["rev"] = (key != "team")   # numérique décroissant, équipe A→Z
-            draw()
+            render()
 
-        def draw():
-            for w in grid.winfo_children():
+        def render():
+            if not content.winfo_exists():
+                return
+            for w in content.winfo_children():
                 w.destroy()
+            # salaire / célébrité en direct depuis le cache (préchargement progressif)
+            for r in rows:
+                agg = _team_squad_agg(r["team"])
+                r["avg_salary"] = agg.get("avg_salary") if agg else None
+                r["avg_celeb"] = agg.get("avg_celeb") if agg else None
+
+            played = [r for r in rows if r["played"]]
+
+            def best(metric, biggest=True):
+                pool = [r for r in played if r.get(metric) is not None]
+                if not pool:
+                    return None
+                return (max if biggest else min)(pool, key=lambda r: r[metric])
+
+            facts = []
+            for label, win_row, render_value in (
+                ("🥇 Meilleure attaque", best("gf", True), lambda r: f"{r['team']} ({r['gf']} buts)"),
+                ("🛡️ Meilleure défense", best("ga", False), lambda r: f"{r['team']} ({r['ga']} encaissés)"),
+                ("⚽ Possession", best("avg_poss", True), lambda r: f"{r['team']} ({r['avg_poss']}%)"),
+                ("🎯 Occasions", best("avg_occ", True), lambda r: f"{r['team']} ({r['avg_occ']}/match)"),
+                ("💰 Plus gros salaires (moy.)", best("avg_salary", True), lambda r: f"{r['team']} ({r['avg_salary']:.1f} M€)"),
+                ("🌟 Plus célèbre (moy.)", best("avg_celeb", True), lambda r: f"{r['team']} ({r['avg_celeb']:.1f})"),
+            ):
+                if win_row:
+                    facts.append((label, render_value(win_row)))
+            if facts:
+                fc = tk.Frame(content, bg=CARD)
+                fc.pack(fill="x", padx=8, pady=(2, 8))
+                for label, value in facts:
+                    fr = tk.Frame(fc, bg=CARD)
+                    fr.pack(fill="x")
+                    tk.Label(fr, text=label, bg=CARD, fg=MUTED, anchor="w",
+                             font=("TkDefaultFont", 9)).pack(side="left", padx=8, pady=2)
+                    tk.Label(fr, text=value, bg=CARD, fg=FG, anchor="e",
+                             font=("TkDefaultFont", 9, "bold")).pack(side="right", padx=8)
+
+            grid = tk.Frame(content, bg=BG)
+            grid.pack(fill="both", expand=True, padx=6, pady=(0, 8))
             key, rev = sortst["key"], sortst["rev"]
 
             def sort_key(r):
@@ -1279,7 +1319,22 @@ def run_gui():
                 cell(11, f"{r['avg_celeb']:.1f}" if r.get("avg_celeb") is not None else "—")
             grid.grid_columnconfigure(1, weight=1)
 
-        draw()
+        render()
+
+        # remplissage progressif au fur et à mesure que les effectifs arrivent
+        prog = {"resolved": -1, "ticks": 0}
+
+        def refresh():
+            if not win.winfo_exists():
+                return
+            res = sum(1 for r in rows if _team_squad_agg(r["team"]) is not None)
+            if res != prog["resolved"]:
+                prog["resolved"] = res
+                render()
+            prog["ticks"] += 1
+            if res < len(rows) and prog["ticks"] < 90:
+                win.after(1000, refresh)
+        win.after(1000, refresh)
 
     def render_match(parent, comp, m, show_comp=False):
         live = m.get("live")
@@ -1477,6 +1532,9 @@ def run_gui():
                     payload = (groups, standings)
                     n_live = sum(1 for g in groups for m in g["matches"] if m.get("live"))
                     summary = f"{n_live} live"
+                    # précharge les effectifs de cette compé pour la page stats
+                    prefetch_squads([t for g in groups for m in g["matches"]
+                                     for t in (m.get("a"), m.get("b"))])
 
                 if gen == state["generation"]:
                     ts = time.strftime("%H:%M:%S")
