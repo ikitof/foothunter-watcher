@@ -855,6 +855,8 @@ def run_gui():
         "team_win": None,      # fenêtre "historique d'équipe" ouverte (réutilisée)
         "stats_win": None,     # fenêtre "stats & classement" ouverte (réutilisée)
         "squads": None,        # {équipe: stats d'effectif} (salaire/célébrité), chargé une fois
+        "players": None,       # liste globale brute des joueurs (table /joueurs)
+        "rosters": {},         # cache {équipe: [joueurs]} (effectifs récupérés à la demande)
     }
 
     # ---- rendu ------------------------------------------------------------
@@ -936,27 +938,79 @@ def run_gui():
         def fmt(v, suffix=""):
             return f"{v}{suffix}" if v is not None else "—"
 
-        # carte effectif (salaire / célébrité, moyenne + médiane) si données dispo
-        squad = (state.get("squads") or {}).get(team)
-        if squad:
-            sc = tk.Frame(box, bg=CARD)
-            sc.pack(fill="x", padx=8, pady=(6, 2))
+        # carte effectif : salaire (si connu) + célébrité, moyenne & médiane, et la
+        # liste des joueurs. Grands clubs => table globale ; sinon on récupère
+        # l'effectif sur /equipes/<team> + fiches /joueurs/<nom> en tâche de fond.
+        sc = tk.Frame(box, bg=CARD)
+        sc.pack(fill="x", padx=8, pady=(6, 2))
+        tk.Label(sc, text="💰 Effectif", bg=CARD, fg=ACCENT, anchor="w",
+                 font=("TkDefaultFont", 9, "bold")).pack(fill="x", padx=8, pady=(4, 0))
+        eff_body = tk.Frame(sc, bg=CARD)
+        eff_body.pack(fill="x")
 
-            def squad_line(label, value):
-                r = tk.Frame(sc, bg=CARD)
+        def fill_effectif(rows):
+            if not eff_body.winfo_exists():
+                return
+            for w in eff_body.winfo_children():
+                w.destroy()
+            if not rows:
+                tk.Label(eff_body, text="Pas de données joueurs pour cette équipe.",
+                         bg=CARD, fg=MUTED, font=("TkDefaultFont", 9)).pack(
+                    anchor="w", padx=8, pady=4)
+                return
+            agg = squad_stats(rows).get(team, {})
+
+            def line(label, value):
+                r = tk.Frame(eff_body, bg=CARD)
                 r.pack(fill="x")
                 tk.Label(r, text=label, bg=CARD, fg=MUTED, anchor="w",
-                         font=("TkDefaultFont", 9)).pack(side="left", padx=8, pady=2)
+                         font=("TkDefaultFont", 9)).pack(side="left", padx=8, pady=1)
                 tk.Label(r, text=value, bg=CARD, fg=FG, anchor="e",
                          font=("TkDefaultFont", 9, "bold")).pack(side="right", padx=8)
 
-            tk.Label(sc, text="💰 Effectif", bg=CARD, fg=ACCENT, anchor="w",
-                     font=("TkDefaultFont", 9, "bold")).pack(fill="x", padx=8, pady=(4, 0))
-            squad_line("Joueurs", str(squad["count"]))
-            squad_line("Salaire (moy. · méd.)",
-                       f"{fmt(squad['avg_salary'])} · {fmt(squad['med_salary'])}")
-            squad_line("Célébrité (moy. · méd.)",
-                       f"{fmt(squad['avg_celeb'])} · {fmt(squad['med_celeb'])}")
+            line("Joueurs", str(agg.get("count", len(rows))))
+            line("Salaire (moy. · méd.)",
+                 f"{fmt(agg.get('avg_salary'))} · {fmt(agg.get('med_salary'))}")
+            line("Célébrité (moy. · méd.)",
+                 f"{fmt(agg.get('avg_celeb'))} · {fmt(agg.get('med_celeb'))}")
+            for p in sorted(rows, key=lambda r: (r.get("celebrite") is None,
+                                                 -(r.get("celebrite") or 0))):
+                pr = tk.Frame(eff_body, bg=CARD)
+                pr.pack(fill="x", padx=8)
+                tk.Label(pr, text=f"{(p.get('poste') or '').ljust(4)} {p.get('nom') or '?'}",
+                         bg=CARD, fg=FG, anchor="w", font=("TkDefaultFont", 8)).pack(side="left")
+                det = []
+                if p.get("celebrite") is not None:
+                    det.append(f"célé {p['celebrite']}")
+                if p.get("salaire") is not None:
+                    det.append(f"sal {p['salaire']}")
+                tk.Label(pr, text="   ".join(det), bg=CARD, fg=MUTED, anchor="e",
+                         font=("TkDefaultFont", 8)).pack(side="right")
+
+        cached = state["rosters"].get(team)
+        glob = [p for p in (state.get("players") or []) if p.get("nom_equipe") == team]
+        if cached is not None:
+            fill_effectif(cached)
+        elif glob:
+            state["rosters"][team] = glob
+            fill_effectif(glob)
+        else:
+            tk.Label(eff_body, text="chargement de l'effectif…", bg=CARD, fg=MUTED,
+                     font=("TkDefaultFont", 9)).pack(anchor="w", padx=8, pady=4)
+
+            def load_roster():
+                idx = {p["nom"]: p for p in (state.get("players") or [])}
+                try:
+                    rows = fetch_team_squad(team, idx)
+                except Exception:
+                    rows = []
+                state["rosters"][team] = rows
+                try:
+                    root.after(0, lambda: win.winfo_exists() and fill_effectif(rows))
+                except (RuntimeError, tk.TclError):
+                    pass
+
+            threading.Thread(target=load_roster, daemon=True).start()
 
         if st["played"] == 0:
             tk.Label(box, text="Aucun match joué pour le moment.", bg=BG, fg=MUTED,
@@ -1462,9 +1516,10 @@ def run_gui():
     # ---- chargement des effectifs (salaire/célébrité) en tâche de fond ----
     def load_squads():
         try:
-            squads = squad_stats(fetch_players())
-            if squads:
-                state["squads"] = squads
+            players = fetch_players()
+            if players:
+                state["players"] = players
+                state["squads"] = squad_stats(players)
         except Exception:
             pass
 
