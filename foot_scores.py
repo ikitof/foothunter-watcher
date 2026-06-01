@@ -125,38 +125,56 @@ def latest_published_build():
     data = json.loads(_http_get_url(url, timeout=UPDATE_TIMEOUT))
     commit = (data.get("target_commitish") or "").strip()
     asset_url = ""
+    asset_size = 0
     for asset in data.get("assets") or []:
         if asset.get("name") == UPDATE_ASSET_NAME:
             asset_url = asset.get("browser_download_url") or ""
+            asset_size = int(asset.get("size") or 0)
             break
     if not commit or not asset_url:
         raise ValueError("build Windows GitHub introuvable")
-    return commit, asset_url
+    return commit, asset_url, asset_size
 
 
 def _same_commit(a, b):
     return bool(a and b and (a == b or a.startswith(b) or b.startswith(a)))
 
 
-def download_update_exe(commit, url):
-    """Télécharge le build Windows publié par la release roulante `main-latest`."""
+def download_update_exe(commit, url, expected_size=0):
+    """Télécharge le build Windows publié par la release roulante `main-latest`.
+
+    Rejette un téléchargement tronqué : la taille reçue doit correspondre
+    exactement à celle annoncée par GitHub (`asset["size"]`). Sinon l'exe relancé
+    échouerait à charger sa DLL Python (bundle incomplet). Le fichier partiel est
+    supprimé en cas d'échec pour ne jamais installer un exe corrompu.
+    """
     suffix = commit[:12] if commit else str(int(time.time()))
     target = os.path.join(tempfile.gettempdir(), f"FootLive-{suffix}.exe")
     req = urllib.request.Request(url, headers={
         "User-Agent": USER_AGENT,
         "Cache-Control": "no-cache",
     })
-    with urllib.request.urlopen(req, timeout=UPDATE_TIMEOUT) as r, open(target, "wb") as f:
-        while True:
-            chunk = r.read(1024 * 256)
-            if not chunk:
-                break
-            f.write(chunk)
-    if os.path.getsize(target) < 100 * 1024:
-        raise ValueError("exécutable téléchargé trop petit")
-    with open(target, "rb") as f:
-        if f.read(2) != b"MZ":
-            raise ValueError("fichier téléchargé invalide")
+    try:
+        with urllib.request.urlopen(req, timeout=UPDATE_TIMEOUT) as r, open(target, "wb") as f:
+            while True:
+                chunk = r.read(1024 * 256)
+                if not chunk:
+                    break
+                f.write(chunk)
+        size = os.path.getsize(target)
+        if expected_size and size != expected_size:
+            raise ValueError(f"téléchargement incomplet ({size}/{expected_size} octets)")
+        if size < 100 * 1024:
+            raise ValueError("exécutable téléchargé trop petit")
+        with open(target, "rb") as f:
+            if f.read(2) != b"MZ":
+                raise ValueError("fichier téléchargé invalide")
+    except Exception:
+        try:
+            os.remove(target)
+        except OSError:
+            pass
+        raise
     return target
 
 
@@ -2301,13 +2319,13 @@ def run_gui():
             if not current:
                 return
             try:
-                latest, asset_url = latest_published_build()
+                latest, asset_url, asset_size = latest_published_build()
                 if _same_commit(current, latest):
                     return
                 ui(lambda: status_var.set(
                     f"mise à jour {latest[:7]} en téléchargement…"
                 ))
-                exe_path = download_update_exe(latest, asset_url)
+                exe_path = download_update_exe(latest, asset_url, asset_size)
             except Exception:
                 return
 
