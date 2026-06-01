@@ -1001,10 +1001,12 @@ def run_gui():
                          font=("TkDefaultFont", 9, "bold")).pack(side="right", padx=8)
 
             line("Joueurs", str(agg.get("count", len(rows))))
-            line("Salaire (moy. · méd.)",
+            line("Salaire M€ (moy. · méd.)",
                  f"{fmt(agg.get('avg_salary'))} · {fmt(agg.get('med_salary'))}")
             line("Célébrité (moy. · méd.)",
                  f"{fmt(agg.get('avg_celeb'))} · {fmt(agg.get('med_celeb'))}")
+            line("Âge (moy. · méd.)",
+                 f"{fmt(agg.get('avg_age'))} · {fmt(agg.get('med_age'))}")
             for p in sorted(rows, key=lambda r: (r.get("celebrite") is None,
                                                  -(r.get("celebrite") or 0))):
                 pr = tk.Frame(eff_body, bg=CARD)
@@ -1015,7 +1017,9 @@ def run_gui():
                 if p.get("celebrite") is not None:
                     det.append(f"célé {p['celebrite']}")
                 if p.get("salaire") is not None:
-                    det.append(f"sal {p['salaire']}")
+                    det.append(f"sal {p['salaire']}M€")
+                if p.get("age") is not None:
+                    det.append(f"{p['age']}a")
                 tk.Label(pr, text="   ".join(det), bg=CARD, fg=MUTED, anchor="e",
                          font=("TkDefaultFont", 8)).pack(side="right")
 
@@ -1031,9 +1035,8 @@ def run_gui():
                      font=("TkDefaultFont", 9)).pack(anchor="w", padx=8, pady=4)
 
             def load_roster():
-                idx = {p["nom"]: p for p in (state.get("players") or [])}
                 try:
-                    rows = fetch_team_squad(team, idx)
+                    rows = fetch_team_squad(team)
                 except Exception:
                     rows = []
                 state["rosters"][team] = rows
