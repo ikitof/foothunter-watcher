@@ -49,6 +49,10 @@ CONFIG_PATH = os.path.join(
 SCORE_RE = re.compile(r"^\s*(\d+)\s*-\s*(\d+)\s*$")
 DATE_RE = re.compile(r"^\s*\d{1,2}/\d{1,2}/\d{2,4}\s*$")
 POSS_RE = re.compile(r"^\s*\d+%\s*-\s*\d+%\s*$")
+CELEB_RE = re.compile(r"[Cc]élébrité\s*:\s*([\d.]+)")
+
+# Postes affichés sur les pages d'équipe (sert à apparier joueur ↔ poste).
+PLAYER_POSTES = ("GAR", "DC", "LAT", "MDEF", "MOFF", "AIL", "AC")
 
 DEFAULT_COMPETITIONS = [
     "Premier League", "Liga", "Bundesliga", "Serie A", "Ligue 1",
@@ -232,6 +236,63 @@ def parse_players(html):
     return []
 
 
+def parse_team_roster(html):
+    """Effectif d'une équipe depuis /equipes/<nom> : liste de {nom, poste}.
+
+    Sur la page, chaque joueur est un lien `/joueurs/<nom>` immédiatement suivi
+    de son poste (GAR, DC, …) ; on apparie dans l'ordre du document.
+    """
+    d = parse_elements(html)
+    if not d:
+        return []
+    roots = [k for k, v in d.items() if v.get("tag") == "q-page"] or list(d.keys())[:1]
+    seq = []
+
+    def walk(eid):
+        v = d.get(str(eid))
+        if not v:
+            return
+        if v.get("tag") == "nicegui-link":
+            href = (v.get("props") or {}).get("href", "")
+            if href.startswith("/joueurs/") and href != "/joueurs":
+                seq.append(("player", urllib.parse.unquote(href[len("/joueurs/"):])))
+        elif v.get("text"):
+            seq.append(("text", v["text"]))
+        for c in v.get("children") or []:
+            walk(c)
+        for s in (v.get("slots") or {}).values():
+            for sid in s.get("ids", []):
+                walk(sid)
+
+    for r in roots:
+        walk(r)
+
+    roster, pending = [], None
+    for kind, val in seq:
+        if kind == "player":
+            if pending:
+                roster.append({"nom": pending, "poste": None})
+            pending = val
+        elif kind == "text" and pending and val in PLAYER_POSTES:
+            roster.append({"nom": pending, "poste": val})
+            pending = None
+    if pending:
+        roster.append({"nom": pending, "poste": None})
+    return roster
+
+
+def parse_player_celebrity(html):
+    """Célébrité (float) depuis la fiche /joueurs/<nom>, ou None."""
+    d = parse_elements(html)
+    if not d:
+        return None
+    for v in d.values():
+        m = CELEB_RE.search(v.get("text") or "")
+        if m:
+            return float(m.group(1))
+    return None
+
+
 def fetch_competition(name):
     """Récupère et parse une compétition. Renvoie (groups, standings)."""
     html = http_get(SAISON_PATH + "/" + urllib.parse.quote(name))
@@ -244,6 +305,29 @@ def fetch_competition(name):
 def fetch_players():
     """Récupère et parse la liste globale des joueurs (page /joueurs)."""
     return parse_players(http_get("/joueurs"))
+
+
+def fetch_team_squad(team, salary_index=None):
+    """Effectif d'une équipe enrichi de la célébrité (et du salaire si connu).
+
+    Combine /equipes/<team> (liste des joueurs) et chaque fiche /joueurs/<nom>
+    (célébrité), en parallèle. Le salaire vient de `salary_index` (table globale)
+    quand le joueur y figure, sinon None — le site ne le publie pas par joueur.
+    Renvoie une liste de dicts {nom_equipe, nom, poste, celebrite, salaire}.
+    """
+    roster = parse_team_roster(http_get("/equipes/" + urllib.parse.quote(team)))
+    if not roster:
+        return []
+    salary_index = salary_index or {}
+
+    def enrich(p):
+        celeb = parse_player_celebrity(http_get("/joueurs/" + urllib.parse.quote(p["nom"])))
+        sal = (salary_index.get(p["nom"]) or {}).get("salaire")
+        return dict(nom_equipe=team, nom=p["nom"], poste=p.get("poste"),
+                    celebrite=celeb, salaire=sal)
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        return list(ex.map(enrich, roster))
 
 
 # ----------------------------------------------------------------------------
@@ -558,6 +642,23 @@ def selftest_offline():
     assert sq["Beta"]["avg_celeb"] == 40.0 and sq["Beta"]["med_celeb"] == 40
     assert _median([]) is None
     print("  ✓ squad_stats OK (moyenne + médiane salaire/célébrité, pair/impair)")
+
+    # 7) parse_team_roster (joueur suivi de son poste) et parse_player_celebrity.
+    def _wrap(obj):
+        return "x parseElements(String.raw`" + json.dumps(obj) + "`) y"
+    roster_dom = {
+        "0": {"tag": "q-page", "children": ["1", "2", "3", "4", "5"]},
+        "1": {"tag": "nicegui-link", "props": {"href": "/joueurs"}, "text": "Joueurs"},
+        "2": {"tag": "nicegui-link", "props": {"href": "/joueurs/Max%20Wei"}},
+        "3": {"tag": "div", "text": "GAR"},
+        "4": {"tag": "nicegui-link", "props": {"href": "/joueurs/Jo%20Do"}},
+        "5": {"tag": "div", "text": "DC"},
+    }
+    r = parse_team_roster(_wrap(roster_dom))
+    assert [(x["nom"], x["poste"]) for x in r] == [("Max Wei", "GAR"), ("Jo Do", "DC")], r
+    assert parse_player_celebrity(_wrap({"0": {"tag": "div", "text": "Célébrité : 47.4"}})) == 47.4
+    assert parse_player_celebrity(_wrap({"0": {"tag": "div", "text": "rien"}})) is None
+    print("  ✓ parse_team_roster / parse_player_celebrity OK")
 
 
 def selftest():
