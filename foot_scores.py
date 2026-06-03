@@ -1967,11 +1967,26 @@ def run_gui():
 
         last_comp, payload = state["last"]
         if last_comp == ALL_KEY:
-            rows = []
-            for c, gs in (payload or {}).items():
-                rows += tag(leaderboard(gs), lambda r, c=c: c)
-            rows.sort(key=lambda t: (t["points"], t["gd"], t["gf"]), reverse=True)
-            return "★ Toutes", rows
+            # Une seule ligne par équipe : TOUS ses matchs, toutes compétitions
+            # confondues (championnat + coupes + Europe) — sinon chaque équipe
+            # apparaissait une fois par compétition, avec 1-3 matchs côté coupes.
+            boards = payload or {}
+            all_groups = []
+            seen = {}   # équipe -> {compétition: nb d'apparitions} (retrouve son championnat)
+            for c, gs in boards.items():
+                all_groups += gs
+                for g in gs:
+                    for m in g["matches"]:
+                        for t in (m.get("a"), m.get("b")):
+                            if t:
+                                seen.setdefault(t, {})
+                                seen[t][c] = seen[t].get(c, 0) + 1
+            rows = leaderboard(all_groups)
+            for r in rows:
+                comps = seen.get(r["team"]) or {}
+                # le championnat = la compétition où l'équipe a le plus de matchs
+                r["comp"] = max(comps, key=comps.get) if comps else None
+            return "★ Toutes (champ. + coupes confondus)", rows
         groups, _ = payload
         return last_comp, tag(leaderboard(groups), lambda r: last_comp)
 
