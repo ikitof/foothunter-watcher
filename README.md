@@ -36,8 +36,10 @@ plus besoin de faire F5 ni de cliquer pour déplier les matchs.
 - **Page « 📊 stats »** : un **classement complet triable** (points, buts, diff,
   possession et occasions moyennes, **salaire et célébrité moyens**) + des faits
   marquants (meilleure attaque, meilleure défense, possession, occasions,
-  **plus gros salaires, plus célèbre**). Reflète la compétition choisie, ou
-  **toutes** en vue « ★ Toutes (live) ». Trie en cliquant un en-tête de colonne.
+  **plus gros salaires, plus célèbre**). Reflète la compétition choisie ; en vue
+  « ★ Toutes (live) », **une seule ligne par équipe avec tous ses matchs
+  confondus** (championnat + coupes + Europe). Trie en cliquant un en-tête de
+  colonne.
   Salaire et célébrité couvrent **toutes** les équipes : les effectifs sont
   **préchargés en arrière-plan** (la page s'ouvre tout de suite et se remplit au
   fur et à mesure, sans attente).
