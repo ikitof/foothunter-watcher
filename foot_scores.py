@@ -23,6 +23,12 @@ import re
 import csv
 import json
 import time
+import base64
+import hashlib
+import socket
+import struct
+import uuid
+import zlib
 import threading
 import tempfile
 import subprocess
@@ -52,6 +58,7 @@ GITHUB_REPO = os.environ.get("FOOT_LIVE_GITHUB_REPO", "ikitof/foothunter-watcher
 UPDATE_RELEASE_TAG = os.environ.get("FOOT_LIVE_UPDATE_TAG", "main-latest")
 UPDATE_ASSET_NAME = os.environ.get("FOOT_LIVE_UPDATE_ASSET", "FootLive.exe")
 UPDATE_TIMEOUT = 20
+PLAYER_DATA_NAME = "data_joueurs.csv"
 
 try:
     from build_info import APP_COMMIT, APP_BRANCH, APP_BUILD_TIME
@@ -217,6 +224,7 @@ SALARY_RE = re.compile(r"Salaire\s+annuel\s*:\s*([\d.,]+)")
 AGE_RE = re.compile(r"Âge\s*:\s*(\d+)")
 POSTE_RE = re.compile(r"Poste\s*:\s*([A-Za-z]+)")
 CLUB_RE = re.compile(r"Saison\s+(\d+)\s*:\s*(.+)")   # historique des clubs sur la fiche
+CELEB_CHART_RE = re.compile(r"data:image/png;base64,([A-Za-z0-9+/=]+)")
 
 # Postes affichés sur les pages d'équipe (sert à apparier joueur ↔ poste).
 PLAYER_POSTES = ("GAR", "DC", "LAT", "MDEF", "MOFF", "AIL", "AC")
@@ -239,6 +247,177 @@ def http_get(path):
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as r:
         return r.read().decode("utf-8", "replace")
+
+
+def _read_exact(reader, size):
+    data = bytearray()
+    while len(data) < size:
+        chunk = reader.read(size - len(data))
+        if not chunk:
+            raise ConnectionError("websocket fermé")
+        data.extend(chunk)
+    return bytes(data)
+
+
+def _websocket_send(sock, opcode, payload):
+    """Envoie une frame WebSocket client (donc masquée), sans dépendance externe."""
+    payload = payload.encode("utf-8") if isinstance(payload, str) else payload
+    first = 0x80 | opcode
+    size = len(payload)
+    if size < 126:
+        header = bytes((first, 0x80 | size))
+    elif size < 65536:
+        header = bytes((first, 0x80 | 126)) + struct.pack(">H", size)
+    else:
+        header = bytes((first, 0x80 | 127)) + struct.pack(">Q", size)
+    mask = os.urandom(4)
+    masked = bytes(value ^ mask[i % 4] for i, value in enumerate(payload))
+    sock.sendall(header + mask + masked)
+
+
+def _websocket_receive(reader):
+    """Lit un message WebSocket complet et renvoie (opcode, payload)."""
+    first, second = _read_exact(reader, 2)
+    opcode, final = first & 0x0F, bool(first & 0x80)
+    masked, size = bool(second & 0x80), second & 0x7F
+    if size == 126:
+        size = struct.unpack(">H", _read_exact(reader, 2))[0]
+    elif size == 127:
+        size = struct.unpack(">Q", _read_exact(reader, 8))[0]
+    mask = _read_exact(reader, 4) if masked else b""
+    payload = _read_exact(reader, size)
+    if masked:
+        payload = bytes(value ^ mask[i % 4] for i, value in enumerate(payload))
+    if final or opcode in (0x8, 0x9, 0xA):
+        return opcode, payload
+
+    chunks = [payload]
+    while True:
+        next_opcode, chunk = _websocket_receive(reader)
+        if next_opcode != 0:
+            raise ValueError("fragment WebSocket inattendu")
+        chunks.append(chunk)
+        # _websocket_receive ne renvoie un fragment de continuation qu'à sa fin.
+        return opcode, b"".join(chunks)
+
+
+def download_players_csv():
+    """Déclenche le bouton d'export de `/joueurs` via le protocole NiceGUI.
+
+    NiceGUI n'expose pas une URL CSV : le bouton envoie le contenu comme pièce
+    jointe binaire Socket.IO. Cette implémentation minimale reste 100 % stdlib.
+    """
+    html = http_get("/joueurs")
+    client_match = re.search(r"query:\s*\{[^}]*'client_id':\s*'([^']+)'", html)
+    elements = parse_elements(html)
+    if not client_match or not elements:
+        raise ValueError("identifiant NiceGUI absent")
+
+    button_id = listener_id = None
+    for eid, element in elements.items():
+        props = element.get("props") or {}
+        label = props.get("label") or ""
+        if element.get("tag") != "q-btn" or "Télécharger stats des joueurs" not in label:
+            continue
+        event = next((e for e in element.get("events") or [] if e.get("type") == "click"), None)
+        if event:
+            button_id, listener_id = int(eid), event.get("listener_id")
+            break
+    if button_id is None or not listener_id:
+        raise ValueError("bouton d'export joueurs absent")
+
+    parsed = urllib.parse.urlparse(BASE_URL)
+    host = parsed.hostname
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    query = urllib.parse.urlencode({
+        "client_id": client_match.group(1),
+        "next_message_id": 0,
+        "implicit_handshake": "true",
+        "document_id": str(uuid.uuid4()),
+        "tab_id": str(uuid.uuid4()),
+        "old_tab_id": "null",
+        "EIO": 4,
+        "transport": "websocket",
+    })
+    endpoint = (parsed.path.rstrip("/") + "/_nicegui_ws/socket.io/?" + query)
+    key = base64.b64encode(os.urandom(16)).decode("ascii")
+    host_header = host if port in (80, 443) else f"{host}:{port}"
+    request = (
+        f"GET {endpoint} HTTP/1.1\r\n"
+        f"Host: {host_header}\r\n"
+        f"Origin: {parsed.scheme}://{host_header}\r\n"
+        "Upgrade: websocket\r\n"
+        "Connection: Upgrade\r\n"
+        f"Sec-WebSocket-Key: {key}\r\n"
+        "Sec-WebSocket-Version: 13\r\n\r\n"
+    ).encode("ascii")
+
+    sock = socket.create_connection((host, port), timeout=HTTP_TIMEOUT)
+    if parsed.scheme == "https":
+        import ssl
+        sock = ssl.create_default_context().wrap_socket(sock, server_hostname=host)
+    reader = None
+    try:
+        sock.sendall(request)
+        reader = sock.makefile("rb")
+        status = reader.readline().decode("ascii", "replace").strip()
+        headers = {}
+        while True:
+            line = reader.readline()
+            if line in (b"\r\n", b"\n", b""):
+                break
+            name, value = line.decode("ascii", "replace").split(":", 1)
+            headers[name.lower()] = value.strip()
+        expected = base64.b64encode(hashlib.sha1(
+            (key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode("ascii")
+        ).digest()).decode("ascii")
+        if " 101 " not in f" {status} " or headers.get("sec-websocket-accept") != expected:
+            raise ConnectionError(f"connexion websocket refusée ({status})")
+
+        _websocket_send(sock, 0x1, "40")
+        connected = False
+        deadline = time.time() + HTTP_TIMEOUT
+        while time.time() < deadline:
+            opcode, payload = _websocket_receive(reader)
+            if opcode == 0x9:
+                _websocket_send(sock, 0xA, payload)
+                continue
+            if opcode != 0x1:
+                continue
+            message = payload.decode("utf-8", "replace")
+            if message == "2":
+                _websocket_send(sock, 0x1, "3")
+            elif message.startswith("40"):
+                connected = True
+                break
+        if not connected:
+            raise TimeoutError("connexion Socket.IO incomplète")
+
+        packet = "42" + json.dumps(["event", {
+            "id": button_id,
+            "client_id": client_match.group(1),
+            "listener_id": listener_id,
+            "args": [],
+        }], separators=(",", ":"))
+        _websocket_send(sock, 0x1, packet)
+        expecting_download = False
+        while time.time() < deadline:
+            opcode, payload = _websocket_receive(reader)
+            if opcode == 0x9:
+                _websocket_send(sock, 0xA, payload)
+            elif opcode == 0x1:
+                message = payload.decode("utf-8", "replace")
+                if message == "2":
+                    _websocket_send(sock, 0x1, "3")
+                elif message.startswith("451-") and '"download"' in message:
+                    expecting_download = True
+            elif opcode == 0x2 and expecting_download:
+                return payload
+        raise TimeoutError("export CSV non reçu")
+    finally:
+        if reader is not None:
+            reader.close()
+        sock.close()
 
 
 def parse_elements(html):
@@ -403,6 +582,120 @@ def parse_players(html):
     return []
 
 
+def parse_player_history_csv(data):
+    """Parse l'export `/joueurs` et renvoie joueurs, célébrités, clubs et saisons.
+
+    Les colonnes saisonnières sont détectées dynamiquement pour accepter les
+    futurs `nom_equipe_N` et `celebrite_N` sans modification du programme.
+    """
+    if isinstance(data, bytes):
+        data = data.decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(data))
+    fields = reader.fieldnames or []
+    celeb_seasons = {
+        int(match.group(1)): field
+        for field in fields
+        if (match := re.fullmatch(r"celebrite_(\d+)", field))
+    }
+    team_seasons = {
+        int(match.group(1)): field
+        for field in fields
+        if (match := re.fullmatch(r"nom_equipe_(\d+)", field))
+    }
+    if "nom" not in fields or len(celeb_seasons) < 2:
+        raise ValueError("colonnes historiques joueurs absentes")
+
+    players, histories, clubs = [], {}, {}
+    for row in reader:
+        name = (row.get("nom") or "").strip()
+        if not name:
+            continue
+        history = {}
+        for season, field in celeb_seasons.items():
+            try:
+                raw = (row.get(field) or "").strip().replace(",", ".")
+                if raw:
+                    history[season] = float(raw)
+            except ValueError:
+                pass
+        club_history = {
+            season: (row.get(field) or "").strip()
+            for season, field in team_seasons.items()
+            if (row.get(field) or "").strip()
+        }
+        if history:
+            histories[name] = history
+        if club_history:
+            clubs[name] = club_history
+
+        latest = max(history) if history else None
+        latest_club_season = max(club_history) if club_history else None
+
+        def number(field):
+            try:
+                raw = (row.get(field) or "").strip().replace(",", ".")
+                return float(raw) if raw else None
+            except ValueError:
+                return None
+
+        players.append({
+            "nom": name,
+            "poste": (row.get("poste") or "").strip() or None,
+            "nom_equipe": club_history.get(latest_club_season) if latest_club_season is not None else None,
+            "age": number("age_actuel"),
+            "salaire": number("salaire_actuel"),
+            "celebrite": history.get(latest) if latest is not None else None,
+        })
+    if not players or not histories:
+        raise ValueError("export joueurs vide")
+    return {
+        "players": players,
+        "histories": histories,
+        "clubs": clubs,
+        "seasons": sorted(celeb_seasons),
+    }
+
+
+def player_data_cache_path():
+    return os.path.join(_config_dir(), PLAYER_DATA_NAME)
+
+
+def save_player_data(data):
+    """Valide puis écrit atomiquement le dernier export joueurs."""
+    parsed = parse_player_history_csv(data)
+    path = player_data_cache_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix="data_joueurs-", suffix=".csv",
+                                     dir=os.path.dirname(path))
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data if isinstance(data, bytes) else data.encode("utf-8"))
+        os.replace(temporary, path)
+    except Exception:
+        try:
+            os.remove(temporary)
+        except OSError:
+            pass
+        raise
+    return parsed
+
+
+def load_bundled_player_data():
+    """Charge le cache actualisé, puis le CSV embarqué si aucun cache n'existe."""
+    paths = [player_data_cache_path(), resource_path(PLAYER_DATA_NAME)]
+    seen = set()
+    for path in paths:
+        if path in seen:
+            continue
+        seen.add(path)
+        try:
+            with open(path, "rb") as f:
+                return parse_player_history_csv(f.read())
+        except (OSError, UnicodeError, ValueError):
+            pass
+    return None
+
+
 def parse_team_roster(html):
     """Effectif d'une équipe depuis /equipes/<nom> : liste de {nom, poste}.
 
@@ -499,6 +792,125 @@ def parse_player_clubs(html):
             if m:
                 clubs[int(m.group(1))] = m.group(2).strip()
     return clubs
+
+
+def _png_rows(png):
+    """Décode un PNG RGB/RGBA 8 bits en lignes de pixels, sans dépendance externe."""
+    if not png.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError("image PNG invalide")
+    pos, compressed = 8, bytearray()
+    width = height = color_type = None
+    while pos + 12 <= len(png):
+        size = struct.unpack(">I", png[pos:pos + 4])[0]
+        kind = png[pos + 4:pos + 8]
+        data = png[pos + 8:pos + 8 + size]
+        pos += size + 12
+        if kind == b"IHDR":
+            width, height, depth, color_type, _, _, interlace = struct.unpack(
+                ">IIBBBBB", data
+            )
+            if depth != 8 or color_type not in (2, 6) or interlace:
+                raise ValueError("format PNG non pris en charge")
+        elif kind == b"IDAT":
+            compressed.extend(data)
+        elif kind == b"IEND":
+            break
+    if not width or not height:
+        raise ValueError("dimensions PNG absentes")
+
+    channels = 3 if color_type == 2 else 4
+    stride = width * channels
+    raw = zlib.decompress(bytes(compressed))
+    rows, previous, offset = [], bytearray(stride), 0
+
+    def paeth(a, b, c):
+        p = a + b - c
+        pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
+        return a if pa <= pb and pa <= pc else (b if pb <= pc else c)
+
+    for _ in range(height):
+        filter_type = raw[offset]
+        offset += 1
+        row = bytearray(raw[offset:offset + stride])
+        offset += stride
+        for i in range(stride):
+            left = row[i - channels] if i >= channels else 0
+            up = previous[i]
+            upper_left = previous[i - channels] if i >= channels else 0
+            if filter_type == 1:
+                row[i] = (row[i] + left) & 255
+            elif filter_type == 2:
+                row[i] = (row[i] + up) & 255
+            elif filter_type == 3:
+                row[i] = (row[i] + (left + up) // 2) & 255
+            elif filter_type == 4:
+                row[i] = (row[i] + paeth(left, up, upper_left)) & 255
+            elif filter_type != 0:
+                raise ValueError("filtre PNG non pris en charge")
+        rows.append(row)
+        previous = row
+    return width, height, channels, rows
+
+
+def parse_celebrity_history(html, current=None):
+    """Extrait l'historique de célébrité depuis le graphique PNG d'une fiche.
+
+    Le site ne publie pas les valeurs du graphique sous forme structurée. On
+    retrouve donc les points bleus et leurs coordonnées. La valeur la plus
+    récente est ancrée sur `current` (valeur exacte de /joueurs) ; les valeurs
+    passées sont des estimations assez précises pour comparer les évolutions.
+    Renvoie {n_saison: valeur}.
+    """
+    match = CELEB_CHART_RE.search(html)
+    seasons = sorted(parse_player_clubs(html))
+    if not match or len(seasons) < 2:
+        return {}
+    try:
+        width, height, channels, rows = _png_rows(base64.b64decode(match.group(1)))
+    except Exception:
+        return {}
+
+    def dark(x, y):
+        px = rows[y][x * channels:x * channels + 3]
+        return len(px) == 3 and max(px) < 55
+
+    # Les quatre bords noirs de l'axe sont les lignes sombres les plus longues.
+    left = max(range(max(1, width // 25), max(2, width // 4)),
+               key=lambda x: sum(dark(x, y) for y in range(height // 20, height - height // 10)))
+    right = max(range(width * 3 // 4, width - max(1, width // 100)),
+                key=lambda x: sum(dark(x, y) for y in range(height // 20, height - height // 10)))
+    top = max(range(height // 25, height // 3),
+              key=lambda y: sum(dark(x, y) for x in range(left, right + 1)))
+    bottom = max(range(height // 2, height - height // 12),
+                 key=lambda y: sum(dark(x, y) for x in range(left, right + 1)))
+    if right <= left or bottom <= top:
+        return {}
+
+    # Matplotlib ajoute une marge horizontale de 5 % autour des points.
+    span = len(seasons) - 1
+    domain = span * 1.1
+    points_y = []
+    for i in range(len(seasons)):
+        expected_x = left + ((i + span * 0.05) / domain) * (right - left)
+        ys = []
+        for y in range(max(0, top - 3), min(height, bottom + 4)):
+            for x in range(max(0, round(expected_x) - 8), min(width, round(expected_x) + 9)):
+                r, g, b = rows[y][x * channels:x * channels + 3]
+                if r > 70 and g - r > 20 and b - r > 25 and b - g > 10:
+                    ys.append(y)
+        if not ys:
+            return {}
+        ys.sort()
+        mid = len(ys) // 2
+        points_y.append((ys[mid] if len(ys) % 2 else (ys[mid - 1] + ys[mid]) / 2))
+
+    scale = 100 / (bottom - top)
+    anchor = float(current) if current is not None else (bottom - points_y[-1]) * scale
+    latest_y = points_y[-1]
+    return {
+        season: round(max(0, min(100, anchor + (latest_y - y) * scale)), 1)
+        for season, y in zip(seasons, points_y)
+    }
 
 
 def fetch_competition(name):
@@ -738,6 +1150,46 @@ def position_percentile(players, poste, field, value):
     n = len(pool)
     return {"n": n, "median": _median(pool), "mean": round(sum(pool) / n, 2),
             "pct": round(sum(1 for v in pool if v < value) / n * 100)}
+
+
+def celebrity_evolution_rows(players, histories, season_from, season_to, poste=None):
+    """Joueurs comparables entre deux saisons, avec leur delta de célébrité."""
+    out = []
+    for player in players:
+        if poste and player.get("poste") != poste:
+            continue
+        hist = histories.get(player.get("nom")) or {}
+        before, after = hist.get(season_from), hist.get(season_to)
+        if before is None or after is None:
+            continue
+        out.append({
+            "nom": player.get("nom"),
+            "poste": player.get("poste"),
+            "team": player.get("nom_equipe"),
+            "before": before,
+            "after": after,
+            "delta": round(after - before, 1),
+            "player": player,
+        })
+    return out
+
+
+def role_evolution_summary(rows):
+    """Résumé des évolutions par poste, trié par évolution moyenne."""
+    grouped = {}
+    for row in rows:
+        if row.get("poste"):
+            grouped.setdefault(row["poste"], []).append(row)
+    out = []
+    for poste, role_rows in grouped.items():
+        out.append({
+            "poste": poste,
+            "count": len(role_rows),
+            "avg": round(sum(r["delta"] for r in role_rows) / len(role_rows), 1),
+            "rise": max(role_rows, key=lambda r: r["delta"]),
+            "drop": min(role_rows, key=lambda r: r["delta"]),
+        })
+    return sorted(out, key=lambda r: r["avg"], reverse=True)
 
 
 # Le modèle du jeu : un match est un entonnoir Possession -> Création -> Occasion
@@ -1074,6 +1526,39 @@ def selftest_offline():
     assert sd["A"]["save"] == 66.7 and sd["A"]["conv"] == 28.6 and sd["A"]["clean"] == 1
     print("  ✓ parse_player_clubs / season_domstats_from_csv OK")
 
+    # 13) évolutions de célébrité : filtre poste + résumé par rôle.
+    evo_players = [
+        {"nom": "A", "poste": "MOFF", "nom_equipe": "X"},
+        {"nom": "B", "poste": "MOFF", "nom_equipe": "Y"},
+        {"nom": "C", "poste": "GAR", "nom_equipe": "Z"},
+    ]
+    evo_hist = {"A": {2: 70.0, 3: 75.0}, "B": {2: 80.0, 3: 72.0},
+                "C": {2: 50.0, 3: 52.0}}
+    evos = celebrity_evolution_rows(evo_players, evo_hist, 2, 3)
+    assert [r["delta"] for r in evos] == [5.0, -8.0, 2.0]
+    assert [r["nom"] for r in celebrity_evolution_rows(
+        evo_players, evo_hist, 2, 3, "MOFF"
+    )] == ["A", "B"]
+    roles = {r["poste"]: r for r in role_evolution_summary(evos)}
+    assert roles["MOFF"]["avg"] == -1.5 and roles["MOFF"]["drop"]["nom"] == "B"
+    assert roles["GAR"]["rise"]["nom"] == "C"
+    print("  ✓ celebrity_evolution_rows / role_evolution_summary OK")
+
+    # 14) export joueurs : saisons détectées dynamiquement + données exactes.
+    player_csv = (
+        "nom,poste,age_actuel,salaire_actuel,nom_equipe_0,nom_equipe_1,"
+        "nom_equipe_3,celebrite_0,celebrite_1,celebrite_3\n"
+        "A,MOFF,24,12.5,X,Y,Z,70.0,75.5,71.2\n"
+        "B,GAR,30,,Q,Q,,40,42,\n"
+    )
+    parsed = parse_player_history_csv(player_csv)
+    assert parsed["seasons"] == [0, 1, 3]
+    assert parsed["histories"]["A"] == {0: 70.0, 1: 75.5, 3: 71.2}
+    assert parsed["clubs"]["A"] == {0: "X", 1: "Y", 3: "Z"}
+    assert parsed["players"][0]["nom_equipe"] == "Z"
+    assert parsed["players"][1]["salaire"] is None
+    print("  ✓ parse_player_history_csv OK (saisons dynamiques, valeurs manquantes)")
+
 
 def selftest():
     print("→ Tests hors-ligne…")
@@ -1082,6 +1567,11 @@ def selftest():
     comps = parse_competitions(http_get(SAISON_PATH))
     print(f"  {len(comps)} compétitions : {', '.join(comps[:6])} …")
     assert comps, "aucune compétition trouvée"
+
+    print("→ Téléchargement de l'export joueurs via /joueurs…")
+    exported = parse_player_history_csv(download_players_csv())
+    assert len(exported["players"]) > 500 and len(exported["seasons"]) >= 2
+    print(f"  ✓ {len(exported['players'])} joueurs, saisons {exported['seasons']}")
 
     tr = LiveTracker()
     for comp in ["Premier League", "Champions League"]:
@@ -1239,6 +1729,12 @@ def run_gui():
                             command=lambda: open_league_players())
     players_btn.pack(side="right", padx=(0, 4))
 
+    evolution_btn = tk.Button(bar2, text="📈", bg=CARD, fg=FG, bd=0, relief="flat",
+                              activebackground=ACCENT, activeforeground="#fff",
+                              font=("TkDefaultFont", 8), cursor="hand2",
+                              command=lambda: open_evolution_window())
+    evolution_btn.pack(side="right", padx=(0, 4))
+
     # ---- zone défilante ---------------------------------------------------
     body_wrap = tk.Frame(root, bg=BG)
     body_wrap.pack(fill="both", expand=True)
@@ -1286,10 +1782,19 @@ def run_gui():
         "roster_inflight": set(),           # équipes en cours de récupération (anti-doublon)
         "player_win": None,    # fenêtre "fiche joueur" ouverte (réutilisée)
         "league_win": None,    # fenêtre "joueurs de la ligue par poste" (réutilisée)
+        "evolution_win": None,  # fenêtre "évolutions de célébrité" (réutilisée)
         "domstats": {},        # cache {compétition: {équipe: stats par domaine}}, invalidé au poll
         "domstats_inflight": set(),   # compétitions en cours de récupération (anti-doublon)
         "history": None,       # {n_saison: {équipe: stats par domaine}} (CSV saisons passées)
         "player_clubs": {},    # cache {nom joueur: {n_saison: club}}
+        "celebrity_histories": {},    # {nom joueur: {saison: célébrité exacte du CSV}}
+        "evolution_players": [],      # joueurs de l'export, y compris les anciens
+        "evolution_seasons": [],
+        "evolution_source": "",
+        "evolution_error": "",
+        "evolution_loading": False,
+        "evolution_done": 0,
+        "evolution_total": 0,
     }
 
     # ---- rendu ------------------------------------------------------------
@@ -1786,6 +2291,282 @@ def run_gui():
                     pass
 
             threading.Thread(target=load_clubs, daemon=True).start()
+
+    # ---- évolutions de célébrité par saison et par poste ------------------
+    def apply_player_data(parsed, source):
+        state["celebrity_histories"] = parsed["histories"]
+        state["evolution_players"] = parsed["players"]
+        state["evolution_seasons"] = parsed["seasons"]
+        state["player_clubs"].update(parsed["clubs"])
+        state["evolution_done"] = len(parsed["histories"])
+        state["evolution_total"] = len(parsed["players"])
+        state["evolution_source"] = source
+
+    def load_player_data():
+        """Charge immédiatement le CSV local, puis demande la version du site."""
+        parsed = load_bundled_player_data()
+        if parsed:
+            apply_player_data(parsed, "CSV local")
+        start_evolution_load(force=True)
+
+    def start_evolution_load(force=False):
+        """Actualise en arrière-plan l'export CSV produit par la page `/joueurs`."""
+        if state["evolution_loading"]:
+            return
+        if state["celebrity_histories"] and not force:
+            return
+        state["evolution_loading"] = True
+        state["evolution_error"] = ""
+
+        def work():
+            try:
+                parsed = save_player_data(download_players_csv())
+                apply_player_data(parsed, "CSV /joueurs actualisé")
+            except Exception as exc:
+                state["evolution_error"] = str(exc)[:120]
+            finally:
+                state["evolution_loading"] = False
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def open_evolution_window():
+        old = state.get("evolution_win")
+        if old is not None and old.winfo_exists():
+            old.lift()
+            return
+        win = tk.Toplevel(root)
+        state["evolution_win"] = win
+        win.title("📈 Évolutions de célébrité")
+        win.configure(bg=BG)
+        win.geometry("1000x680")
+        win.minsize(760, 400)
+        try:
+            win.attributes("-topmost", bool(topmost_var.get()))
+        except tk.TclError:
+            pass
+        win.lift()
+
+        periods = {}
+        period_v = tk.StringVar()
+        poste_v = tk.StringVar(value="Tous")
+        status = tk.StringVar(value="chargement des joueurs…")
+        source = tk.StringVar(value="Données exactes de l'export CSV /joueurs.")
+
+        bar = tk.Frame(win, bg=HDR)
+        bar.pack(fill="x", side="top")
+        tk.Label(bar, text="Période", bg=HDR, fg=MUTED,
+                 font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
+        period_box = ttk.Combobox(bar, textvariable=period_v, values=list(periods),
+                                  state="readonly", width=14)
+        period_box.pack(side="left", padx=(0, 8), pady=4)
+        tk.Label(bar, text="Poste", bg=HDR, fg=MUTED,
+                 font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+        poste_box = ttk.Combobox(bar, textvariable=poste_v,
+                                 values=["Tous"] + list(PLAYER_POSTES),
+                                 state="readonly", width=7)
+        poste_box.pack(side="left", pady=4)
+        refresh = tk.Button(bar, text="↻", bg=CARD, fg=FG, bd=0, relief="flat",
+                            activebackground=ACCENT, activeforeground="#fff",
+                            font=("TkDefaultFont", 10, "bold"), cursor="hand2",
+                            command=lambda: start_evolution_load(force=True))
+        refresh.pack(side="right", padx=6, pady=4)
+
+        tk.Label(win, textvariable=status, bg=BG, fg=MUTED, anchor="w",
+                 font=("TkDefaultFont", 8)).pack(fill="x", padx=8, pady=(4, 0))
+        tk.Label(win, textvariable=source, bg=BG, fg=MUTED, anchor="w",
+                 font=("TkDefaultFont", 7)).pack(fill="x", padx=8)
+
+        cv = tk.Canvas(win, bg=BG, highlightthickness=0, bd=0)
+        sb = tk.Scrollbar(win, orient="vertical", command=cv.yview)
+        cv.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        cv.pack(side="left", fill="both", expand=True)
+        content = tk.Frame(cv, bg=BG)
+        bid = cv.create_window((0, 0), window=content, anchor="nw")
+        content.bind("<Configure>", lambda _e: cv.configure(scrollregion=cv.bbox("all")))
+        cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
+
+        def _wheel(e):
+            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            return "break"
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            win.bind(seq, _wheel)
+
+        def player_comp(team):
+            current = comp_var.get()
+            if current != ALL_KEY:
+                return current
+            if state["last"] and state["last"][0] == ALL_KEY:
+                for comp, groups in (state["last"][1] or {}).items():
+                    if any(team in (m.get("a"), m.get("b"))
+                           for group in groups for m in group["matches"]):
+                        return comp
+            return competitions[1] if len(competitions) > 1 else current
+
+        def open_row(row):
+            open_player(player_comp(row["team"]), row["team"], row["player"])
+
+        def delta_text(value):
+            return f"{value:+.1f}"
+
+        def cell(parent, row, col, text, bg, fg=FG, left=False, bold=False, width=None):
+            label = tk.Label(parent, text=text, bg=bg, fg=fg,
+                             font=("TkDefaultFont", 8, "bold" if bold else "normal"),
+                             anchor="w" if left else "center", padx=4, width=width)
+            label.grid(row=row, column=col, sticky="we", padx=1)
+            return label
+
+        def player_table(parent, title, rows, descending):
+            tk.Label(parent, text=title, bg=BG, fg=ACCENT, anchor="w",
+                     font=("TkDefaultFont", 10, "bold")).pack(
+                         fill="x", padx=10, pady=(10, 2))
+            grid = tk.Frame(parent, bg=BG)
+            grid.pack(fill="x", padx=6)
+            headers = ["#", "Joueur", "Poste", "Équipe", "Avant → après", "Δ"]
+            widths = [3, 22, 6, 20, 15, 7]
+            for ci, header in enumerate(headers):
+                cell(grid, 0, ci, header, HDR, MUTED, left=ci in (1, 3), bold=True,
+                     width=widths[ci])
+            ordered = sorted(rows, key=lambda r: r["delta"], reverse=descending)[:12]
+            for ri, row in enumerate(ordered, start=1):
+                rowbg = CARD if ri % 2 else BG
+                color = GREEN if row["delta"] > 0 else (LIVE if row["delta"] < 0 else MUTED)
+                labels = [
+                    cell(grid, ri, 0, str(ri), rowbg, MUTED, width=widths[0]),
+                    cell(grid, ri, 1, row["nom"] or "?", rowbg, FG, left=True, width=widths[1]),
+                    cell(grid, ri, 2, row["poste"] or "?", rowbg, MUTED, width=widths[2]),
+                    cell(grid, ri, 3, row["team"] or "?", rowbg, MUTED, left=True, width=widths[3]),
+                    cell(grid, ri, 4, f"{row['before']:.1f} → {row['after']:.1f}", rowbg,
+                         width=widths[4]),
+                    cell(grid, ri, 5, delta_text(row["delta"]), rowbg, color, bold=True,
+                         width=widths[5]),
+                ]
+                for label in labels:
+                    label.configure(cursor="hand2")
+                    label.bind("<Button-1>", lambda _e, r=row: open_row(r))
+            grid.grid_columnconfigure(1, weight=1)
+            grid.grid_columnconfigure(3, weight=1)
+
+        def render():
+            page = tk.Frame(content, bg=BG)
+
+            def show_page():
+                for widget in content.winfo_children():
+                    if widget is not page:
+                        widget.destroy()
+                page.pack(fill="both", expand=True)
+
+            seasons = state.get("evolution_seasons") or []
+            fresh_periods = {
+                f"Saison {before} → {after}": (before, after)
+                for before, after in zip(seasons, seasons[1:])
+            }
+            if fresh_periods != periods:
+                periods.clear()
+                periods.update(fresh_periods)
+                period_box.configure(values=list(periods))
+                if period_v.get() not in periods:
+                    meaningful = [
+                        label for label, (before, after) in periods.items()
+                        if any(
+                            history.get(before) is not None
+                            and history.get(after) is not None
+                            and history[before] != history[after]
+                            for history in state["celebrity_histories"].values()
+                        )
+                    ]
+                    period_v.set(meaningful[-1] if meaningful else next(reversed(periods), ""))
+
+            players = state.get("evolution_players") or []
+            if not players:
+                status.set("chargement de l'export joueurs…")
+                tk.Label(page, text="Chargement…", bg=BG, fg=MUTED,
+                         font=("TkDefaultFont", 9)).pack(anchor="w", padx=10, pady=8)
+                show_page()
+                return
+
+            start_evolution_load()
+            done, total = state["evolution_done"], state["evolution_total"]
+            refresh_text = " · actualisation…" if state["evolution_loading"] else ""
+            error_text = f" · actualisation impossible : {state['evolution_error']}" \
+                if state["evolution_error"] else ""
+            status.set(f"{done}/{total} historiques CSV chargés{refresh_text}{error_text}")
+            source.set(f"Données exactes · {state['evolution_source'] or 'export CSV /joueurs'}")
+            if not periods or period_v.get() not in periods:
+                tk.Label(page, text="Pas encore assez de saisons dans l'export.",
+                         bg=BG, fg=MUTED, font=("TkDefaultFont", 9)).pack(
+                             anchor="w", padx=10, pady=10)
+                show_page()
+                return
+            season_from, season_to = periods[period_v.get()]
+            all_rows = celebrity_evolution_rows(
+                players, state["celebrity_histories"], season_from, season_to
+            )
+            selected = None if poste_v.get() == "Tous" else poste_v.get()
+            rows = [r for r in all_rows if not selected or r["poste"] == selected]
+
+            tk.Label(page, text="Évolution moyenne par poste", bg=BG, fg=ACCENT, anchor="w",
+                     font=("TkDefaultFont", 10, "bold")).pack(
+                         fill="x", padx=10, pady=(8, 2))
+            role_grid = tk.Frame(page, bg=BG)
+            role_grid.pack(fill="x", padx=6)
+            role_headers = ["Poste", "Joueurs", "Moyenne", "Plus forte hausse", "Plus forte baisse"]
+            role_widths = [7, 8, 9, 28, 28]
+            for ci, header in enumerate(role_headers):
+                cell(role_grid, 0, ci, header, HDR, MUTED, left=ci in (0, 3, 4), bold=True,
+                     width=role_widths[ci])
+            for ri, role in enumerate(role_evolution_summary(all_rows), start=1):
+                rowbg = CARD if ri % 2 else BG
+                avg_color = GREEN if role["avg"] > 0 else (LIVE if role["avg"] < 0 else MUTED)
+                labels = [
+                    cell(role_grid, ri, 0, role["poste"], rowbg, FG, left=True, bold=True,
+                         width=role_widths[0]),
+                    cell(role_grid, ri, 1, str(role["count"]), rowbg, width=role_widths[1]),
+                    cell(role_grid, ri, 2, delta_text(role["avg"]), rowbg, avg_color, bold=True,
+                         width=role_widths[2]),
+                    cell(role_grid, ri, 3, f"{role['rise']['nom']} "
+                         f"({delta_text(role['rise']['delta'])})", rowbg, GREEN, left=True,
+                         width=role_widths[3]),
+                    cell(role_grid, ri, 4, f"{role['drop']['nom']} "
+                         f"({delta_text(role['drop']['delta'])})", rowbg, LIVE, left=True,
+                         width=role_widths[4]),
+                ]
+                for label in labels:
+                    label.configure(cursor="hand2")
+                    label.bind("<Button-1>", lambda _e, p=role["poste"]:
+                               (poste_v.set(p), render()))
+            role_grid.grid_columnconfigure(3, weight=1)
+            role_grid.grid_columnconfigure(4, weight=1)
+
+            label = selected or "tous postes"
+            if rows:
+                player_table(page, f"Plus fortes hausses · {label}", rows, True)
+                player_table(page, f"Plus fortes baisses · {label}", rows, False)
+            else:
+                tk.Label(page, text="Pas encore assez d'historiques pour cette sélection.",
+                         bg=BG, fg=MUTED, font=("TkDefaultFont", 9)).pack(
+                             anchor="w", padx=10, pady=10)
+            show_page()
+
+        progress = {"sig": None}
+
+        def tick():
+            if not win.winfo_exists():
+                return
+            sig = (state["evolution_done"] // 50, state["evolution_total"],
+                   state["evolution_loading"], len(state.get("evolution_players") or []),
+                   tuple(state.get("evolution_seasons") or []),
+                   state["evolution_source"], state["evolution_error"],
+                   period_v.get(), poste_v.get())
+            if sig != progress["sig"]:
+                progress["sig"] = sig
+                render()
+            win.after(800, tick)
+
+        period_box.bind("<<ComboboxSelected>>", lambda *_: render())
+        poste_box.bind("<<ComboboxSelected>>", lambda *_: render())
+        render()
+        win.after(800, tick)
 
     # ---- joueurs de la ligue par poste (bouton 👤 / clic sur une stat) ----
     def open_league_players():
@@ -2505,6 +3286,7 @@ def run_gui():
     threading.Thread(target=load_comp_list, daemon=True).start()
     threading.Thread(target=load_squads, daemon=True).start()
     threading.Thread(target=load_history, daemon=True).start()
+    threading.Thread(target=load_player_data, daemon=True).start()
     threading.Thread(target=poll_loop, daemon=True).start()
     root.mainloop()
 

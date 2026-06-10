@@ -49,6 +49,7 @@ python -m PyInstaller `
     --add-data "foot-live.png;." `
     --add-data "matchs_saison_0.csv;." `
     --add-data "matchs_saison_1.csv;." `
+    --add-data "data_joueurs.csv;." `
     "foot_scores.py"
 
 Write-Host "Built dist\FootLive.exe"

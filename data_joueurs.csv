@@ -1,0 +1,1016 @@
+nom,poste,age_actuel,salaire_actuel,nom_equipe_0,nom_equipe_1,nom_equipe_2,nom_equipe_3,celebrite_0,celebrite_1,celebrite_2,celebrite_3
+David Raya,GAR,32.0,26.78,Arsenal,Arsenal,Arsenal,Arsenal,92.9,96.8,95.7,95.7
+William Saliba,DC,26.0,27.53,Arsenal,Arsenal,Arsenal,Arsenal,99.4,99.5,96.7,96.7
+Jurrien Timber,LAT,26.0,26.93,Arsenal,Arsenal,Arsenal,Arsenal,98.6,98.9,95.9,95.9
+Declan Rice,MDEF,28.0,28.65,Arsenal,Arsenal,Arsenal,Arsenal,96.6,98.6,98.2,98.2
+Martin Odegaard,MOFF,28.0,27.45,Arsenal,Arsenal,Arsenal,Arsenal,89.5,96.5,96.6,96.6
+Bukayo Saka,AIL,26.0,27.68,Arsenal,Arsenal,Arsenal,Arsenal,98.6,99.2,96.9,96.9
+Viktor Gyokeres,AC,29.0,27.9,Arsenal,Arsenal,Arsenal,Arsenal,82.9,96.3,97.2,97.2
+Gianluigi Donnaruma,GAR,28.0,24.6,Manchester City,Manchester City,Athletic Bilbao,Athletic Bilbao,92.3,94.2,92.8,92.8
+Ruben Dias,DC,30.0,26.32,Manchester City,Manchester City,Manchester City,Manchester City,90.3,93.7,95.1,95.1
+Matheus Nunes,LAT,29.0,24.82,Manchester City,Manchester City,Manchester City,Manchester City,78.7,87.9,93.1,93.1
+Rodri,MDEF,31.0,28.2,Manchester City,Bayern Munich,Bayern Munich,Bayern Munich,97.4,97.0,97.6,97.6
+Rayan Cherki,MOFF,24.0,29.1,Manchester City,Manchester City,Manchester City,Manchester City,98.0,98.4,98.8,98.8
+Jeremy Doku,AIL,25.0,29.7,Manchester City,Manchester City,PSG,PSG,97.6,98.1,99.6,99.6
+Erling Haaland,AC,27.0,28.35,Manchester City,SSC Napoli,SSC Napoli,SSC Napoli,99.9,99.6,97.8,97.8
+Alisson,GAR,35.0,22.2,Liverpool FC,Bayern Munich,Bayern Munich,Bayern Munich,95.4,93.1,89.6,89.6
+Ibrahima Konaté,DC,28.0,21.07,Liverpool FC,Liverpool FC,Feynenoord Rotterdam,Feynenoord Rotterdam,82.9,82.8,88.1,88.1
+Andrew Robertson,LAT,33.0,15.15,Liverpool FC,Liverpool FC,Liverpool FC,Liverpool FC,74.8,76.9,80.2,80.2
+Ryan Gravenbech,MDEF,25.0,23.55,Liverpool FC,SSC Napoli,SSC Napoli,SSC Napoli,96.3,94.7,91.4,91.4
+Florian Wirtz,MOFF,24.0,28.5,Liverpool FC,Liverpool FC,Liverpool FC,Liverpool FC,99.2,98.3,98.0,98.0
+Mohamed Salah,AIL,35.0,18.15,Liverpool FC,Liverpool FC,Liverpool FC,Liverpool FC,82.7,80.7,84.2,84.2
+Hugo Ekitike,AC,25.0,26.18,Liverpool FC,Liverpool FC,Liverpool FC,Liverpool FC,97.6,95.3,94.9,94.9
+Robert Sanchez,GAR,30.0,15.07,Chelsea,Chelsea,Chelsea,Chelsea,57.7,59.9,80.1,80.1
+Wesley Fofana,DC,26.0,21.82,Chelsea,Chelsea,Chelsea,Chelsea,88.5,89.6,89.1,89.1
+Marc Cucurella,LAT,29.0,24.07,Chelsea,Chelsea,Chelsea,Chelsea,92.3,89.5,92.1,92.1
+Moses Caicedo,MDEF,26.0,25.95,Chelsea,Chelsea,Chelsea,Chelsea,99.6,98.5,94.6,94.6
+Cole Palmer,MOFF,25.0,28.28,Chelsea,Chelsea,Chelsea,Chelsea,99.0,97.9,97.7,97.7
+Estevao,AIL,20.0,27.0,Chelsea,Chelsea,Chelsea,Chelsea,94.9,93.5,96.0,96.0
+Joao Pedro,AC,26.0,23.03,Chelsea,Chelsea,Chelsea,Chelsea,88.5,88.7,90.7,90.7
+Aaron Ramsdale,GAR,29.0,6.67,Newcastle,Newcastle,Torino FC,Torino FC,60.2,57.4,53.4,53.4
+Malick Thiaw,DC,26.0,22.72,Newcastle,Newcastle,Stade Rennais,Stade Rennais,94.3,90.3,90.3,90.3
+Tino Livarameto,LAT,25.0,18.82,Newcastle,Newcastle,Newcastle,Newcastle,89.8,86.5,85.1,85.1
+Bruno Guimares,MDEF,30.0,16.28,Newcastle,Newcastle,Newcastle,Newcastle,90.3,85.3,81.7,81.7
+Joe Willock,MOFF,28.0,6.2,Newcastle,Toulouse FC,Toulouse FC,Toulouse FC,46.2,45.7,49.6,49.6
+Anthony Gordon,AIL,26.0,18.75,Newcastle,Newcastle,RC Lens,RC Lens,94.3,90.1,85.0,85.0
+Nick Woltemade,AC,25.0,22.35,Newcastle,Newcastle,Newcastle,Newcastle,95.2,92.0,89.8,89.8
+Dean Henderson,GAR,30.0,10.88,Crystal Palace,Crystal Palace,Newcastle,Newcastle,70.8,65.2,69.0,69.0
+Marc Guéhi,DC,27.0,12.71,Crystal Palace,Crystal Palace,Crystal Palace,Crystal Palace,93.6,90.4,73.9,73.9
+Daniel Munoz,LAT,27.0,11.17,Crystal Palace,Crystal Palace,Basaksehir FK,Basaksehir FK,91.4,87.6,69.8,69.8
+Adam Wharton,MDEF,23.0,21.75,Crystal Palace,Crystal Palace,Strasbourg,Strasbourg,94.0,89.9,89.0,89.0
+Daichi Kamada,MOFF,31.0,6.61,Crystal Palace,Crystal Palace,Crystal Palace,Crystal Palace,44.1,43.7,52.9,52.9
+Ismaila Sarr,AIL,29.0,9.64,Crystal Palace,Crystal Palace,Crystal Palace,Crystal Palace,65.8,63.7,65.7,65.7
+Jean-Philippe Mateta,AC,30.0,12.67,Crystal Palace,Crystal Palace,Crystal Palace,Crystal Palace,76.9,72.6,73.8,73.8
+Bart Verbruggen,GAR,25.0,14.14,Brighton,Brighton,SSC Napoli,SSC Napoli,81.7,78.7,77.7,77.7
+Jan Paul Van Hecke,DC,27.0,11.1,Brighton,Brighton,Brighton,Brighton,85.5,83.2,69.6,69.6
+Ferdi Kadioglu,LAT,28.0,7.91,Brighton,Brighton,Brighton,Brighton,60.2,59.6,61.1,61.1
+Carlos Baleba,MDEF,23.0,17.7,Brighton,Brighton,Getafe,Getafe,91.2,86.2,83.6,83.6
+Yasin Ayari,MOFF,24.0,13.39,Brighton,Brighton,Brighton,Brighton,79.3,76.4,75.7,75.7
+Kaoru Mitoma,AIL,30.0,11.96,Brighton,Brighton,Sparta Rotterdam,Sparta Rotterdam,76.9,71.0,71.9,71.9
+Georginio Rutter,AC,25.0,12.22,Brighton,Brighton,Gaziantep FK,Gaziantep FK,77.8,76.5,72.6,72.6
+Emiliano Martinez,GAR,35.0,13.61,Aston Villa,Aston Villa,Aston Villa,Aston Villa,86.0,85.7,76.3,76.3
+Pau Torres,DC,30.0,14.21,Aston Villa,Aston Villa,KAA La Gantoise,KAA La Gantoise,64.8,71.1,77.9,77.9
+Lucas Digne,LAT,34.0,8.96,Aston Villa,Standard de Liège,Standard de Liège,Standard de Liège,63.1,68.5,63.9,63.9
+Amadou Onana,MDEF,26.0,13.46,Aston Villa,Aston Villa,Girona FC,Girona FC,84.9,87.7,75.9,75.9
+John McGinn,MOFF,33.0,14.36,Aston Villa,Aston Villa,Aston Villa,Aston Villa,68.8,79.5,78.3,78.3
+Morgan Rogers,AIL,25.0,25.28,Aston Villa,Aston Villa,Aston Villa,Aston Villa,98.2,97.6,93.7,93.7
+Ollie Watkins,AC,31.0,17.32,Aston Villa,Juventus Turin,Juventus Turin,Juventus Turin,76.5,83.3,83.1,83.1
+Senne Lammens,GAR,25.0,11.85,Manchester United,Manchester United,Manchester United,Manchester United,86.6,82.7,71.6,71.6
+Lisandro Martinez,DC,30.0,11.4,Manchester United,Manchester United,Manchester United,Manchester United,76.9,73.1,70.4,70.4
+Patrick Dorgu,LAT,23.0,17.78,Manchester United,Manchester United,Borussia Dortmund,Borussia Dortmund,84.1,82.6,83.7,83.7
+Kobbie Mainoo,MDEF,22.0,19.57,Manchester United,Lazio Rome,Lazio Rome,Lazio Rome,84.7,82.2,86.1,86.1
+Bruno Fernandez,MOFF,33.0,23.18,Manchester United,Manchester United,Vfb Stuttgart,Vfb Stuttgart,94.8,90.9,90.9,90.9
+Bryan Mbeumo,AIL,28.0,15.68,Manchester United,Manchester United,Union Saint-Gilloise,Union Saint-Gilloise,89.5,86.8,80.9,80.9
+Matheus Cunha,AC,28.0,13.65,Manchester United,Manchester United,SC Braga,SC Braga,82.9,81.5,76.4,76.4
+Djordje Petrovic,GAR,28.0,8.36,Bournemouth,AS Monaco,AS Monaco,AS Monaco,65.8,63.4,62.3,62.3
+Bafode Diakite,DC,26.0,12.15,Bournemouth,Bournemouth,Bournemouth,Bournemouth,80.0,78.9,72.4,72.4
+Adrien Truffert,LAT,26.0,9.67,Bournemouth,Olympique de Marseille,Olympique de Marseille,Olympique de Marseille,84.9,81.5,65.8,65.8
+Tyler Adams,MDEF,28.0,11.55,Bournemouth,Bournemouth,KVC Westerlo,KVC Westerlo,60.2,56.8,70.8,70.8
+Ryan Christie,MOFF,32.0,6.4,Bournemouth,Bournemouth,UD Levante,UD Levante,56.9,54.7,51.2,51.2
+Antoine Semenyo,AIL,27.0,11.06,Bournemouth,Samsunspor,Samsunspor,Samsunspor,91.4,87.3,69.5,69.5
+Evanilson,AC,28.0,14.33,Bournemouth,SL Benfica,SL Benfica,SL Benfica,65.8,65.1,78.2,78.2
+Thibault Courtois,GAR,35.0,25.05,Real Madrid,Real Madrid,Real Madrid,Real Madrid,95.4,95.6,93.4,93.4
+Eder Militao,DC,29.0,23.85,Real Madrid,Real Madrid,Real Madrid,Real Madrid,86.1,91.8,91.8,91.8
+Alvaro Carreras,LAT,24.0,27.22,Real Madrid,Real Madrid,Real Madrid,Real Madrid,93.2,96.2,96.3,96.3
+Federico Valverde,MDEF,29.0,26.55,Real Madrid,Real Madrid,Real Madrid,Real Madrid,95.6,96.6,95.4,95.4
+Jude Bellingham,MOFF,24.0,29.62,Real Madrid,Real Madrid,Real Madrid,Real Madrid,99.2,99.7,99.5,99.5
+Vinicius Jnr,AIL,27.0,27.75,Real Madrid,Real Madrid,Real Madrid,Real Madrid,98.4,98.8,97.0,97.0
+Kylian Mbappé,AC,28.0,28.57,Real Madrid,Real Madrid,Real Madrid,Real Madrid,96.6,98.0,98.1,98.1
+Joan Garcia,GAR,26.0,27.07,FC Barcelone,FC Barcelone,FC Barcelone,FC Barcelone,97.0,95.9,96.1,96.1
+Pau Cubarsi,DC,20.0,29.18,FC Barcelone,FC Barcelone,FC Barcelone,FC Barcelone,94.9,95.5,98.9,98.9
+Jules Koundé,LAT,29.0,27.15,FC Barcelone,FC Barcelone,FC Barcelone,FC Barcelone,92.3,92.8,96.2,96.2
+Frenkie De Jong,MDEF,30.0,27.82,FC Barcelone,FC Barcelone,FC Barcelone,FC Barcelone,90.3,93.2,97.1,97.1
+Pedri,MOFF,25.0,28.88,FC Barcelone,FC Barcelone,Athletic Bilbao,Athletic Bilbao,99.8,99.4,98.5,98.5
+Lamine Yamal,AIL,20.0,29.85,FC Barcelone,FC Barcelone,FC Barcelone,FC Barcelone,99.7,99.3,99.8,99.8
+Ferran Torres,AC,27.0,21.68,FC Barcelone,Aston Villa,Aston Villa,Aston Villa,91.4,95.0,88.9,88.9
+Jan Oblak,GAR,34.0,22.28,Atlético Madrid,Atlético Madrid,Atlético Madrid,Atlético Madrid,92.8,88.2,89.7,89.7
+Jose Gimenez,DC,32.0,21.3,Atlético Madrid,Inter Milan,Inter Milan,Inter Milan,80.5,79.0,88.4,88.4
+Nahuel Molina,LAT,29.0,12.41,Atlético Madrid,Atlético Madrid,Atlético Madrid,Atlético Madrid,46.2,48.8,73.1,73.1
+Pablo Barrios,MDEF,24.0,27.38,Atlético Madrid,Atlético Madrid,Atlético Madrid,Atlético Madrid,96.8,95.1,96.5,96.5
+Thiago Almada,MOFF,26.0,20.78,Atlético Madrid,Atlético Madrid,Atlético Madrid,Atlético Madrid,84.9,85.5,87.7,87.7
+Giuliano Simeone,AIL,24.0,26.85,Atlético Madrid,Atlético Madrid,Atlético Madrid,Atlético Madrid,93.2,93.3,95.8,95.8
+Julian Alvarez,AC,27.0,25.57,Atlético Madrid,Atlético Madrid,Atlético Madrid,Atlético Madrid,98.4,96.7,94.1,94.1
+Unai Simon,GAR,30.0,25.2,Athletic Bilbao,Athletic Bilbao,Manchester City,Manchester City,84.5,91.2,93.6,93.6
+Dani Vivian,DC,28.0,21.07,Athletic Bilbao,Athletic Bilbao,Athletic Bilbao,Athletic Bilbao,82.9,88.1,88.1,88.1
+Jesus Areso,LAT,28.0,14.44,Athletic Bilbao,RC Lens,RC Lens,RC Lens,46.2,66.8,78.5,78.5
+Mikel Jauregizar,MDEF,24.0,25.12,Athletic Bilbao,Athletic Bilbao,Athletic Bilbao,Athletic Bilbao,87.2,94.1,93.5,93.5
+Oihan Sancet,MOFF,27.0,26.47,Athletic Bilbao,Athletic Bilbao,FC Porto,FC Porto,93.6,96.0,95.3,95.3
+Nico Williams,AIL,25.0,29.25,Athletic Bilbao,Athletic Bilbao,Stade Rennais,Stade Rennais,98.2,98.7,99.0,99.0
+Inaki Williams,AC,23.0,28.43,Athletic Bilbao,Athletic Bilbao,RB Leipzig,RB Leipzig,95.9,97.7,97.9,97.9
+Luiz Junior,GAR,26.0,11.89,Villareal,Villareal,AC Milan,AC Milan,80.0,79.2,71.7,71.7
+Juan Foyth,DC,29.0,7.44,Villareal,Villareal,Hoffenheim,Hoffenheim,60.2,59.5,59.5,59.5
+Rafa Marin,LAT,25.0,8.77,Villareal,Villareal,Villareal,Villareal,55.4,58.8,63.4,63.4
+Pape Gueye,MDEF,28.0,10.46,Villareal,Samsunspor,Samsunspor,Samsunspor,72.1,71.7,67.9,67.9
+Alberto Moleiro,MOFF,24.0,22.5,Villareal,Villareal,Villareal,Villareal,90.9,88.9,90.0,90.0
+Nicolas Pépé,AIL,32.0,12.86,Villareal,Villareal,Villareal,Villareal,76.0,73.7,74.3,74.3
+Gerard Moreno,AC,35.0,12.45,Villareal,KRC Genk,KRC Genk,KRC Genk,71.7,71.9,73.2,73.2
+Alex Remiro,GAR,32.0,13.84,Real Sociedad,Real Sociedad,Real Sociedad,Real Sociedad,80.5,80.0,76.9,76.9
+Igor Zubeldia,DC,30.0,7.08,Real Sociedad,Real Sociedad,Real Sociedad,Real Sociedad,44.7,47.8,56.6,56.6
+Jon Aramburu,LAT,25.0,18.9,Real Sociedad,AC Milan,AC Milan,AC Milan,77.8,78.6,85.2,85.2
+Jon Gorrotxategi,MDEF,25.0,8.25,Real Sociedad,Real Sociedad,Real Sociedad,Real Sociedad,47.6,57.0,62.0,62.0
+Brais Mendez,MOFF,30.0,11.36,Real Sociedad,Real Sociedad,Real Sociedad,Real Sociedad,64.8,68.7,70.3,70.3
+Takefusa Kubo,AIL,26.0,14.66,Real Sociedad,Real Sociedad,Real Sociedad,Real Sociedad,94.3,93.4,79.1,79.1
+Mikel Oyarzabal,AC,30.0,14.74,Real Sociedad,Real Sociedad,Real Sociedad,Real Sociedad,76.9,78.3,79.3,79.3
+Alvaro Valles,GAR,,,Real Betis,US Lecce,AS Anus,,51.0,47.4,51.9,
+Marc Bartra,DC,36.0,4.37,Real Betis,Real Betis,Real Betis,Real Betis,52.2,49.4,36.1,36.1
+Hector Bellerin,LAT,32.0,5.28,Real Betis,Real Betis,Real Betis,Real Betis,37.3,37.9,42.2,42.2
+Sofyan Amrabat,MDEF,31.0,6.47,Real Betis,Real Betis,Real Betis,Real Betis,50.2,49.0,51.8,51.8
+Giovani Lo Celso,MOFF,31.0,8.92,Real Betis,Real Betis,Real Betis,Real Betis,69.6,66.1,63.8,63.8
+Antony,AIL,27.0,10.65,Real Betis,Real Betis,Real Betis,Real Betis,89.0,85.0,68.4,68.4
+Chucho Hernandez,AC,28.0,7.42,Real Betis,Real Betis,Real Betis,Real Betis,60.2,57.9,59.4,59.4
+Julen Agirrezbalaga,GAR,26.0,6.95,Valence FC,Valence FC,Como,Como,73.6,73.6,55.6,55.6
+Cesar Tarrega,DC,25.0,15.53,Valence FC,AC Milan,AC Milan,AC Milan,70.0,69.3,80.7,80.7
+José Gaya,LAT,32.0,10.2,Valence FC,Valence FC,Valence FC,Valence FC,56.9,50.8,67.2,67.2
+Javi Guerra,MDEF,24.0,13.88,Valence FC,Basaksehir FK,Basaksehir FK,Basaksehir FK,79.3,74.4,77.0,77.0
+André Almeida,MOFF,27.0,4.3,Valence FC,Fc Köln,Fc Köln,Fc Köln,45.3,48.9,35.7,35.7
+Diego Lopez,AIL,25.0,20.47,Valence FC,Valence FC,Valence FC,Valence FC,81.7,80.9,87.3,87.3
+Hugo Duro,AC,28.0,7.88,Valence FC,Valence FC,RSC Anderlecht,RSC Anderlecht,53.6,51.1,61.0,61.0
+Paulo Gazzaniga,GAR,35.0,6.36,Girona FC,Girona FC,Girona FC,Girona FC,55.1,52.7,50.9,50.9
+Vitor Reis,DC,21.0,6.81,Girona FC,Sporting Charleroi,Sporting Charleroi,Sporting Charleroi,43.3,44.4,54.5,54.5
+Alex Moreno,LAT,34.0,5.03,Girona FC,Girona FC,AZ Alkmaar,AZ Alkmaar,42.2,38.8,40.2,40.2
+Azzedine Ounahi,MDEF,27.0,5.34,Girona FC,Girona FC,Mainz 05,Mainz 05,68.2,65.6,42.7,42.7
+Ivan Martin,MOFF,28.0,7.12,Girona FC,Girona FC,Girona FC,Girona FC,46.2,46.2,57.0,57.0
+Bryan Gil,AIL,26.0,8.48,Girona FC,Girona FC,Girona FC,Girona FC,73.6,76.3,62.6,62.6
+Vladyslav Vanat,AC,25.0,10.28,Girona FC,Girona FC,Mainz 05,Mainz 05,70.0,73.8,67.4,67.4
+David Soria,GAR,34.0,11.66,Getafe,KVC Westerlo,KVC Westerlo,KVC Westerlo,68.0,64.4,71.1,71.1
+Abdel Abqar,DC,28.0,5.22,Getafe,Getafe,Getafe,Getafe,28.8,29.0,41.8,41.8
+Juan Iglesias,LAT,29.0,2.21,Getafe,Getafe,Torino FC,Torino FC,28.8,27.0,22.8,22.8
+Mario Martin,MDEF,23.0,7.14,Getafe,Getafe,Como,Como,35.4,36.3,57.1,57.1
+Mauro Arambarri,MOFF,32.0,9.53,Getafe,Getafe,Getafe,Getafe,64.1,60.1,65.4,65.4
+Adrian Liso,AIL,22.0,6.86,Getafe,Rayo Vallecano,Rayo Vallecano,Rayo Vallecano,35.7,45.1,54.9,54.9
+Borja Mayoral,AC,30.0,7.73,Getafe,Getafe,Getafe,Getafe,44.7,44.3,60.6,60.6
+Jonas Urbig,GAR,24.0,24.97,Bayern Munich,Liverpool FC,Liverpool FC,Liverpool FC,71.1,88.3,93.3,93.3
+Dayot Upamecano,DC,29.0,26.1,Bayern Munich,Bayern Munich,Bayern Munich,Bayern Munich,95.6,95.4,94.8,94.8
+Alphonso Davies,LAT,27.0,25.43,Bayern Munich,Bayern Munich,Bayern Munich,Bayern Munich,96.9,97.1,93.9,93.9
+Joshua Kimmich,MDEF,32.0,28.05,Bayern Munich,Manchester City,Manchester City,Manchester City,96.2,96.1,97.4,97.4
+Jamal Musiala,MOFF,24.0,29.47,Bayern Munich,Bayern Munich,Bayern Munich,Bayern Munich,99.5,99.0,99.3,99.3
+Luis Diaz,AIL,30.0,25.5,Bayern Munich,Bayern Munich,Bayern Munich,Bayern Munich,87.8,92.4,94.0,94.0
+Harry Kane,AC,34.0,28.72,Bayern Munich,Manchester City,Manchester City,Manchester City,97.8,97.3,98.3,98.3
+Gregor Kobel,GAR,30.0,23.1,Borussia Dortmund,Borussia Dortmund,Borussia Dortmund,Borussia Dortmund,90.3,91.4,90.8,90.8
+Nico Schlotterbeck,DC,28.0,23.7,Borussia Dortmund,Borussia Dortmund,Valence FC,Valence FC,92.3,91.3,91.6,91.6
+Julian Ryerson,LAT,30.0,18.0,Borussia Dortmund,Borussia Dortmund,PSV Eindhoven,PSV Eindhoven,57.7,70.1,84.0,84.0
+Felix Nmecha,MDEF,27.0,24.45,Borussia Dortmund,Borussia Dortmund,Inter Milan,Inter Milan,93.6,94.5,92.6,92.6
+Jobe Bellingham,MOFF,22.0,23.4,Borussia Dortmund,Borussia Dortmund,Borussia Dortmund,Borussia Dortmund,72.9,87.1,91.2,91.2
+Karim Adeyemi,AIL,25.0,25.35,Borussia Dortmund,Borussia Dortmund,Borussia Dortmund,Borussia Dortmund,95.2,95.7,93.8,93.8
+Serhou Guirassy,AC,31.0,26.03,Borussia Dortmund,Borussia Dortmund,Feynenoord Rotterdam,Feynenoord Rotterdam,87.7,91.1,94.7,94.7
+Mark Flekken,GAR,34.0,5.35,Bayer Leverkusen,Pisa SC,Pisa SC,Pisa SC,48.8,46.3,42.8,42.8
+Edmond Tapsoba,DC,28.0,19.72,Bayer Leverkusen,FC Porto,FC Porto,FC Porto,72.1,72.4,86.3,86.3
+Alejandro Grimaldo,LAT,32.0,13.42,Bayer Leverkusen,Bayer Leverkusen,Bayer Leverkusen,Bayer Leverkusen,87.0,83.0,75.8,75.8
+Robert Andrich,MDEF,33.0,9.97,Bayer Leverkusen,Bayer Leverkusen,Bayer Leverkusen,Bayer Leverkusen,63.2,62.1,66.6,66.6
+Aleix Garcia,MOFF,30.0,12.3,Bayer Leverkusen,Bayer Leverkusen,FC Lorient,FC Lorient,81.5,77.7,72.8,72.8
+Eliesse Ben Seghir,AIL,22.0,16.8,Bayer Leverkusen,Bayer Leverkusen,Bayer Leverkusen,Bayer Leverkusen,72.9,77.6,82.4,82.4
+Chirstian Kofane,AC,21.0,15.9,Bayer Leverkusen,Bayer Leverkusen,Bayer Leverkusen,Bayer Leverkusen,59.5,69.4,81.2,81.2
+Peter Gulaci,GAR,36.0,20.7,RB Leipzig,RB Leipzig,RB Leipzig,RB Leipzig,84.3,92.7,87.6,87.6
+Castello Lukeba,DC,24.0,27.3,RB Leipzig,RB Leipzig,RB Leipzig,RB Leipzig,93.2,96.4,96.4,96.4
+David Raum,LAT,29.0,21.38,RB Leipzig,RB Leipzig,RB Leipzig,RB Leipzig,78.7,86.6,88.5,88.5
+Nicolas Seiwald,MDEF,26.0,20.25,RB Leipzig,RB Leipzig,Borussia Dortmund,Borussia Dortmund,80.0,92.9,87.0,87.0
+Christoph Baumgartner,MOFF,28.0,20.03,RB Leipzig,RB Leipzig,RB Leipzig,RB Leipzig,53.6,78.5,86.7,86.7
+Johan Bakayoko,AIL,24.0,26.62,RB Leipzig,RB Leipzig,RB Leipzig,RB Leipzig,90.9,95.8,95.5,95.5
+Romulo,AC,25.0,26.4,RB Leipzig,RB Leipzig,Borussia Dortmund,Borussia Dortmund,81.7,95.2,95.2,95.2
+Michael Zetterer,GAR,32.0,4.63,Eintracht Francfort,Eintracht Francfort,Eintracht Francfort,Eintracht Francfort,37.3,36.9,37.7,37.7
+Arthur Theate,DC,27.0,9.86,Eintracht Francfort,Eintracht Francfort,Eintracht Francfort,Eintracht Francfort,85.5,80.5,66.3,66.3
+Nathaniel Brown,LAT,24.0,17.4,Eintracht Francfort,KRC Genk,KRC Genk,KRC Genk,83.6,79.1,83.2,83.2
+Hugo Larsonn,MDEF,23.0,14.96,Eintracht Francfort,Eintracht Francfort,Eintracht Francfort,Eintracht Francfort,88.1,84.6,79.9,79.9
+Mario Götze,MOFF,35.0,7.29,Eintracht Francfort,Eintracht Francfort,Sporting Charleroi,Sporting Charleroi,71.7,68.4,58.3,58.3
+Ritsu Doan,AIL,29.0,11.29,Eintracht Francfort,Eintracht Francfort,Eintracht Francfort,Eintracht Francfort,78.7,75.5,70.1,70.1
+Jonathan Burkardt,AC,27.0,12.94,Eintracht Francfort,Eintracht Francfort,Eintracht Francfort,Eintracht Francfort,91.4,88.5,74.5,74.5
+Alexander Nübel,GAR,31.0,11.59,Vfb Stuttgart,Bayer Leverkusen,Bayer Leverkusen,Bayer Leverkusen,69.6,69.6,70.9,70.9
+Jeff Chabot,DC,29.0,8.81,Vfb Stuttgart,Vfb Stuttgart,Moreirense FC,Moreirense FC,53.6,60.3,63.5,63.5
+Maximilian Mittelstädt,LAT,30.0,14.89,Vfb Stuttgart,Vfb Stuttgart,Vfb Stuttgart,Vfb Stuttgart,76.9,75.2,79.7,79.7
+Angelo Stiller,MDEF,26.0,20.18,Vfb Stuttgart,Vfb Stuttgart,Vfb Stuttgart,Vfb Stuttgart,96.0,94.3,86.9,86.9
+Bilal El Khanouss,MOFF,23.0,19.2,Vfb Stuttgart,Vfb Stuttgart,Bayer Leverkusen,Bayer Leverkusen,79.7,83.4,85.6,85.6
+Jamie Leweling,AIL,26.0,14.55,Vfb Stuttgart,Vfb Stuttgart,Vfb Stuttgart,Vfb Stuttgart,67.1,77.0,78.8,78.8
+Ermerdin Demirovic,AC,29.0,18.97,Vfb Stuttgart,Vfb Stuttgart,Vfb Stuttgart,Vfb Stuttgart,65.8,73.4,85.3,85.3
+Kamil Grabara,GAR,28.0,6.59,Wolfsburg,UD Levante,UD Levante,UD Levante,60.2,56.8,52.7,52.7
+Konstantinos Koulierakis,DC,24.0,12.75,Wolfsburg,Wolfsburg,Wolfsburg,Wolfsburg,71.1,74.2,74.0,74.0
+Aaron Zehnter,LAT,23.0,7.95,Wolfsburg,Wolfsburg,Wolfsburg,Wolfsburg,49.5,54.0,61.2,61.2
+Maximilian Arnold,MDEF,33.0,7.34,Wolfsburg,Wolfsburg,CD Santa Clara,CD Santa Clara,56.3,52.2,58.7,58.7
+Lovro Majer,MOFF,29.0,7.21,Wolfsburg,AZ Alkmaar,AZ Alkmaar,AZ Alkmaar,53.6,52.3,57.7,57.7
+Christian Eriksen,AIL,35.0,5.91,Wolfsburg,Wolfsburg,Wolfsburg,AS Saint-Etienne,41.3,42.7,47.3,47.3
+Mohamed Amoura,AC,27.0,10.95,Wolfsburg,Wolfsburg,Wolfsburg,Wolfsburg,85.5,83.7,69.2,69.2
+Moi Backhaus,GAR,23.0,6.89,Werder Bremen,Werder Bremen,Rayo Vallecano,Rayo Vallecano,41.5,48.5,55.1,55.1
+Marco Friedl,DC,29.0,7.8,Werder Bremen,Werder Bremen,Werder Bremen,Werder Bremen,46.2,48.3,60.8,60.8
+Yukinari Sugawara,LAT,27.0,12.6,Werder Bremen,Werder Bremen,FC Porto,FC Porto,45.3,49.9,73.6,73.6
+Senne Lynen,MDEF,28.0,4.84,Werder Bremen,Werder Bremen,UD Levante,UD Levante,40.0,40.6,39.0,39.0
+Isaac Schmidt,MOFF,27.0,6.95,Werder Bremen,Werder Bremen,FC Twente,FC Twente,75.3,75.7,55.6,55.6
+Samuel Mbangula,AIL,23.0,12.08,Werder Bremen,Werder Bremen,FC Twente,FC Twente,58.5,68.3,72.2,72.2
+Victor Boniface,AC,26.0,10.35,Werder Bremen,Werder Bremen,Fiorentina,Fiorentina,84.9,84.8,67.6,67.6
+Oliver Baumann,GAR,36.0,6.54,Hoffenheim,Hoffenheim,Hoffenheim,Hoffenheim,77.6,72.9,52.3,52.3
+Robin Hranac,DC,28.0,2.9,Hoffenheim,Hoffenheim,GD Estoril Praia,GD Estoril Praia,14.4,16.8,27.1,27.1
+Bernardo,LAT,32.0,3.59,Hoffenheim,Alanyaspor,Alanyaspor,Alanyaspor,30.9,32.8,31.3,31.3
+Leon Avdullahu,MDEF,23.0,5.11,Hoffenheim,Hoffenheim,SC Heerenveen,SC Heerenveen,41.5,41.6,40.9,40.9
+Muhammed Damar,MOFF,23.0,9.45,Hoffenheim,Hoffenheim,Hoffenheim,Hoffenheim,41.5,51.3,65.2,65.2
+Bazoumana Touré,AIL,21.0,13.09,Hoffenheim,Hoffenheim,Fiorentina,Fiorentina,51.9,65.5,74.9,74.9
+Tim Lemperle,AC,25.0,10.72,Hoffenheim,Hoffenheim,Hoffenheim,Hoffenheim,47.6,60.0,68.6,68.6
+Noah Atubolu,GAR,25.0,15.45,SC Fribourg,SC Fribourg,AZ Alkmaar,AZ Alkmaar,81.7,82.0,80.6,80.6
+Matthias Ginter,DC,33.0,11.03,SC Fribourg,SC Fribourg,SC Fribourg,SC Fribourg,74.8,71.5,69.4,69.4
+Lukas Kübler,LAT,35.0,3.31,SC Fribourg,SC Fribourg,Crystal Palace,Crystal Palace,29.6,31.3,29.6,29.6
+Maximilian Eggestein,MDEF,31.0,5.08,SC Fribourg,SC Fribourg,SC Fribourg,SC Fribourg,31.3,32.9,40.6,40.6
+Johan Manzambi,MOFF,22.0,7.46,SC Fribourg,SC Fribourg,SC Fribourg,SC Fribourg,42.7,44.9,59.7,59.7
+Niklas Beste,AIL,28.0,6.75,SC Fribourg,SC Fribourg,Newcastle,Newcastle,40.0,40.9,54.0,54.0
+Igor Matanovic,AC,24.0,8.21,SC Fribourg,SC Fribourg,SC Fribourg,SC Fribourg,33.6,41.2,61.9,61.9
+Josep Martinez,GAR,29.0,13.72,Inter Milan,Inter Milan,Inter Milan,Inter Milan,40.0,50.4,76.6,76.6
+Alessandro Bastoni,DC,28.0,23.62,Inter Milan,Atlético Madrid,Atlético Madrid,Atlético Madrid,94.1,91.7,91.5,91.5
+Denzel Dumfries,LAT,31.0,22.57,Inter Milan,Inter Milan,Inter Milan,Inter Milan,90.1,87.8,90.1,90.1
+Nicolo Barella,MDEF,30.0,22.05,Inter Milan,Inter Milan,Bournemouth,Bournemouth,90.3,89.0,89.4,89.4
+Andy Diouf,MOFF,24.0,24.9,Inter Milan,Inter Milan,Inter Milan,Inter Milan,83.6,85.1,93.2,93.2
+Marcus Thuram,AIL,30.0,22.8,Inter Milan,Inter Milan,Inter Milan,Inter Milan,87.8,84.7,90.4,90.4
+Lautaro Martinez,AC,30.0,25.88,Inter Milan,Inter Milan,Inter Milan,Inter Milan,95.1,92.2,94.5,94.5
+Vanja Milinković-Savić,GAR,30.0,6.9,SSC Napoli,SSC Napoli,Brighton,Brighton,57.7,56.5,55.2,55.2
+Alessandro Buongiorno,DC,28.0,14.4,SSC Napoli,Fenerbahce,Fenerbahce,Fenerbahce,78.7,76.7,78.4,78.4
+Giovanni Di Lorenzo,LAT,34.0,11.7,SSC Napoli,SSC Napoli,SSC Napoli,SSC Napoli,79.6,76.0,71.2,71.2
+Scott McTominay,MDEF,31.0,16.57,SSC Napoli,Juventus Turin,Juventus Turin,Juventus Turin,90.1,87.0,82.1,82.1
+Kévin De Bruyne,MOFF,36.0,9.19,SSC Napoli,SSC Napoli,SSC Napoli,SSC Napoli,77.6,75.0,64.5,64.5
+Matteo Politano,AIL,34.0,12.64,SSC Napoli,SSC Napoli,SSC Napoli,SSC Napoli,68.0,68.8,73.7,73.7
+Rasmus Hojlund,AC,24.0,18.68,SSC Napoli,Ajax Amsterdam,Ajax Amsterdam,Ajax Amsterdam,83.6,84.9,84.9,84.9
+Michele Di Gregorio,GAR,30.0,20.1,Juventus Turin,KRC Genk,KRC Genk,KRC Genk,70.8,79.8,86.8,86.8
+Bremer,DC,30.0,20.85,Juventus Turin,Juventus Turin,Borussia Dortmund,Borussia Dortmund,87.8,88.4,87.8,87.8
+Andrea Cambiaso,LAT,27.0,15.0,Juventus Turin,Juventus Turin,Juventus Turin,Juventus Turin,89.0,90.7,80.0,80.0
+Manuel Locatelli,MDEF,29.0,26.25,Juventus Turin,Stade Rennais,Stade Rennais,Stade Rennais,86.1,89.4,95.0,95.0
+Kephren Thuram,MOFF,26.0,18.22,Juventus Turin,Juventus Turin,Juventus Turin,Juventus Turin,92.0,94.6,84.3,84.3
+Kenan Yildiz,AIL,22.0,27.97,Juventus Turin,Juventus Turin,Werder Bremen,Werder Bremen,98.1,97.8,97.3,97.3
+Dusan Vlahovic,AC,27.0,24.68,Juventus Turin,Bayern Munich,Bayern Munich,Bayern Munich,89.0,93.8,92.9,92.9
+Mike Maignan,GAR,32.0,20.4,AC Milan,AC Milan,Villareal,Villareal,92.9,91.6,87.2,87.2
+Matteo Gabbia,DC,28.0,13.8,AC Milan,Girona FC,Girona FC,Girona FC,60.2,73.0,76.8,76.8
+Davide Bartesaghi,LAT,21.0,17.62,AC Milan,Como,Como,Como,43.3,70.0,83.5,83.5
+Adrien Rabiot,MDEF,32.0,22.43,AC Milan,AC Milan,AC Milan,AC Milan,87.0,86.9,89.9,89.9
+Ruben Loftus-cheek,MOFF,31.0,22.65,AC Milan,AC Milan,AC Milan,AC Milan,69.6,81.3,90.2,90.2
+Christian Pulisic,AIL,29.0,24.3,AC Milan,AC Milan,AC Milan,AC Milan,89.5,90.5,92.4,92.4
+Rafael Leao,AC,28.0,24.75,AC Milan,AC Milan,AC Milan,AC Milan,86.1,88.6,93.0,93.0
+Marco Carnesecchi,GAR,27.0,14.14,Atalanta,Atalanta,Atalanta,Atalanta,95.8,92.6,77.7,77.7
+Isak Hien,DC,28.0,7.45,Atalanta,Angers SCO,Angers SCO,Angers SCO,53.6,52.6,59.6,59.6
+Berat Djimsti,LAT,34.0,6.06,Atalanta,Atalanta,Atalanta,Atalanta,56.1,51.5,48.5,48.5
+Mario Pasalic,MDEF,32.0,5.88,Atalanta,FC Saint Pauli,FC Saint Pauli,FC Saint Pauli,56.9,54.7,47.0,47.0
+Charles De Kelelaere,MOFF,26.0,11.47,Atalanta,Atalanta,Atalanta,Atalanta,94.3,90.1,70.6,70.6
+Kamaldeen Sulemana,AIL,25.0,9.9,Atalanta,Atalanta,KAA La Gantoise,KAA La Gantoise,47.6,52.8,66.4,66.4
+Ademola Lookman,AC,30.0,16.5,Atalanta,Atalanta,KVC Westerlo,KVC Westerlo,84.5,80.8,82.0,82.0
+Jean Butez,GAR,32.0,6.83,Como,Como,Sporting CP,Sporting CP,37.3,43.9,54.6,54.6
+Diego Carlos,DC,34.0,9.41,Como,Fiorentina,Fiorentina,Fiorentina,56.1,61.2,65.1,65.1
+Alex Valle,LAT,23.0,10.61,Como,Toulouse FC,Toulouse FC,Toulouse FC,41.5,55.5,68.3,68.3
+Maxence Caqueret,MDEF,27.0,10.05,Como,Como,GO Ahead Eagles,GO Ahead Eagles,85.5,84.1,66.8,66.8
+Nico Paz,MOFF,23.0,29.32,Como,Stade Rennais,FC Barcelone,FC Barcelone,97.3,94.9,99.1,99.1
+Jesus Rodriguez,AIL,22.0,15.6,Como,Como,Como,Como,65.6,75.1,80.8,80.8
+Alvaro Morata,AC,35.0,9.34,Como,Como,Como,Como,61.1,64.2,64.9,64.9
+Lukaza Skorupski,GAR,36.0,4.37,FC Bologna,FC Bologna,FC Bologna,FC Bologna,52.2,49.2,36.1,36.1
+Torbjørn Heggem,DC,28.0,2.92,FC Bologna,FC Bologna,Hannover 96,Hannover 96,23.5,24.4,27.2,27.2
+Juan Miranda,LAT,27.0,5.24,FC Bologna,FC Bologna,FC Bologna,FC Bologna,61.7,58.0,41.9,41.9
+Remo Freuler,MDEF,35.0,7.17,FC Bologna,FC Bologna,FC Bologna,FC Bologna,71.7,67.9,57.4,57.4
+Jens Odgaard,MOFF,28.0,5.16,FC Bologna,FC Bologna,Borussia Mönchengladbach,Borussia Mönchengladbach,40.0,40.6,41.3,41.3
+Nicolo Cambiaghi,AIL,26.0,6.05,FC Bologna,FC Bologna,FC Bologna,FC Bologna,52.6,56.2,48.4,48.4
+Santiago Castro,AC,23.0,14.92,FC Bologna,FC Bologna,FC Bologna,FC Bologna,72.4,74.6,79.8,79.8
+David De Gea,GAR,36.0,8.29,Fiorentina,Fiorentina,Fiorentina,Fiorentina,84.3,81.4,62.1,62.1
+Luca Ranieri,DC,28.0,4.53,Fiorentina,Vitória Guimarães SC,Vitória Guimarães SC,Vitória Guimarães SC,33.8,36.5,37.1,37.1
+Robin Gosens,LAT,33.0,6.51,Fiorentina,Fiorentina,Fiorentina,Fiorentina,56.3,51.6,52.1,52.1
+Nicolo Fagioli,MDEF,26.0,5.59,Fiorentina,Fiorentina,Fiorentina,Fiorentina,67.1,65.3,44.7,44.7
+Albert Guðmundsson,MOFF,30.0,6.7,Fiorentina,FC Groningen,FC Groningen,FC Groningen,51.0,50.9,53.6,53.6
+Roberto Piccoli,AIL,26.0,6.17,Fiorentina,Fiorentina,Gaziantep FK,Gaziantep FK,59.7,66.2,49.4,49.4
+Moise Kean,AC,27.0,18.07,Fiorentina,Fiorentina,Werder Bremen,Werder Bremen,93.6,90.6,84.1,84.1
+Ivan Provedel,GAR,33.0,11.81,Lazio Rome,Lazio Rome,Lazio Rome,Lazio Rome,74.8,71.2,71.5,71.5
+Mario Gila,DC,27.0,11.78,Lazio Rome,Como,Como,Como,85.5,83.7,71.4,71.4
+Nuno Tavares,LAT,27.0,9.22,Lazio Rome,Lazio Rome,Lazio Rome,Lazio Rome,68.2,69.7,64.6,64.6
+Matteo Guendouzi,MDEF,28.0,12.53,Lazio Rome,Villareal,Villareal,Villareal,78.7,76.2,73.4,73.4
+Toma Basic,MOFF,31.0,5.64,Lazio Rome,Lazio Rome,Lazio Rome,Lazio Rome,17.6,23.0,45.1,45.1
+Mattia Zaccagni,AIL,32.0,14.51,Lazio Rome,Lazio Rome,Lazio Rome,Lazio Rome,84.0,80.6,78.7,78.7
+Matteo Cancellieri,AC,25.0,6.88,Lazio Rome,Villareal,FC Nantes,FC Nantes,39.5,51.8,55.0,55.0
+Mile Svilar,GAR,28.0,17.18,AS Roma,Bournemouth,Bournemouth,Bournemouth,86.1,82.9,82.9,82.9
+Gianluca Mancini,DC,31.0,13.99,AS Roma,AS Roma,AS Roma,AS Roma,84.2,81.1,77.3,77.3
+Wesley,LAT,24.0,17.85,AS Roma,AS Roma,SC Fribourg,SC Fribourg,87.2,85.9,83.8,83.8
+Bryan Cristante,MDEF,32.0,7.4,AS Roma,Pisa SC,Pisa SC,Pisa SC,69.3,68.6,59.2,59.2
+Manu Koné,MOFF,26.0,18.53,AS Roma,AS Roma,AS Roma,AS Roma,97.0,94.8,84.7,84.7
+Matias Soulé,AIL,24.0,22.88,AS Roma,AS Roma,AS Roma,AS Roma,90.9,89.8,90.5,90.5
+Artem Dovbyk,AC,30.0,13.05,AS Roma,AS Roma,AS Roma,AS Roma,64.8,68.2,74.8,74.8
+Lucas Chevalier,GAR,26.0,27.6,PSG,PSG,PSG,PSG,96.0,96.9,96.8,96.8
+Marquinhos,DC,33.0,28.8,PSG,PSG,PSG,PSG,86.9,94.4,98.4,98.4
+Achraf Hakimi,LAT,29.0,29.4,PSG,PSG,PSG,PSG,97.9,98.2,99.2,99.2
+Vitinha,MDEF,27.0,29.55,PSG,PSG,PSG,PSG,99.1,99.1,99.4,99.4
+Désiré Doué,MOFF,22.0,29.93,PSG,PSG,PSG,PSG,98.8,99.9,99.9,99.9
+Khvicha Kvaratskhelia,AIL,27.0,28.95,PSG,PSG,Manchester City,Manchester City,98.9,99.8,98.6,98.6
+Ousmane Dembélé,AC,30.0,29.78,PSG,PSG,PSG,PSG,90.3,97.4,99.7,99.7
+Géronimo Rulli,GAR,35.0,19.95,Olympique de Marseille,Olympique de Marseille,Valence FC,Valence FC,66.9,81.9,86.6,86.6
+Benjamin Pavard,DC,31.0,21.22,Olympique de Marseille,Olympique de Marseille,Olympique de Marseille,Olympique de Marseille,76.5,86.0,88.3,88.3
+Amir Murillo,LAT,31.0,15.38,Olympique de Marseille,KAA La Gantoise,KAA La Gantoise,KAA La Gantoise,50.2,71.8,80.5,80.5
+Pierre-Emile Hojberg,MDEF,32.0,20.32,Olympique de Marseille,Olympique de Marseille,Olympique de Marseille,Olympique de Marseille,76.0,85.2,87.1,87.1
+Bilal Nadir,MOFF,23.0,25.8,Olympique de Marseille,Olympique de Marseille,Olympique de Marseille,Olympique de Marseille,72.4,90.0,94.4,94.4
+Mason Greenwood,AIL,26.0,24.53,Olympique de Marseille,Olympique de Marseille,Olympique de Marseille,Olympique de Marseille,97.0,97.2,92.7,92.7
+Robino Vaz,AC,20.0,26.7,Olympique de Marseille,Olympique de Marseille,Olympique de Marseille,Olympique de Marseille,74.7,92.1,95.6,95.6
+Dominik Greif,GAR,30.0,7.05,Olympique Lyonnais,Olympique Lyonnais,Toulouse FC,Toulouse FC,57.7,56.5,56.4,56.4
+Moussa Niakhaté,DC,31.0,12.49,Olympique Lyonnais,Olympique Lyonnais,KRC Genk,KRC Genk,64.3,62.7,73.3,73.3
+Nicolas Tagliafico,LAT,35.0,6.6,Olympique Lyonnais,Olympique Lyonnais,Olympique Lyonnais,Olympique Lyonnais,61.1,60.7,52.8,52.8
+Tanner Tessmann,MDEF,26.0,6.24,Olympique Lyonnais,Olympique Lyonnais,Ajax Amsterdam,Ajax Amsterdam,73.6,70.7,49.9,49.9
+Pavel Sulc,MOFF,26.0,10.5,Olympique Lyonnais,Olympique Lyonnais,Olympique Lyonnais,Olympique Lyonnais,84.9,84.2,68.0,68.0
+Malick Fofana,AIL,22.0,20.93,Olympique Lyonnais,Olympique Lyonnais,SC Fribourg,SC Fribourg,94.7,91.0,87.9,87.9
+Roman Yaremchuk,AC,,,Olympique Lyonnais,,,,9.6,,,
+Philipp Köhn,GAR,29.0,14.78,AS Monaco,Vfb Stuttgart,Vfb Stuttgart,Vfb Stuttgart,53.6,65.7,79.4,79.4
+Christian Mawissa,DC,22.0,19.65,AS Monaco,AS Monaco,AS Monaco,AS Monaco,72.9,82.1,86.2,86.2
+Vanderson,LAT,26.0,13.35,AS Monaco,Bournemouth,Bournemouth,Bournemouth,80.0,83.6,75.6,75.6
+Lamine Camara,MDEF,23.0,23.25,AS Monaco,AS Monaco,AS Monaco,AS Monaco,91.2,93.0,91.0,91.0
+Aleksandr Golovin,MOFF,31.0,12.04,AS Monaco,AS Monaco,Strasbourg,Strasbourg,57.2,65.8,72.1,72.1
+Takumi Minamino,AIL,32.0,8.06,AS Monaco,AS Monaco,AS Monaco,AS Monaco,43.6,55.0,61.5,61.5
+Folarin Balogun,AC,26.0,10.8,AS Monaco,AS Monaco,AS Monaco,AS Monaco,73.6,83.9,68.8,68.8
+Robin Risser,GAR,23.0,23.32,RC Lens,RC Lens,RC Lens,RC Lens,79.7,83.4,91.1,91.1
+Malang Sarr,DC,28.0,8.74,RC Lens,RC Lens,Aston Villa,Aston Villa,53.6,55.4,63.3,63.3
+Matthieu Udol,LAT,31.0,18.45,RC Lens,Stade Rennais,Stade Rennais,Stade Rennais,57.2,57.1,84.6,84.6
+Mamadou Sangaré,MDEF,25.0,21.6,RC Lens,RC Lens,RC Lens,RC Lens,77.8,80.9,88.8,88.8
+Adrien Thomasson,MOFF,33.0,10.09,RC Lens,Sparta Rotterdam,Sparta Rotterdam,Sparta Rotterdam,49.1,55.7,66.9,66.9
+Florian Thauvin,AIL,34.0,12.56,RC Lens,RC Lens,Hoffenheim,Hoffenheim,73.5,77.3,73.5,73.5
+Odsonne Edouard,AC,29.0,21.45,RC Lens,FC Porto,FC Porto,FC Porto,40.0,54.5,88.6,88.6
+Berke Ozer,GAR,27.0,8.59,LOSC,LOSC,LOSC,LOSC,68.2,74.1,62.9,62.9
+Chancel Mbemba,DC,33.0,5.19,LOSC,LOSC,Standard de Liège,Standard de Liège,36.4,38.4,41.5,41.5
+Romain Perraud,LAT,30.0,2.24,LOSC,LOSC,Plouhinec FC,Plouhinec FC,27.9,26.9,23.0,23.0
+Nabil Bentaleb,MDEF,33.0,6.55,LOSC,LOSC,LOSC,LOSC,42.9,44.0,52.4,52.4
+Ayyoub Bouaddi,MOFF,20.0,19.5,LOSC,LOSC,LOSC,LOSC,81.3,80.3,86.0,86.0
+Matias Fernandez-Pardo,AIL,22.0,17.55,LOSC,LOSC,LOSC,LOSC,72.9,76.6,83.4,83.4
+Hamza Igamane,AC,25.0,13.28,LOSC,LOSC,LOSC,LOSC,70.0,72.7,75.4,75.4
+Mike Penders,GAR,22.0,15.97,Strasbourg,Strasbourg,Strasbourg,Strasbourg,72.9,78.2,81.3,81.3
+Mamadou Sarr,DC,22.0,19.28,Strasbourg,Strasbourg,RC Lens,RC Lens,72.9,76.1,85.7,85.7
+Guéla Doué,LAT,25.0,14.47,Strasbourg,Aston Villa,Aston Villa,Aston Villa,86.6,84.4,78.6,78.6
+Valentin Barco,MDEF,23.0,17.03,Strasbourg,Strasbourg,Crystal Palace,Crystal Palace,88.1,86.4,82.7,82.7
+Julio Enciso,MOFF,23.0,11.14,Strasbourg,Strasbourg,SC Heerenveen,SC Heerenveen,58.5,66.9,69.7,69.7
+Kendry Paez,AIL,20.0,13.69,Strasbourg,Strasbourg,Strasbourg,Strasbourg,52.1,63.1,76.5,76.5
+Joaqin Panichelli,AC,25.0,15.75,Strasbourg,Strasbourg,Strasbourg,Strasbourg,77.8,79.4,81.0,81.0
+Brice Samba,GAR,33.0,17.1,Stade Rennais,Stade Rennais,Stade Rennais,Stade Rennais,63.2,64.1,82.8,82.8
+Lilian Brassier,DC,28.0,9.71,Stade Rennais,Stade Rennais,Liverpool FC,Liverpool FC,40.0,43.0,65.9,65.9
+Quentin Merlin,LAT,25.0,11.92,Stade Rennais,Real Sociedad,Real Sociedad,Real Sociedad,81.7,80.1,71.8,71.8
+Valentin Rongier,MDEF,33.0,13.24,Stade Rennais,Valence FC,Valence FC,Valence FC,68.8,68.0,75.3,75.3
+Ludovic Blas,MOFF,29.0,8.81,Stade Rennais,CD Santa Clara,CD Santa Clara,CD Santa Clara,46.2,50.0,63.5,63.5
+Mousa Tamari,AIL,30.0,7.01,Stade Rennais,Stade Rennais,Manchester United,Manchester United,44.7,47.4,56.1,56.1
+Esteban Lepaul,AC,27.0,21.97,Stade Rennais,Stade Rennais,Stade Rennais,Stade Rennais,61.7,69.8,89.3,89.3
+Guillaume Restes,GAR,22.0,14.7,Toulouse FC,Toulouse FC,Sporting Charleroi,Sporting Charleroi,84.7,81.8,79.2,79.2
+Ramsus Nicolaisen,DC,30.0,5.8,Toulouse FC,Toulouse FC,Toulouse FC,Toulouse FC,38.5,38.7,46.4,46.4
+Djibril Sidibé,LAT,35.0,1.65,Toulouse FC,Gil Vicente,Gil Vicente,Gil Vicente,29.6,28.9,18.8,18.8
+Cristian Casseres Jnr,MDEF,27.0,3.34,Toulouse FC,Atalanta,Atalanta,Atalanta,45.3,42.3,29.8,29.8
+Mario Sauer,MOFF,23.0,8.4,Toulouse FC,Valence FC,Valence FC,Valence FC,22.8,25.6,62.4,62.4
+Yann Gboho,AIL,26.0,15.3,Toulouse FC,Toulouse FC,FC Porto,FC Porto,59.7,62.9,80.4,80.4
+Emersonn,AC,23.0,5.29,Toulouse FC,Toulouse FC,Plouzané AC,Plouzané AC,22.8,33.3,42.3,42.3
+Yvon Mvogo,GAR,33.0,6.65,FC Lorient,FC Lorient,FC Lorient,Uchiha Palaiseau,36.4,41.1,53.2,53.2
+Montassar Talbi,DC,29.0,4.33,FC Lorient,FC Lorient,Plouhinec FC,Plouhinec FC,28.8,36.0,35.9,35.9
+Arsène Kouassi,LAT,23.0,11.62,FC Lorient,FC Lorient,FC Lorient,FC Lorient,41.5,51.0,71.0,71.0
+Arthur Avom,MDEF,23.0,12.26,FC Lorient,FC Lorient,FC Lorient,FC Lorient,58.5,63.2,72.7,72.7
+Théo Le Bris,MOFF,,,FC Lorient,FC Lorient,Uchiha Palaiseau,,33.1,38.0,36.9,
+Aiyegun Tosin,AIL,29.0,2.99,FC Lorient,FC Lorient,AS Anus,AS Anus,14.4,17.8,27.6,27.6
+Pablo Pagis,AC,25.0,6.94,FC Lorient,FC Lorient,AZ Alkmaar,AZ Alkmaar,26.3,36.8,55.5,55.5
+Rui Silva,GAR,33.0,12.9,Sporting CP,Sporting CP,SC Fribourg,SC Fribourg,68.8,74.7,74.4,74.4
+Gonçalo Inacio,DC,26.0,14.25,Sporting CP,Sporting CP,Sporting CP,Sporting CP,92.0,91.5,78.0,78.0
+Maxi Araujo,LAT,27.0,10.01,Sporting CP,Sporting CP,Sparta Rotterdam,Sparta Rotterdam,68.2,74.5,66.7,66.7
+Morten Hjulmand,MDEF,28.0,19.88,Sporting CP,Galatasaray,Galatasaray,Galatasaray,82.9,84.3,86.5,86.5
+Hidemasa Morita,MOFF,32.0,9.38,Sporting CP,Sporting CP,Sporting CP,Sporting CP,49.9,56.1,65.0,65.0
+Francisco Trincao,AIL,27.0,15.82,Sporting CP,Sporting CP,Sporting CP,Sporting CP,91.4,90.8,81.1,81.1
+Luis Suarez,AC,30.0,14.59,Sporting CP,Sporting CP,Sporting CP,Sporting CP,57.7,70.1,78.9,78.9
+Anatolyi Trubin,GAR,26.0,19.8,SL Benfica,SL Benfica,SL Benfica,SL Benfica,88.5,89.1,86.4,86.4
+Antonio Silva,DC,24.0,23.78,SL Benfica,SL Benfica,SL Benfica,SL Benfica,87.2,87.4,91.7,91.7
+Alexander Bah,LAT,30.0,11.25,SL Benfica,SL Benfica,SL Benfica,SL Benfica,44.7,47.8,70.0,70.0
+Richard Rios,MDEF,27.0,19.12,SL Benfica,SL Benfica,SL Benfica,SL Benfica,80.7,84.5,85.5,85.5
+Fredrik Aursnes,MOFF,32.0,13.5,SL Benfica,SL Benfica,SL Benfica,SL Benfica,64.1,67.7,76.0,76.0
+Georgiy Sudakov,AIL,25.0,22.12,SL Benfica,SL Benfica,Athletic Bilbao,Athletic Bilbao,89.8,89.3,89.5,89.5
+Vangelis Pavlidis,AC,29.0,21.9,SL Benfica,RC Lens,RC Lens,RC Lens,82.9,82.3,89.2,89.2
+Diogo Costa,GAR,28.0,17.47,FC Porto,FC Porto,Olympique de Marseille,Olympique de Marseille,86.1,85.6,83.3,83.3
+Jan Bednarek,DC,31.0,10.84,FC Porto,CD Santa Clara,CD Santa Clara,CD Santa Clara,50.2,59.8,68.9,68.9
+Alberto Costa,LAT,24.0,16.12,FC Porto,FC Porto,Getafe,Getafe,71.1,79.3,81.5,81.5
+Alan Varela,MDEF,26.0,16.65,FC Porto,FC Porto,RB Leipzig,RB Leipzig,88.5,89.7,82.2,82.2
+Rodrigo Mora,MOFF,20.0,23.47,FC Porto,FC Porto,Bournemouth,Bournemouth,81.3,86.1,91.3,91.3
+Pepê,AIL,30.0,9.83,FC Porto,FC Porto,SC Braga,SC Braga,51.0,59.1,66.2,66.2
+Samu Aghehowa,AC,23.0,29.03,FC Porto,FC Barcelone,FC Barcelone,FC Barcelone,88.1,89.2,98.7,98.7
+Lukas Hornicek,GAR,25.0,9.94,SC Braga,SC Braga,SC Braga,SC Braga,55.4,60.4,66.5,66.5
+Sikou Niakaté,DC,28.0,5.09,SC Braga,SC Braga,KV Mechelen,KV Mechelen,33.8,37.1,40.7,40.7
+Leonardo Lelo,LAT,27.0,6.62,SC Braga,SC Braga,Girona FC,Girona FC,61.7,60.9,53.0,53.0
+Gorby,MDEF,25.0,6.34,SC Braga,SC Braga,Borussia Mönchengladbach,Borussia Mönchengladbach,39.5,45.4,50.7,50.7
+Ridrigo Zalazar,MOFF,28.0,7.25,SC Braga,SC Braga,SC Braga,SC Braga,60.2,58.1,58.0,58.0
+Ricardo Horta,AIL,33.0,10.16,SC Braga,SC Braga,Basaksehir FK,Basaksehir FK,68.8,67.6,67.1,67.1
+Fran Navarro,AC,29.0,5.76,SC Braga,SC Braga,Samsunspor,Samsunspor,28.8,35.5,46.1,46.1
+Andrew,GAR,26.0,4.95,Gil Vicente,Gil Vicente,Gil Vicente,Gil Vicente,67.1,67.0,39.7,39.7
+Buatu,DC,34.0,1.54,Gil Vicente,Gil Vicente,Juventus Turin,Uchiha Palaiseau,7.3,8.0,17.6,17.6
+Ghislain Konan,LAT,31.0,1.47,Gil Vicente,Hellas Verona,Hellas Verona,Hellas Verona,22.0,20.3,16.8,16.8
+Facundo Caseres,MDEF,26.0,0.83,Gil Vicente,Gil Vicente,Wolverhampton,Wolverhampton,18.6,20.0,9.4,9.4
+Luis Esteves,MOFF,29.0,1.27,Gil Vicente,Sunderland,Sunderland,Sunderland,19.0,17.6,14.5,14.5
+Murilo,AIL,33.0,1.05,Gil Vicente,Union Berlin,Union Berlin,Union Berlin,13.0,11.2,11.9,11.9
+Pablo,AC,23.0,7.65,Gil Vicente,FC Groningen,FC Groningen,FC Groningen,49.5,49.5,60.4,60.4
+Gabriel Batista,GAR,29.0,4.64,CD Santa Clara,CD Santa Clara,CD Santa Clara,CD Santa Clara,23.5,25.4,37.8,37.8
+Sidney Lima,DC,30.0,2.5,CD Santa Clara,Everton FC,Everton FC,Rodez AF,13.8,13.1,24.6,24.6
+Lucas Soares,LAT,29.0,0.75,CD Santa Clara,CD Santa Clara,RCD Mallorca,RCD Mallorca,8.4,7.9,8.5,8.5
+Adriano Firmino,MDEF,,,CD Santa Clara,CD Santa Clara,AS Anus,,10.9,11.0,16.1,
+Serginho,MOFF,28.0,0.44,CD Santa Clara,Espanyol Barcelona,Espanyol Barcelona,Espanyol Barcelona,6.7,5.8,5.0,5.0
+Gabriel Silva,AIL,25.0,9.79,CD Santa Clara,CD Santa Clara,CD Santa Clara,CD Santa Clara,55.4,53.3,66.1,66.1
+Wendel,AC,27.0,1.28,CD Santa Clara,Real Oviedo,Real Oviedo,Uchiha Palaiseau,15.7,20.6,14.6,14.6
+Lazar Carevic,GAR,28.0,3.08,FC Famalicao,FC Famalicao,FC Famalicao,FC Famalicao,14.4,21.1,28.2,28.2
+Justin De Haas,DC,27.0,5.58,FC Famalicao,FC Famalicao,FC Famalicao,FC Famalicao,45.3,53.3,44.6,44.6
+Rodrigo Pinheiro,LAT,25.0,5.45,FC Famalicao,FC Famalicao,FC Famalicao,FC Famalicao,33.1,40.3,43.6,43.6
+Mathias De Amorim,MDEF,23.0,5.14,FC Famalicao,FC Famalicao,FC Famalicao,FC Famalicao,22.8,28.7,41.1,41.1
+Gustavo Sa,MOFF,23.0,8.14,FC Famalicao,Wolfsburg,Wolfsburg,Plouzané AC,58.5,55.9,61.7,61.7
+Sorriso,AIL,26.0,5.75,FC Famalicao,FC Famalicao,Besiktas JK,Besiktas JK,52.6,53.9,46.0,46.0
+Simon Elisor,AC,28.0,2.45,FC Famalicao,FC Famalicao,FC Famalicao,FC Famalicao,8.4,11.5,24.3,24.3
+Joel Robles,GAR,36.0,0.52,GD Estoril Praia,GD Estoril Praia,Elche CF,Elche CF,20.1,14.9,5.9,5.9
+Felix Bacher,DC,27.0,1.03,GD Estoril Praia,GD Estoril Praia,Deportivo Alavés,Deportivo Alavés,15.7,18.4,11.7,11.7
+Pedro Amaral,LAT,30.0,1.11,GD Estoril Praia,GD Estoril Praia,GD Estoril Praia,GD Estoril Praia,10.3,9.8,12.6,12.6
+Nodar Lominadze,MDEF,25.0,0.32,GD Estoril Praia,GD Estoril Praia,FC Augsburg,FC Augsburg,4.3,4.0,3.6,3.6
+Joao Carvalho,MOFF,30.0,0.94,GD Estoril Praia,GD Estoril Praia,US Sassuolo,US Sassuolo,18.1,13.9,10.7,10.7
+André lacximicant,AIL,26.0,1.66,GD Estoril Praia,GD Estoril Praia,FC Lorient,FC Lorient,14.1,18.7,19.0,19.0
+Yanis Bergraoui,AC,,,GD Estoril Praia,Mainz 05,Uchiha Palaiseau,,36.8,40.0,26.4,
+André Ferreira,GAR,31.0,0.8,Moreirense FC,Moreirense FC,Moreirense FC,Moreirense FC,6.3,5.9,9.1,9.1
+Maracas,DC,33.0,2.58,Moreirense FC,Moreirense FC,FC Bologna,FC Bologna,17.1,17.0,25.1,25.1
+Kiko,LAT,25.0,5.0,Moreirense FC,Moreirense FC,Moreirense FC,Uchiha Palaiseau,33.1,35.6,40.0,40.0
+Vasco Sousa,MDEF,24.0,3.11,Moreirense FC,Real Oviedo,Real Oviedo,AS Saint-Etienne,21.1,24.1,28.4,28.4
+Alan,MOFF,27.0,3.73,Moreirense FC,Moreirense FC,Moreirense FC,Moreirense FC,52.9,48.7,32.2,32.2
+Landerson,AIL,21.0,1.4,Moreirense FC,Moreirense FC,Moreirense FC,Moreirense FC,2.4,4.2,16.0,16.0
+Guilherme Schettine,AC,32.0,1.31,Moreirense FC,Elche CF,Elche CF,Elche CF,13.3,14.1,15.0,15.0
+Juan Castillo,GAR,24.0,2.77,Vitória Guimarães SC,Deportivo Alavés,SO Millau,SO Millau,16.2,20.1,26.3,26.3
+Rodrigo Abascal,DC,33.0,1.3,Vitória Guimarães SC,UD Levante,UD Levante,UD Levante,13.0,14.6,14.8,14.8
+Maga,LAT,25.0,3.64,Vitória Guimarães SC,Vitória Guimarães SC,Vitória Guimarães SC,Vitória Guimarães SC,26.3,32.6,31.6,31.6
+Beni Mukendi,MDEF,25.0,1.31,Vitória Guimarães SC,Vitória Guimarães SC,Vitória Guimarães SC,Vitória Guimarães SC,15.4,16.2,14.9,14.9
+Samu,MOFF,31.0,2.63,Vitória Guimarães SC,Vitória Guimarães SC,FC Bologna,FC Bologna,22.0,18.3,25.4,25.4
+Telmo Arcanjo,AIL,26.0,2.14,Vitória Guimarães SC,Vitória Guimarães SC,GD Estoril Praia,GD Estoril Praia,29.9,32.4,22.4,22.4
+Nelson Oliveira,AC,36.0,0.53,Vitória Guimarães SC,Vitória Guimarães SC,Vitória Guimarães SC,Vitória Guimarães SC,9.3,8.2,6.0,6.0
+Matej Kovar,GAR,27.0,12.97,PSV Eindhoven,PSV Eindhoven,PSV Eindhoven,PSV Eindhoven,61.7,70.8,74.6,74.6
+Ryan Flamingo,DC,25.0,22.95,PSV Eindhoven,PSV Eindhoven,PSV Eindhoven,PSV Eindhoven,81.7,85.4,90.6,90.6
+Sergiño Dest,LAT,27.0,13.95,PSV Eindhoven,PSV Eindhoven,Feynenoord Rotterdam,Feynenoord Rotterdam,75.3,77.4,77.2,77.2
+Jerdy Schouten,MDEF,31.0,19.43,PSV Eindhoven,PSV Eindhoven,FC Porto,FC Porto,64.3,70.5,85.9,85.9
+Ismael Saibari,MOFF,26.0,18.38,PSV Eindhoven,PSV Eindhoven,PSV Eindhoven,PSV Eindhoven,88.5,86.7,84.5,84.5
+Dennis Man,AIL,29.0,13.54,PSV Eindhoven,PSV Eindhoven,PSV Eindhoven,PSV Eindhoven,46.2,48.1,76.1,76.1
+Ricardo Pepi,AC,25.0,23.93,PSV Eindhoven,PSV Eindhoven,PSV Eindhoven,PSV Eindhoven,77.8,79.6,91.9,91.9
+Timon Wellenreuther,GAR,32.0,12.11,Feynenoord Rotterdam,Feynenoord Rotterdam,Feynenoord Rotterdam,Feynenoord Rotterdam,43.6,54.3,72.3,72.3
+Anel Ahmedhodzic,DC,28.0,7.58,Feynenoord Rotterdam,Feynenoord Rotterdam,SC Braga,SC Braga,40.0,47.7,60.2,60.2
+Givairo Read,LAT,21.0,12.83,Feynenoord Rotterdam,Feynenoord Rotterdam,FC Twente,FC Twente,67.0,74.9,74.2,74.2
+Oussama Targhalline,MDEF,25.0,20.55,Feynenoord Rotterdam,Feynenoord Rotterdam,Feynenoord Rotterdam,Feynenoord Rotterdam,47.6,63.0,87.4,87.4
+Quinten Timber,MOFF,26.0,21.0,Feynenoord Rotterdam,Feynenoord Rotterdam,Feynenoord Rotterdam,Feynenoord Rotterdam,92.0,91.9,88.0,88.0
+Anis Hadj Moussa,AIL,25.0,24.0,Feynenoord Rotterdam,Feynenoord Rotterdam,Feynenoord Rotterdam,Feynenoord Rotterdam,77.8,84.0,92.0,92.0
+Ayase Ueda,AC,29.0,10.39,Feynenoord Rotterdam,Feynenoord Rotterdam,Girona FC,Girona FC,33.8,49.3,67.7,67.7
+Vitezslav Jaros,GAR,26.0,6.84,Ajax Amsterdam,Ajax Amsterdam,Ajax Amsterdam,Ajax Amsterdam,36.8,62.0,54.7,54.7
+Youri Baas,DC,24.0,18.6,Ajax Amsterdam,SSC Napoli,SSC Napoli,SSC Napoli,65.3,78.0,84.8,84.8
+Owen Wijndal,LAT,28.0,5.44,Ajax Amsterdam,Ajax Amsterdam,Ajax Amsterdam,Ajax Amsterdam,23.5,34.9,43.5,43.5
+Youri Regeer,MDEF,24.0,11.51,Ajax Amsterdam,Ajax Amsterdam,Wolfsburg,Wolfsburg,48.4,69.0,70.7,70.7
+Davy Klaassen,MOFF,34.0,7.99,Ajax Amsterdam,Ajax Amsterdam,Ajax Amsterdam,Ajax Amsterdam,48.8,58.5,61.3,61.3
+Mika Godts,AIL,22.0,18.3,Ajax Amsterdam,Ajax Amsterdam,Ajax Amsterdam,Ajax Amsterdam,59.3,77.2,84.4,84.4
+Wout Weghorst,AC,35.0,11.74,Ajax Amsterdam,Lazio Rome,Lazio Rome,Lazio Rome,48.2,61.7,71.3,71.3
+Rome Jayden Owusu-Oduro,GAR,23.0,9.26,AZ Alkmaar,AZ Alkmaar,GD Estoril Praia,GD Estoril Praia,35.4,46.1,64.7,64.7
+Wouter Goes,DC,23.0,16.95,AZ Alkmaar,AZ Alkmaar,AZ Alkmaar,AZ Alkmaar,79.7,81.7,82.6,82.6
+Mees de Wit,LAT,29.0,1.35,AZ Alkmaar,AZ Alkmaar,Union Berlin,Union Berlin,10.9,15.3,15.4,15.4
+Peer Koopmeiners,MDEF,27.0,8.33,AZ Alkmaar,AZ Alkmaar,AZ Alkmaar,AZ Alkmaar,61.7,70.8,62.2,62.2
+Sven Mijnans,MOFF,27.0,5.96,AZ Alkmaar,Fiorentina,Fiorentina,Fiorentina,52.9,58.4,47.7,47.7
+Weslley Patati,AIL,24.0,12.79,AZ Alkmaar,AZ Alkmaar,Toulouse FC,Toulouse FC,71.1,74.8,74.1,74.1
+Troy Parrott,AC,25.0,13.12,AZ Alkmaar,AZ Alkmaar,Angers SCO,Angers SCO,55.4,66.4,75.0,75.0
+Vasilios Barkas,GAR,33.0,4.2,FC Utrecht,Sunderland,Union Berlin,Union Berlin,25.7,34.4,35.1,35.1
+Mike van der Hoorn,DC,35.0,2.95,FC Utrecht,FC Utrecht,FC Utrecht,FC Utrecht,29.6,31.6,27.4,27.4
+Souffian El Karouani,LAT,27.0,3.73,FC Utrecht,FC Utrecht,FC Utrecht,FC Utrecht,52.9,49.8,32.2,32.2
+Alonzo Engwanda,MDEF,24.0,6.41,FC Utrecht,FC Utrecht,Werder Bremen,Werder Bremen,21.1,27.4,51.3,51.3
+Gjivai Zechiël,MOFF,23.0,3.41,FC Utrecht,FC Utrecht,SO Millau,SO Millau,16.8,25.8,30.2,30.2
+Miguel Rodríguez,AIL,24.0,14.85,FC Utrecht,Galatasaray,Galatasaray,Galatasaray,48.4,61.8,79.6,79.6
+Sébastien Haller,AC,33.0,7.47,FC Utrecht,FC Utrecht,FC Utrecht,FC Utrecht,42.9,48.6,59.8,59.8
+Etienne Vaessen,GAR,32.0,0.7,FC Groningen,FC Groningen,FC Groningen,FC Groningen,9.9,10.1,7.9,7.9
+Thijmen Blokzijl,DC,22.0,2.11,FC Groningen,FC Groningen,FC Groningen,FC Groningen,12.6,13.7,22.2,22.2
+Marco Rente,LAT,30.0,0.42,FC Groningen,FC Groningen,Real Oviedo,Real Oviedo,6.4,5.4,4.7,4.7
+Stije Resink,MDEF,24.0,1.56,FC Groningen,FC Groningen,FC Groningen,FC Groningen,21.1,20.4,17.8,17.8
+Tika de Jonge,MOFF,24.0,1.29,FC Groningen,Göztepe,Göztepe,Göztepe,8.3,9.6,14.7,14.7
+Younes Taha,AIL,25.0,3.96,FC Groningen,FC Groningen,FC Groningen,FC Groningen,10.6,16.3,33.6,33.6
+Thom van Bergen,AC,24.0,4.77,FC Groningen,Sporting Charleroi,Sporting Charleroi,Red Star FC,11.7,16.5,38.6,38.6
+Joël Drommel,GAR,31.0,4.09,Sparta Rotterdam,Sparta Rotterdam,Sparta Rotterdam,Sparta Rotterdam,17.6,15.4,34.4,34.4
+Marvin Young,DC,22.0,7.0,Sparta Rotterdam,Sparta Rotterdam,Sparta Rotterdam,Sparta Rotterdam,23.4,25.2,56.0,56.0
+Bruno Martins Indi,LAT,35.0,0.26,Sparta Rotterdam,Sparta Rotterdam,US Sassuolo,US Sassuolo,6.0,5.1,2.9,2.9
+Joshua Kitolano,MDEF,24.0,2.82,Sparta Rotterdam,Espanyol Barcelona,Hannover 96,Plouzané AC,21.1,21.7,26.6,26.6
+Julian Baas,MOFF,25.0,1.61,Sparta Rotterdam,FC Famalicao,FC Famalicao,FC Famalicao,10.6,13.8,18.4,18.4
+Mitchell van Bergen,AIL,28.0,0.95,Sparta Rotterdam,Sparta Rotterdam,US Lecce,US Lecce,8.4,9.9,10.8,10.8
+Tobias Lauritsen,AC,30.0,5.47,Sparta Rotterdam,Sparta Rotterdam,Sparta Rotterdam,Sparta Rotterdam,18.1,18.0,43.8,43.8
+Issam El Maach,GAR,27.0,0.46,FC Twente,FC Twente,FC Twente,FC Twente,5.4,6.7,5.2,5.2
+Robin Pröpper,DC,34.0,2.59,FC Twente,FC Twente,FC Twente,FC Twente,20.7,22.1,25.2,25.2
+Mats Rots,LAT,21.0,3.34,FC Twente,FC Twente,AS Saint-Etienne,AS Saint-Etienne,12.8,17.9,29.8,29.8
+Ramiz Zerrouki,MDEF,29.0,4.19,FC Twente,FC Twente,SC Braga,SC Braga,23.5,24.2,35.0,35.0
+Kristian Hlynsson,MOFF,23.0,2.43,FC Twente,FC Twente,Red Star FC,Red Star FC,16.8,21.2,24.2,24.2
+Marko Pjaca,AIL,32.0,4.76,FC Twente,FC Twente,Udinese Calcio,Udinese Calcio,27.2,26.7,38.5,38.5
+Sam Lammers,AC,30.0,3.88,FC Twente,FC Twente,FC Twente,FC Twente,22.4,24.8,33.1,33.1
+Bernt Klaverboer,GAR,22.0,1.05,SC Heerenveen,SC Heerenveen,SC Heerenveen,SC Heerenveen,5.2,7.7,12.0,12.0
+Sam Kersten,DC,29.0,0.57,SC Heerenveen,SC Heerenveen,SC Heerenveen,SC Heerenveen,3.9,4.9,6.4,6.4
+Vasilios Zagaritis,LAT,26.0,0.43,SC Heerenveen,SC Heerenveen,FC Saint Pauli,FC Saint Pauli,7.6,9.1,4.8,4.8
+Joris van Overeem,MDEF,33.0,0.76,SC Heerenveen,SC Heerenveen,Espanyol Barcelona,Espanyol Barcelona,9.7,9.2,8.6,8.6
+Luuk Brouwers,MOFF,29.0,0.47,SC Heerenveen,SC Heerenveen,Celta Vigo,Celta Vigo,5.7,5.7,5.3,5.3
+Jacob Trenskow,AIL,27.0,1.22,SC Heerenveen,Everton FC,Everton FC,Everton FC,15.7,19.8,13.9,13.9
+Dylan Vente,AC,28.0,1.85,SC Heerenveen,SC Heerenveen,SC Heerenveen,SC Heerenveen,8.4,10.9,20.6,20.6
+Jari De Busser,GAR,28.0,3.46,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,19.0,21.3,30.5,30.5
+Joris Kramer,DC,35.0,1.5,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,16.1,16.4,17.1,17.1
+Mats Deijl,LAT,30.0,1.33,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,13.8,11.3,15.2,15.2
+Melle Meulensteen,MDEF,28.0,0.88,GO Ahead Eagles,GO Ahead Eagles,Union Berlin,Red Star FC,14.4,11.6,10.0,10.0
+Jakob Breum,MOFF,24.0,6.14,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,48.4,44.1,49.1,49.1
+Mathis Suray,AIL,26.0,1.09,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,14.1,15.0,12.4,12.4
+Victor Edvardsen,AC,31.0,2.27,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,GO Ahead Eagles,13.6,11.4,23.2,23.2
+Uğurcan Çakır,GAR,31.0,13.76,Galatasaray,Galatasaray,Galatasaray,Galatasaray,64.3,71.6,76.7,76.7
+Davinson Sánchez,DC,31.0,16.72,Galatasaray,Galatasaray,Galatasaray,Galatasaray,76.5,76.8,82.3,82.3
+Roland Sallai,LAT,30.0,7.49,Galatasaray,Galatasaray,SC Braga,SC Braga,51.0,54.1,59.9,59.9
+Lucas Torreira,MDEF,31.0,16.43,Galatasaray,Sporting CP,Sporting CP,Sporting CP,76.5,80.2,81.9,81.9
+Gabriel Sara,MOFF,28.0,13.58,Galatasaray,Galatasaray,Galatasaray,Galatasaray,65.8,72.2,76.2,76.2
+Leroy Sané,AIL,32.0,14.81,Galatasaray,Getafe,Getafe,Getafe,76.0,78.8,79.5,79.5
+Victor Osimhen,AC,29.0,24.22,Galatasaray,Galatasaray,Galatasaray,Galatasaray,94.1,93.6,92.3,92.3
+Ederson,GAR,34.0,21.53,Fenerbahce,Fenerbahce,Fenerbahce,Fenerbahce,86.8,88.0,88.7,88.7
+Milan Škriniar,DC,32.0,14.62,Fenerbahce,Bayer Leverkusen,Bayer Leverkusen,Bayer Leverkusen,69.3,78.4,79.0,79.0
+Nélson Semedo,LAT,34.0,7.2,Fenerbahce,Royal Anterwerp FC,Royal Anterwerp FC,Royal Anterwerp FC,42.2,55.1,57.6,57.6
+İsmail Yüksek,MDEF,28.0,14.29,Fenerbahce,Fenerbahce,Fenerbahce,Fenerbahce,46.2,66.6,78.1,78.1
+Marco Asensio,MOFF,31.0,16.05,Fenerbahce,Fenerbahce,Fenerbahce,Fenerbahce,64.3,74.0,81.4,81.4
+Talisca,AIL,33.0,17.25,Fenerbahce,Fenerbahce,Fenerbahce,Fenerbahce,68.8,75.8,83.0,83.0
+Jhon Duran,AC,24.0,25.65,Fenerbahce,Fenerbahce,Fenerbahce,Fenerbahce,87.2,92.3,94.2,94.2
+Ersin Destanoğlu,GAR,27.0,3.29,Besiktas JK,Besiktas JK,Besiktas JK,Besiktas JK,32.0,39.0,29.5,29.5
+Emirhan Topçu,DC,27.0,3.21,Besiktas JK,Besiktas JK,Besiktas JK,Besiktas JK,38.9,39.3,29.0,29.0
+Gökhan Sazdağı,LAT,33.0,0.79,Besiktas JK,Besiktas JK,Besiktas JK,Besiktas JK,7.9,7.4,9.0,9.0
+Wilfred Ndidi ,MDEF,31.0,6.26,Besiktas JK,Besiktas JK,Besiktas JK,Besiktas JK,50.2,46.9,50.1,50.1
+Orkun Kökçü,MOFF,27.0,11.33,Besiktas JK,Besiktas JK,Besiktas JK,Besiktas JK,91.4,86.3,70.2,70.2
+Jota Silva,AIL,28.0,6.1,Besiktas JK,Besiktas JK,RSC Anderlecht,RSC Anderlecht,33.8,37.1,48.8,48.8
+Tammy Abraham,AC,30.0,7.08,Besiktas JK,Besiktas JK,Besiktas JK,Besiktas JK,44.7,45.6,56.6,56.6
+André Onana,GAR,31.0,6.76,Trabzonspor,Trabzonspor,Trabzonspor,Trabzonspor,50.2,50.5,54.1,54.1
+Arseniy Batagov,DC,25.0,8.55,Trabzonspor,Trabzonspor,Trabzonspor,Trabzonspor,39.5,49.7,62.8,62.8
+Wagner Pina,LAT,25.0,6.35,Trabzonspor,Trabzonspor,Trabzonspor,Trabzonspor,33.1,39.4,50.8,50.8
+Ozan Tufan,MDEF,32.0,4.92,Trabzonspor,Trabzonspor,Trabzonspor,Trabzonspor,21.8,26.3,39.5,39.5
+Tim Jabol-Folcarelli,MOFF,28.0,0.98,Trabzonspor,Trabzonspor,Trabzonspor,Trabzonspor,6.7,6.6,11.2,11.2
+Oleksandr Zubkov,AIL,31.0,6.76,Trabzonspor,Trabzonspor,Trabzonspor,Trabzonspor,50.2,46.9,54.1,54.1
+Paul Onuachu,AC,33.0,5.41,Trabzonspor,Trabzonspor,Trabzonspor,Trabzonspor,25.7,28.4,43.3,43.3
+Muhammed Şengezer,GAR,31.0,2.35,Basaksehir FK,Basaksehir FK,Basaksehir FK,Basaksehir FK,13.6,11.9,23.7,23.7
+Jerome Opoku,DC,29.0,3.49,Basaksehir FK,Basaksehir FK,Basaksehir FK,Basaksehir FK,19.0,19.5,30.7,30.7
+Christopher Operi,LAT,30.0,4.69,Basaksehir FK,Basaksehir FK,AS Roma,AS Roma,27.9,25.0,38.1,38.1
+Berat Özdemir,MDEF,29.0,1.6,Basaksehir FK,Genoa CFC,Genoa CFC,Genoa CFC,23.5,23.3,18.3,18.3
+Amine Harit,MOFF,30.0,4.54,Basaksehir FK,Basaksehir FK,Basaksehir FK,Basaksehir FK,32.7,30.4,37.2,37.2
+Yusuf Sarı,AIL,29.0,3.05,Basaksehir FK,Basaksehir FK,Pisa SC,Pisa SC,33.8,34.7,28.0,28.0
+Eldor Shomurodov,AC,32.0,3.15,Basaksehir FK,Basaksehir FK,US Lecce,US Lecce,27.2,28.8,28.6,28.6
+Okan Kocuk,GAR,32.0,5.2,Samsunspor,Samsunspor,Samsunspor,Samsunspor,21.8,30.8,41.6,41.6
+Toni Borevković,DC,30.0,4.12,Samsunspor,Samsunspor,Samsunspor,Samsunspor,22.4,26.1,34.6,34.6
+Logi Tómasson,LAT,27.0,0.78,Samsunspor,Samsunspor,SO Millau,SO Millau,9.1,12.3,8.8,8.8
+Antoine Makoumbou,MDEF,29.0,5.39,Samsunspor,AS Roma,AS Roma,AS Roma,23.5,27.8,43.1,43.1
+Carlo Holse,MOFF,28.0,4.56,Samsunspor,Samsunspor,Samsunspor,Samsunspor,23.5,29.8,37.3,37.3
+Emre Kılınç,AIL,33.0,4.4,Samsunspor,Fc Köln,Fc Köln,Fc Köln,17.1,25.1,36.3,36.3
+Cherif Ndiaye,AC,31.0,7.54,Samsunspor,Samsunspor,Basaksehir FK,AS Anus,31.3,41.5,60.1,60.1
+Mateusz Lis,GAR,30.0,1.98,Göztepe,Göztepe,Göztepe,Göztepe,22.4,20.2,21.4,21.4
+Héliton,DC,32.0,0.73,Göztepe,Göztepe,Göztepe,Göztepe,6.2,6.4,8.3,8.3
+Taha Altıkardeş,LAT,24.0,1.25,Göztepe,Göztepe,Mainz 05,Mainz 05,11.7,11.7,14.3,14.3
+Anthony Dennis,MDEF,23.0,3.54,Göztepe,Göztepe,Göztepe,Göztepe,28.6,27.7,31.0,31.0
+Amin Cherni,MOFF,26.0,0.38,Göztepe,Everton FC,Everton FC,Everton FC,7.6,7.2,4.3,4.3
+Janderson,AIL,28.0,0.49,Göztepe,Fulham FC,Fulham FC,Fulham FC,5.7,5.3,5.5,5.5
+Juan,AC,25.0,2.55,Göztepe,Göztepe,US Sassuolo,US Sassuolo,20.2,23.8,24.9,24.9
+Yahia Fofana,GAR,27.0,7.03,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,61.7,65.4,56.2,56.2
+Samet Akaydin,DC,33.0,1.71,Caykur Rizespor,Borussia Mönchengladbach,Borussia Mönchengladbach,Borussia Mönchengladbach,9.7,13.4,19.5,19.5
+Casper Højer,LAT,33.0,2.64,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,20.8,22.2,25.5,25.5
+Giannis Papanikolaou,MDEF,29.0,0.85,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,6.7,7.1,9.6,9.6
+Ibrahim Olawoyin,MOFF,30.0,1.18,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,10.3,10.4,13.4,13.4
+Valentin Mihăilă,AIL,27.0,3.91,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,32.0,37.3,33.3,33.3
+Ali Sowe,AC,33.0,5.17,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,25.7,31.4,41.4,41.4
+Burak Bozan,GAR,30.0,0.48,Gaziantep FK,Gaziantep FK,Gaziantep FK,Gaziantep FK,1.7,2.7,5.4,5.4
+Arda Kızıldağ,DC,29.0,1.44,Gaziantep FK,Gaziantep FK,Gaziantep FK,Gaziantep FK,8.4,9.3,16.4,16.4
+Kévin Rodrigues,LAT,33.0,3.34,Gaziantep FK,Gaziantep FK,Gaziantep FK,Gaziantep FK,30.6,29.5,29.8,29.8
+Drissa Camara,MDEF,25.0,5.05,Gaziantep FK,Gaziantep FK,Brighton,Brighton,26.3,26.5,40.4,40.4
+Kacper Kozlowski,MOFF,24.0,4.85,Gaziantep FK,Gaziantep FK,Gaziantep FK,Gaziantep FK,28.3,32.1,39.1,39.1
+Deian Sorescu,AIL,30.0,1.45,Gaziantep FK,Gaziantep FK,Mainz 05,Mainz 05,18.1,17.4,16.6,16.6
+Mohamed Bayo,AC,29.0,3.33,Gaziantep FK,Gaziantep FK,Club Brugge,Club Brugge,23.5,24.4,29.7,29.7
+Ertuğrul Taşkıran,GAR,36.0,0.33,Alanyaspor,Alanyaspor,Alanyaspor,Alanyaspor,7.2,7.0,3.7,3.7
+Nuno Lima,DC,26.0,0.67,Alanyaspor,Brentford,Brentford,Brentford,10.1,12.2,7.6,7.6
+Baran Moğultay,LAT,23.0,0.56,Alanyaspor,Celta Vigo,Celta Vigo,Celta Vigo,3.3,4.3,6.3,6.3
+Maestro,MDEF,,,Alanyaspor,Nottingham Forest,AS Saint-Etienne,,21.1,19.9,17.8,
+Ianis Hagi,MOFF,29.0,0.59,Alanyaspor,Alanyaspor,Nottingham Forest,Nottingham Forest,8.4,7.3,6.7,6.7
+Uchenna Ogundu,AIL,21.0,2.37,Alanyaspor,Alanyaspor,Alanyaspor,Alanyaspor,7.1,9.7,23.8,23.8
+Steve Mounié,AC,,,Alanyaspor,Alanyaspor,AS Anus,,20.8,21.5,31.9,
+Nordin Jackers,GAR,,,Club Brugge,Parma Calcio,FC Nantes,,6.4,8.5,9.9,
+Joel Ordóñez,DC,23.0,10.69,Club Brugge,Club Brugge,Club Brugge,Club Brugge,65.5,65.9,68.5,68.5
+Joaquin Seys,LAT,22.0,7.04,Club Brugge,Club Brugge,Club Brugge,Club Brugge,42.7,45.3,56.3,56.3
+Raphael Onyedika,MDEF,26.0,6.09,Club Brugge,Club Brugge,Club Brugge,Club Brugge,73.6,72.0,48.7,48.7
+Hans Vanaken,MOFF,35.0,6.44,Club Brugge,Club Brugge,Club Brugge,Club Brugge,61.1,58.6,51.5,51.5
+Christos Tzolis,AIL,25.0,14.03,Club Brugge,Club Brugge,Club Brugge,Club Brugge,89.8,87.2,77.4,77.4
+Nicolò Tresoldi,AC,23.0,6.97,Club Brugge,Club Brugge,Rodez AF,Rodez AF,22.8,35.0,55.8,55.8
+Hendrik Van Crombrugge,GAR,34.0,1.88,KRC Genk,Club Brugge,Club Brugge,Club Brugge,7.3,13.6,20.8,20.8
+Matte Smets,DC,24.0,16.2,KRC Genk,KRC Genk,Strasbourg,Strasbourg,71.1,77.8,81.6,81.6
+Joris Kayembe,LAT,33.0,4.9,KRC Genk,Hoffenheim,Hoffenheim,Hoffenheim,25.7,33.1,39.4,39.4
+Bryan Heynen,MDEF,30.0,10.99,KRC Genk,KRC Genk,KRC Genk,KRC Genk,51.0,53.7,69.3,69.3
+Konstantinos Karetsas,MOFF,20.0,5.79,KRC Genk,KRC Genk,AS Saint-Etienne,AS Saint-Etienne,29.5,40.4,46.3,46.3
+Jarne Steuckers,AIL,25.0,12.0,KRC Genk,FC Utrecht,FC Utrecht,FC Utrecht,63.5,71.4,72.0,72.0
+Hyeon-gyu Oh,AC,26.0,4.82,KRC Genk,UD Levante,UD Levante,UD Levante,29.9,46.0,38.9,38.9
+Colin Coosemans ,GAR,35.0,4.58,RSC Anderlecht,RSC Anderlecht,RSC Anderlecht,RSC Anderlecht,41.3,38.6,37.4,37.4
+Lucas Hey,DC,24.0,1.72,RSC Anderlecht,RSC Anderlecht,Plouzané AC,Plouzané AC,16.2,19.0,19.7,19.7
+Killian Sardella,LAT,25.0,4.48,RSC Anderlecht,RSC Anderlecht,RSC Anderlecht,RSC Anderlecht,39.5,38.5,36.8,36.8
+Nathan De Cat,MDEF,19.0,0.17,RSC Anderlecht,RSC Anderlecht,SO Millau,SO Millau,3.6,3.4,1.8,1.8
+Mario Stroeykens,MOFF,23.0,9.11,RSC Anderlecht,RSC Anderlecht,RSC Anderlecht,RSC Anderlecht,58.5,55.2,64.3,64.3
+Nilson Angulo,AIL,24.0,1.45,RSC Anderlecht,RSC Anderlecht,SO Millau,SO Millau,11.7,15.6,16.5,16.5
+Adriano Bertaccini,AC,27.0,5.55,RSC Anderlecht,RSC Anderlecht,Manchester United,Manchester United,52.9,53.5,44.4,44.4
+Kjell Scherpen,GAR,27.0,5.46,Union Saint-Gilloise,Union Saint-Gilloise,Union Saint-Gilloise,Union Saint-Gilloise,38.9,44.5,43.7,43.7
+Fedde Leysen,DC,24.0,5.21,Union Saint-Gilloise,Union Saint-Gilloise,Union Saint-Gilloise,Union Saint-Gilloise,21.1,26.8,41.7,41.7
+Anan Khalaili,LAT,23.0,9.3,Union Saint-Gilloise,Union Saint-Gilloise,CD Santa Clara,CD Santa Clara,49.5,49.1,64.8,64.8
+Adem Zorgane,MDEF,28.0,9.49,Union Saint-Gilloise,Union Saint-Gilloise,KAA La Gantoise,KAA La Gantoise,53.6,56.3,65.3,65.3
+Ousseynou Niang,MOFF,26.0,3.07,Union Saint-Gilloise,Union Saint-Gilloise,Union Saint-Gilloise,Union Saint-Gilloise,29.9,35.9,28.1,28.1
+Anouar Ait El Hadj,AIL,25.0,6.8,Union Saint-Gilloise,Union Saint-Gilloise,FC Famalicao,FC Famalicao,47.6,51.9,54.4,54.4
+Promise David,AC,26.0,7.24,Union Saint-Gilloise,Union Saint-Gilloise,Union Saint-Gilloise,Union Saint-Gilloise,67.1,72.1,57.9,57.9
+Davy Roef,GAR,33.0,8.02,KAA La Gantoise,KAA La Gantoise,KAA La Gantoise,KAA La Gantoise,36.4,44.6,61.4,61.4
+Siebe Van der Heyden,DC,,,KAA La Gantoise,KAA La Gantoise,Rodez AF,,23.5,35.3,45.8,
+Tiago Araújo,LAT,26.0,1.93,KAA La Gantoise,UD Levante,UD Levante,UD Levante,25.0,38.2,21.1,21.1
+Mathias Delorge,MDEF,23.0,10.42,KAA La Gantoise,KAA La Gantoise,Aston Villa,Aston Villa,41.5,53.6,67.8,67.8
+Abdelkahar Kadri,MOFF,27.0,5.33,KAA La Gantoise,KAA La Gantoise,KAA La Gantoise,KAA La Gantoise,38.9,43.1,42.6,42.6
+Michal Skoras,AIL,,,KAA La Gantoise,KAA La Gantoise,Rodez AF,,20.5,34.3,34.2,
+Wilfried Kanga,AC,29.0,6.19,KAA La Gantoise,KAA La Gantoise,KAA La Gantoise,KAA La Gantoise,8.4,17.1,49.5,49.5
+Taishi Brandon Nozawa,GAR,25.0,1.42,Royal Anterwerp FC,Royal Anterwerp FC,Nottingham Forest,Nottingham Forest,2.9,6.5,16.2,16.2
+Zeno Van Den Bosch,DC,24.0,7.61,Royal Anterwerp FC,Royal Anterwerp FC,Royal Anterwerp FC,Royal Anterwerp FC,56.6,57.7,60.3,60.3
+Daam Foulon,LAT,28.0,1.78,Royal Anterwerp FC,Nottingham Forest,Nottingham Forest,Nottingham Forest,19.0,17.3,20.2,20.2
+Mauricio Benítez,MDEF,23.0,0.86,Royal Anterwerp FC,Royal Anterwerp FC,Royal Anterwerp FC,Royal Anterwerp FC,3.3,4.8,9.8,9.8
+Isaac Babadi,MOFF,22.0,2.42,Royal Anterwerp FC,Royal Anterwerp FC,Royal Anterwerp FC,Royal Anterwerp FC,12.6,14.0,24.1,24.1
+Gyrano Kerk,AIL,32.0,2.87,Royal Anterwerp FC,Royal Anterwerp FC,Vitória Guimarães SC,Vitória Guimarães SC,17.4,17.7,26.9,26.9
+Vincent Janssen,AC,33.0,5.69,Royal Anterwerp FC,Royal Anterwerp FC,Royal Anterwerp FC,Royal Anterwerp FC,42.9,41.9,45.5,45.5
+Matthieu Epolo,GAR,22.0,13.31,Standard de Liège,Standard de Liège,Standard de Liège,Standard de Liège,50.1,68.9,75.5,75.5
+Ibe Hautekiet,DC,,,Standard de Liège,Standard de Liège,SO Millau,,20.2,30.7,33.2,
+Marlon Fossey,LAT,,,Standard de Liège,Eintracht Francfort,AS Anus,,14.4,16.1,17.3,
+Marco Ilaimaharitra,MDEF,,,Standard de Liège,Tottenham,Rodez AF,,13.3,18.2,24.8,
+Mohammed El Hankouri,MOFF,30.0,2.61,Standard de Liège,Standard de Liège,Standard de Liège,Standard de Liège,13.8,19.2,25.3,25.3
+Rafiki Saïd,AIL,27.0,6.69,Standard de Liège,Standard de Liège,Standard de Liège,Standard de Liège,45.3,61.1,53.5,53.5
+Thomas Henry,AC,33.0,5.5,Standard de Liège,Standard de Liège,Standard de Liège,Standard de Liège,13.0,26.0,44.0,44.0
+Nacho Miras,GAR,30.0,0.21,KV Mechelen,KV Mechelen,KV Mechelen,KV Mechelen,0.9,1.1,2.3,2.3
+Redouane Halhal,DC,24.0,0.61,KV Mechelen,KV Mechelen,Celta Vigo,Celta Vigo,3.1,4.1,6.9,6.9
+Thérence Koudou,LAT,23.0,1.9,KV Mechelen,KV Mechelen,KV Mechelen,Plouzané AC,16.8,15.8,20.9,20.9
+Fredrik Hammar,MDEF,26.0,0.63,KV Mechelen,KV Mechelen,KV Mechelen,KV Mechelen,14.1,13.3,7.1,7.1
+Mathis Servais,MOFF,23.0,4.29,KV Mechelen,KV Mechelen,KV Mechelen,KV Mechelen,22.8,25.6,35.6,35.6
+Myron van Brederode,AIL,24.0,6.15,KV Mechelen,KV Mechelen,KV Mechelen,KV Mechelen,28.3,33.4,49.2,49.2
+Lion Lauberbach,AC,29.0,1.37,KV Mechelen,Wolverhampton,Wolverhampton,Wolverhampton,14.4,14.4,15.6,15.6
+Andreas Jungdal,GAR,25.0,2.32,KVC Westerlo,Cagliari Calcio,Rodez AF,Rodez AF,4.3,10.8,23.5,23.5
+Emin Bayram,DC,24.0,16.35,KVC Westerlo,KVC Westerlo,KVC Westerlo,KVC Westerlo,48.4,62.3,81.8,81.8
+Bryan Reynolds,LAT,26.0,5.85,KVC Westerlo,Strasbourg,Strasbourg,Strasbourg,44.6,53.0,46.8,46.8
+Doğucan Haspolat,MDEF,27.0,5.4,KVC Westerlo,KVC Westerlo,Gaziantep FK,Gaziantep FK,45.3,54.4,43.2,43.2
+Isa Sakamoto,MOFF,24.0,8.66,KVC Westerlo,KVC Westerlo,KVC Westerlo,KVC Westerlo,41.1,41.7,63.1,63.1
+Josimar Alcócer,AIL,23.0,6.55,KVC Westerlo,KVC Westerlo,KVC Westerlo,KVC Westerlo,12.3,17.2,52.4,52.4
+Nacho Ferri,AC,23.0,4.35,KVC Westerlo,KVC Westerlo,SO Millau,SO Millau,12.3,23.6,36.0,36.0
+Martin Delavallée,GAR,,,Sporting Charleroi,Sporting Charleroi,Uchiha Palaiseau,,28.6,34.8,43.0,
+Aiham Ousou,DC,,,Sporting Charleroi,Valence FC,AS Anus,,14.4,14.4,18.5,
+Lewin Blum,LAT,26.0,0.85,Sporting Charleroi,Sporting Charleroi,Sporting Charleroi,Sporting Charleroi,18.6,18.9,9.6,9.6
+Étienne Camara,MDEF,24.0,1.52,Sporting Charleroi,Elche CF,Elche CF,Elche CF,16.2,19.0,17.4,17.4
+Yassine Titraoui,MOFF,,,Sporting Charleroi,Sporting Charleroi,Rodez AF,,16.2,15.9,22.6,
+Parfait Guiagon,AIL,26.0,4.15,Sporting Charleroi,Sporting Charleroi,Sporting Charleroi,Sporting Charleroi,36.8,40.5,34.8,34.8
+Aurélien Scheidler,AC,29.0,1.39,Sporting Charleroi,Olympique Lyonnais,Olympique Lyonnais,Olympique Lyonnais,6.7,8.1,15.9,15.9
+Guglielmo Vicario,GAR,31.0,13.16,Tottenham,Tottenham,Werder Bremen,Werder Bremen,81.1,73.9,75.1,75.1
+Cristian Romero,DC,29.0,7.69,Tottenham,Tottenham,Tottenham,Tottenham,78.7,72.3,60.5,60.5
+Pedro Porro,LAT,28.0,6.45,Tottenham,Tottenham,Tottenham,AS Anus,65.8,60.6,51.6,51.6
+João Palhinha,MDEF,32.0,9.0,Tottenham,Standard de Liège,Standard de Liège,Standard de Liège,76.0,70.3,64.0,64.0
+Xavi Simons,MOFF,24.0,13.91,Tottenham,Tottenham,Tottenham,Tottenham,93.2,88.8,77.1,77.1
+Mohammed Kudus,AIL,27.0,10.24,Tottenham,Tottenham,AZ Alkmaar,AZ Alkmaar,89.0,83.1,67.3,67.3
+Richarlison,AC,30.0,7.28,Tottenham,Tottenham,Villareal,Villareal,51.0,47.2,58.2,58.2
+Caoimhín Kelleher,GAR,29.0,5.86,Brentford,Brentford,Brentford,Brentford,65.8,59.3,46.9,46.9
+Nathan Collins,DC,26.0,6.39,Brentford,Ajax Amsterdam,Ajax Amsterdam,Ajax Amsterdam,84.9,77.9,51.1,51.1
+Michael Kayode,LAT,23.0,12.38,Brentford,Fenerbahce,Fenerbahce,Fenerbahce,72.4,64.8,73.0,73.0
+Yegor Yarmolyuk,MDEF,23.0,5.66,Brentford,Brentford,Brentford,Brentford,58.5,51.7,45.3,45.3
+Mikkel Damsgaard,MOFF,27.0,6.53,Brentford,Brentford,GD Estoril Praia,GD Estoril Praia,80.7,73.2,52.2,52.2
+Dango Ouattara,AIL,25.0,7.41,Brentford,Brentford,Brentford,Brentford,81.7,75.9,59.3,59.3
+Igor Thiago,AC,26.0,5.55,Brentford,Brentford,Brighton,Brighton,59.7,56.0,44.4,44.4
+Jordan Pickford,GAR,33.0,6.99,Everton FC,Everton FC,Everton FC,Everton FC,74.8,63.9,55.9,55.9
+James Tarkowski,DC,35.0,7.15,Everton FC,Lazio Rome,Lazio Rome,Lazio Rome,61.1,50.6,57.2,57.2
+Vitaliy Mykolenko,LAT,28.0,5.09,Everton FC,Everton FC,Everton FC,Everton FC,53.6,43.5,40.7,40.7
+James Garner,MDEF,26.0,4.15,Everton FC,Everton FC,US Cremonese,US Cremonese,67.1,59.4,34.8,34.8
+Iliman Ndiaye,MOFF,27.0,8.7,Everton FC,Como,Como,Como,89.0,81.1,63.2,63.2
+Jack Grealish,AIL,32.0,10.76,Everton FC,Bournemouth,Bournemouth,Bournemouth,76.0,64.7,68.7,68.7
+Thierno Barry,AC,25.0,13.2,Everton FC,Everton FC,Athletic Bilbao,Athletic Bilbao,77.8,69.5,75.2,75.2
+Bernd Leno,GAR,35.0,4.25,Fulham FC,Fulham FC,Fulham FC,Fulham FC,55.1,46.4,35.4,35.4
+Calvin Bassey,DC,28.0,10.58,Fulham FC,Fulham FC,FC Lorient,FC Lorient,65.8,62.2,68.2,68.2
+Antonee Robinson,LAT,30.0,6.92,Fulham FC,Fulham FC,Fulham FC,Fulham FC,76.9,69.2,55.4,55.4
+Sander Berge,MDEF,29.0,5.53,Fulham FC,Fulham FC,Fulham FC,Fulham FC,60.2,53.1,44.2,44.2
+Emile Smith Rowe,MOFF,27.0,6.5,Fulham FC,Fulham FC,Manchester United,Manchester United,75.3,69.9,52.0,52.0
+Alex Iwobi,AIL,31.0,7.26,Fulham FC,SC Heerenveen,SC Heerenveen,SC Heerenveen,64.3,57.8,58.1,58.1
+Rodrigo Muniz,AC,26.0,10.91,Fulham FC,Fulham FC,Valence FC,Valence FC,59.7,59.0,69.1,69.1
+Robin Roefs,GAR,25.0,6.91,Sunderland,Real Betis,Real Betis,Real Betis,70.0,64.3,55.3,55.3
+Omar Alderete,DC,31.0,4.94,Sunderland,Sunderland,Sunderland,Sunderland,50.2,42.9,39.6,39.6
+Nordi Mukiele,LAT,30.0,5.12,Sunderland,Sunderland,Sunderland,Sunderland,57.7,47.3,41.0,41.0
+Granit Xhaka,MDEF,35.0,7.3,Sunderland,Sunderland,Sunderland,AS Anus,82.7,74.3,58.4,58.4
+Enzo Le Fée,MOFF,27.0,10.54,Sunderland,RC Lens,RC Lens,RC Lens,68.2,59.7,68.1,68.1
+Chemsdine Talbi,AIL,22.0,13.01,Sunderland,KRC Genk,KRC Genk,KRC Genk,65.6,59.2,74.7,74.7
+Wilson Isidor,AC,27.0,1.72,Sunderland,Sunderland,Espanyol Barcelona,Espanyol Barcelona,38.9,36.6,19.6,19.6
+Matz Sels,GAR,35.0,7.5,Nottingham Forest,Nottingham Forest,Crystal Palace,Crystal Palace,71.7,70.6,60.0,60.0
+Murillo,DC,25.0,19.35,Nottingham Forest,Nottingham Forest,Nottingham Forest,Nottingham Forest,96.3,93.9,85.8,85.8
+Neco Williams,LAT,26.0,9.6,Nottingham Forest,Athletic Bilbao,Athletic Bilbao,Athletic Bilbao,80.0,79.7,65.6,65.6
+Eliott Anderson,MDEF,25.0,24.15,Nottingham Forest,Liverpool FC,Liverpool FC,Liverpool FC,96.3,94.0,92.2,92.2
+Morgan Gibbs-White,MOFF,28.0,15.22,Nottingham Forest,Nottingham Forest,KRC Genk,KRC Genk,82.9,80.4,80.3,80.3
+Dan Ndoye,AIL,27.0,8.51,Nottingham Forest,Nottingham Forest,Nottingham Forest,Nottingham Forest,80.7,79.9,62.7,62.7
+Lorenzo Lucca,AC,27.0,7.38,Nottingham Forest,Nottingham Forest,Toulouse FC,Toulouse FC,61.7,66.7,59.0,59.0
+Lucas Perri,GAR,30.0,6.33,Leeds United,Leeds United,Leeds United,Leeds United,64.8,58.2,50.6,50.6
+Pascal Struijk,DC,28.0,5.97,Leeds United,Leeds United,LOSC,LOSC,46.2,42.4,47.8,47.8
+Gabriel Gudmundsson,LAT,28.0,6.45,Leeds United,Leeds United,Union Saint-Gilloise,Union Saint-Gilloise,65.8,58.9,51.6,51.6
+Ethan Ampadu,MDEF,27.0,3.02,Leeds United,Leeds United,Leeds United,Leeds United,61.7,54.6,27.8,27.8
+Brenden Aaronson,MOFF,27.0,1.48,Leeds United,Leeds United,Leeds United,Leeds United,45.3,40.2,16.9,16.9
+Noah Okafor,AIL,27.0,3.18,Leeds United,Leeds United,Leeds United,Leeds United,61.7,53.2,28.8,28.8
+Dominic Calvert-Lewin,AC,30.0,6.42,Leeds United,Leeds United,Göztepe,Göztepe,57.7,50.1,51.4,51.4
+Max Weiß,GAR,23.0,3.83,Burnley,Burnley,Red Star FC,Red Star FC,41.5,35.4,32.8,32.8
+Maxime Estève,DC,25.0,6.04,Burnley,Burnley,Burnley,Burnley,70.0,61.6,48.3,48.3
+Quilindschy Hartman,LAT,26.0,4.14,Burnley,Burnley,Borussia Mönchengladbach,Borussia Mönchengladbach,73.6,64.5,34.7,34.7
+Josh Cullen,MDEF,31.0,3.8,Burnley,Burnley,RSC Anderlecht,RSC Anderlecht,37.9,30.6,32.6,32.6
+Hannibal,MOFF,25.0,25.72,Burnley,Burnley,Stade Rennais,Stade Rennais,93.1,85.8,94.3,94.3
+Jacob Bruun Larsen,AIL,29.0,1.7,Burnley,Burnley,Burnley,Burnley,33.8,29.8,19.4,19.4
+Lyle Foster,AC,27.0,1.64,Burnley,Burnley,Nottingham Forest,Nottingham Forest,32.0,29.1,18.7,18.7
+Alphonse Areola,GAR,34.0,4.42,West Ham,West Ham,West Ham,West Ham,42.2,39.6,36.4,36.4
+Jean-Clair Todibo,DC,28.0,4.72,West Ham,West Ham,West Ham,West Ham,53.6,46.7,38.3,38.3
+El Hadji Malick Diouf,LAT,23.0,19.05,West Ham,West Ham,Galatasaray,Galatasaray,88.1,82.4,85.4,85.4
+Mateus Fernandes,MDEF,23.0,7.39,West Ham,West Ham,West Ham,West Ham,72.4,67.1,59.1,59.1
+Lucas Paquetá,MOFF,30.0,6.79,West Ham,West Ham,West Ham,West Ham,70.8,64.0,54.3,54.3
+Jarrod Bowen,AIL,31.0,9.04,West Ham,West Ham,West Ham,FC Nantes,81.1,75.3,64.1,64.1
+Taty Castellanos,AC,29.0,7.35,West Ham,Gil Vicente,Gil Vicente,Gil Vicente,65.8,62.8,58.8,58.8
+Sam Johnstone,GAR,34.0,2.76,Wolverhampton,Wolverhampton,Sunderland,Sunderland,36.0,33.0,26.2,26.2
+Toti,DC,29.0,2.19,Wolverhampton,Wolverhampton,Hamburger SV,Hamburger SV,33.8,30.3,22.7,22.7
+Hugo Bueno,LAT,25.0,5.95,Wolverhampton,Wolverhampton,Wolverhampton,Wolverhampton,70.0,61.4,47.6,47.6
+André,MDEF,26.0,9.75,Wolverhampton,Wolverhampton,PSV Eindhoven,PSV Eindhoven,73.6,65.0,66.0,66.0
+João Gomes,MOFF,26.0,3.62,Wolverhampton,Wolverhampton,Union Berlin,Union Berlin,73.6,66.2,31.5,31.5
+Jhon Arias,AIL,30.0,5.26,Wolverhampton,Wolverhampton,US Cremonese,US Cremonese,51.0,43.2,42.1,42.1
+Jørgen Strand Larsen,AC,27.0,8.1,Wolverhampton,CD Santa Clara,CD Santa Clara,CD Santa Clara,75.3,68.1,61.6,61.6
+Marko Dmitrovic,GAR,36.0,1.65,Espanyol Barcelona,Espanyol Barcelona,Espanyol Barcelona,Espanyol Barcelona,52.2,42.8,18.9,18.9
+Fernando Calero,DC,32.0,2.4,Espanyol Barcelona,Espanyol Barcelona,RSC Anderlecht,RSC Anderlecht,27.2,21.8,24.0,24.0
+Carlos Romero,LAT,26.0,2.03,Espanyol Barcelona,Espanyol Barcelona,Espanyol Barcelona,Espanyol Barcelona,59.7,52.1,21.7,21.7
+Urko González de Zárate,MDEF,26.0,1.25,Espanyol Barcelona,Manchester United,Manchester United,Manchester United,36.8,33.5,14.2,14.2
+Edu Expósito,MOFF,31.0,3.55,Espanyol Barcelona,Gil Vicente,Gil Vicente,Gil Vicente,31.3,27.2,31.1,31.1
+Javi Puado,AIL,29.0,4.61,Espanyol Barcelona,Espanyol Barcelona,Espanyol Barcelona,Espanyol Barcelona,53.6,45.0,37.6,37.6
+Roberto Fernández,AC,25.0,2.56,Espanyol Barcelona,Espanyol Barcelona,Union Berlin,Union Berlin,26.3,26.2,25.0,25.0
+Ionuț Radu,GAR,30.0,5.06,Celta Vigo,Celta Vigo,US Lecce,US Lecce,51.0,43.6,40.5,40.5
+Javi Rodríguez,DC,24.0,14.1,Celta Vigo,Celta Vigo,Vfb Stuttgart,Vfb Stuttgart,71.1,66.0,77.6,77.6
+Óscar Mingueza,LAT,28.0,8.89,Celta Vigo,KVC Westerlo,KVC Westerlo,KVC Westerlo,65.8,55.8,63.7,63.7
+Ilaix Moriba,MDEF,25.0,9.08,Celta Vigo,Celta Vigo,GD Estoril Praia,GD Estoril Praia,81.7,75.6,64.2,64.2
+Fer López,MOFF,23.0,5.25,Celta Vigo,Celta Vigo,Hannover 96,Hannover 96,49.5,43.4,42.0,42.0
+Bryan Zaragoza,AIL,26.0,3.93,Celta Vigo,Celta Vigo,Celta Vigo,Celta Vigo,73.6,67.1,33.4,33.4
+Borja Iglesias,AC,35.0,6.25,Celta Vigo,GD Estoril Praia,GD Estoril Praia,GD Estoril Praia,61.1,53.8,50.0,50.0
+Iñaki Peña,GAR,28.0,4.79,Elche CF,Elche CF,Olympique Lyonnais,Olympique Lyonnais,46.2,40.8,38.7,38.7
+David Affengruber,DC,26.0,4.03,Elche CF,Elche CF,Elche CF,Elche CF,67.1,63.8,34.0,34.0
+Álvaro Núñez,LAT,27.0,3.02,Elche CF,Elche CF,Elche CF,Elche CF,61.7,54.9,27.8,27.8
+Marc Aguado,MDEF,27.0,1.99,Elche CF,Toulouse FC,Toulouse FC,Toulouse FC,38.9,35.7,21.5,21.5
+Rodrigo Mendoza,MOFF,22.0,3.67,Elche CF,Elche CF,Elche CF,Elche CF,35.7,33.8,31.8,31.8
+Grady Diangana,AIL,29.0,0.78,Elche CF,Elche CF,Elche CF,Elche CF,10.9,9.4,8.9,8.9
+Álvaro Rodríguez,AC,23.0,5.84,Elche CF,KV Mechelen,KV Mechelen,KV Mechelen,35.4,34.2,46.7,46.7
+Augusto Batalla,GAR,31.0,17.93,Rayo Vallecano,Rayo Vallecano,FC Porto,FC Porto,57.2,52.0,83.9,83.9
+Abdul Mumin,DC,29.0,4.66,Rayo Vallecano,Rayo Vallecano,Rayo Vallecano,Rayo Vallecano,46.2,43.8,37.9,37.9
+Pep Chavarría,LAT,29.0,4.89,Rayo Vallecano,Rayo Vallecano,Rayo Vallecano,Rayo Vallecano,53.6,48.0,39.3,39.3
+Óscar Valentín,MDEF,33.0,5.0,Rayo Vallecano,Rayo Vallecano,Rayo Vallecano,Rayo Vallecano,42.9,41.3,40.0,40.0
+Unai López,MOFF,32.0,3.81,Rayo Vallecano,Rayo Vallecano,Vitória Guimarães SC,Vitória Guimarães SC,37.3,35.1,32.7,32.7
+Jorge de Frutos,AIL,30.0,6.16,Rayo Vallecano,FC Saint Pauli,FC Saint Pauli,FC Saint Pauli,64.8,58.2,49.3,49.3
+Alemão,AC,29.0,3.85,Rayo Vallecano,Rayo Vallecano,Hamburger SV,Hamburger SV,23.5,24.4,32.9,32.9
+Odysseas Vlachodimos,GAR,33.0,6.3,Séville FC,Séville FC,Royal Anterwerp FC,Royal Anterwerp FC,56.3,51.2,50.4,50.4
+Kike Salas,DC,25.0,8.17,Séville FC,Séville FC,Villareal,Villareal,63.5,61.3,61.8,61.8
+José Ángel Carmona,LAT,25.0,7.84,Séville FC,Séville FC,Séville FC,Séville FC,77.8,73.5,60.9,60.9
+Lucien Agoumé,MDEF,25.0,5.9,Séville FC,Séville FC,Séville FC,Séville FC,63.5,60.2,47.2,47.2
+Djibril Sow,MOFF,30.0,4.04,Séville FC,Séville FC,Séville FC,Séville FC,38.5,37.0,34.1,34.1
+Rubén Vargas,AIL,29.0,5.74,Séville FC,Séville FC,Séville FC,Séville FC,53.6,50.7,45.9,45.9
+Akor Adams,AC,27.0,5.42,Séville FC,Séville FC,Séville FC,Séville FC,61.7,62.6,43.4,43.4
+Sergio Herrera,GAR,34.0,4.32,CA Osasuna,CA Osasuna,Wolverhampton,Wolverhampton,48.8,42.1,35.8,35.8
+Alejandro Catena,DC,33.0,4.5,CA Osasuna,CA Osasuna,CA Osasuna,CA Osasuna,49.1,41.3,36.9,36.9
+Javi Galán,LAT,33.0,4.11,CA Osasuna,CA Osasuna,CA Osasuna,CA Osasuna,49.1,41.0,34.5,34.5
+Jon Moncayola,MDEF,29.0,4.74,CA Osasuna,CA Osasuna,CA Osasuna,CA Osasuna,53.6,44.2,38.4,38.4
+Aimar Oroz,MOFF,26.0,3.7,CA Osasuna,CA Osasuna,CA Osasuna,CA Osasuna,73.6,64.5,32.0,32.0
+Víctor Muñoz,AIL,24.0,5.51,CA Osasuna,CA Osasuna,CA Osasuna,CA Osasuna,56.6,48.4,44.1,44.1
+Raúl García,AC,27.0,1.86,CA Osasuna,CA Osasuna,CA Osasuna,CA Osasuna,38.9,36.6,20.7,20.7
+Antonio Sivera,GAR,31.0,4.43,Deportivo Alavés,Vitória Guimarães SC,Vitória Guimarães SC,Vitória Guimarães SC,44.1,38.3,36.5,36.5
+Jon Pacheco,DC,27.0,3.44,Deportivo Alavés,Deportivo Alavés,US Cremonese,US Cremonese,45.3,43.3,30.4,30.4
+Nahuel Tenaglia,LAT,31.0,4.43,Deportivo Alavés,US Cremonese,US Cremonese,US Cremonese,44.1,39.5,36.5,36.5
+Antonio Blanco,MDEF,27.0,3.0,Deportivo Alavés,Deportivo Alavés,Deportivo Alavés,Deportivo Alavés,52.9,46.6,27.7,27.7
+Denis Suárez,MOFF,34.0,1.49,Deportivo Alavés,Deportivo Alavés,Deportivo Alavés,Deportivo Alavés,36.0,31.7,17.0,17.0
+Lucas Boyé,AIL,31.0,1.32,Deportivo Alavés,Deportivo Alavés,Deportivo Alavés,Deportivo Alavés,27.6,23.5,15.1,15.1
+Toni Martínez,AC,30.0,3.65,Deportivo Alavés,Hannover 96,Hannover 96,Hannover 96,32.7,30.2,31.7,31.7
+Leo Román,GAR,27.0,5.62,RCD Mallorca,Juventus Turin,Juventus Turin,Juventus Turin,68.2,61.5,45.0,45.0
+Martin Valjent,DC,32.0,3.98,RCD Mallorca,RCD Mallorca,RCD Mallorca,RCD Mallorca,43.6,37.8,33.7,33.7
+Johan Mojica,LAT,35.0,2.68,RCD Mallorca,RCD Mallorca,SC Heerenveen,SC Heerenveen,48.2,39.2,25.7,25.7
+Samú Costa,MDEF,27.0,5.65,RCD Mallorca,RCD Mallorca,FC Utrecht,FC Utrecht,75.3,67.3,45.2,45.2
+Pablo Torre,MOFF,24.0,6.0,RCD Mallorca,RCD Mallorca,RCD Mallorca,RCD Mallorca,65.3,57.6,48.0,48.0
+Jan Virgili,AIL,21.0,5.71,RCD Mallorca,RCD Mallorca,RCD Mallorca,RCD Mallorca,51.9,44.8,45.7,45.7
+Vedat Muriqi,AC,33.0,5.83,RCD Mallorca,RCD Mallorca,Rayo Vallecano,Rayo Vallecano,63.2,54.2,46.6,46.6
+Mathew Ryan,GAR,35.0,6.11,UD Levante,AS Roma,AS Roma,AS Roma,55.1,46.8,48.9,48.9
+Adrián Dela,DC,28.0,1.17,UD Levante,US Lecce,US Lecce,US Lecce,23.5,19.4,13.3,13.3
+Jeremy Toljan,LAT,33.0,1.07,UD Levante,SC Paderborn,SC Paderborn,SC Paderborn,25.7,20.7,12.2,12.2
+Kervin Arriaga,MDEF,30.0,2.69,UD Levante,UD Levante,Everton FC,Everton FC,27.9,22.9,25.8,25.8
+Pablo Martínez,MOFF,29.0,4.66,UD Levante,UD Levante,Newcastle,Newcastle,33.8,29.4,37.9,37.9
+Carlos Álvarez,AIL,24.0,8.62,UD Levante,UD Levante,UD Levante,UD Levante,79.3,71.3,63.0,63.0
+Karl Etta Eyong,AC,24.0,7.31,UD Levante,Moreirense FC,Moreirense FC,Moreirense FC,56.6,52.4,58.5,58.5
+Aarón Escandell,GAR,32.0,4.87,Real Oviedo,Hannover 96,Hannover 96,Hannover 96,49.9,41.8,39.2,39.2
+David Carmo,DC,28.0,1.58,Real Oviedo,Real Oviedo,Real Oviedo,Real Oviedo,33.8,27.8,18.0,18.0
+Rahim Alhassane,LAT,26.0,1.46,Real Oviedo,Real Oviedo,Sporting CP,Sporting CP,29.9,24.2,16.7,16.7
+Leander Dendoncker,MDEF,32.0,1.69,Real Oviedo,Alanyaspor,Alanyaspor,Alanyaspor,30.9,24.7,19.3,19.3
+Luka Ilic,MOFF,28.0,0.54,Real Oviedo,Real Oviedo,Real Oviedo,Real Oviedo,10.9,8.7,6.1,6.1
+Haissem Hassan,AIL,25.0,6.01,Real Oviedo,Real Oviedo,Real Oviedo,Real Oviedo,63.5,57.2,48.1,48.1
+Federico Viñas,AC,29.0,1.04,Real Oviedo,Deportivo Alavés,Deportivo Alavés,Deportivo Alavés,19.0,16.0,11.8,11.8
+Moritz Nicolas,GAR,30.0,3.72,Borussia Mönchengladbach,Borussia Mönchengladbach,Borussia Mönchengladbach,Borussia Mönchengladbach,32.7,27.1,32.1,32.1
+Nico Elvedi,DC,31.0,4.8,Borussia Mönchengladbach,Caykur Rizespor,Caykur Rizespor,Caykur Rizespor,44.1,37.4,38.8,38.8
+Joe Scally,LAT,25.0,6.64,Borussia Mönchengladbach,Borussia Mönchengladbach,Werder Bremen,Werder Bremen,55.4,45.8,53.1,53.1
+Yannik Engelhardt,MDEF,26.0,0.71,Borussia Mönchengladbach,Borussia Mönchengladbach,RCD Mallorca,RCD Mallorca,25.0,21.6,8.1,8.1
+Rocco Reitz,MOFF,25.0,6.71,Borussia Mönchengladbach,Borussia Mönchengladbach,Mainz 05,Mainz 05,77.8,70.4,53.7,53.7
+Franck Honorat,AIL,31.0,5.92,Borussia Mönchengladbach,Borussia Mönchengladbach,Borussia Mönchengladbach,Borussia Mönchengladbach,57.2,49.6,47.4,47.4
+Haris Tabakovic,AC,33.0,1.8,Borussia Mönchengladbach,Borussia Mönchengladbach,Borussia Mönchengladbach,Borussia Mönchengladbach,20.8,18.6,20.3,20.3
+Robin Zentner,GAR,33.0,5.61,Mainz 05,Mainz 05,Mainz 05,Mainz 05,49.1,45.9,44.9,44.9
+Danny da Costa,DC,34.0,3.16,Mainz 05,Mainz 05,Mainz 05,Mainz 05,30.4,32.0,28.7,28.7
+Anthony Caci,LAT,30.0,6.21,Mainz 05,Mainz 05,LOSC,LOSC,51.0,45.5,49.7,49.7
+Kaishu Sano,MDEF,27.0,7.16,Mainz 05,Mainz 05,Union Saint-Gilloise,Union Saint-Gilloise,80.7,77.1,57.3,57.3
+Nadiem Amiri,MOFF,31.0,6.38,Mainz 05,Mainz 05,US Lecce,Rodez AF,69.6,61.9,51.0,51.0
+Arnaud Nordin,AIL,29.0,1.38,Mainz 05,Mainz 05,AS Saint-Etienne,Rodez AF,23.5,22.3,15.7,15.7
+Benedict Hollerbach,AC,26.0,11.21,Mainz 05,Bournemouth,Bournemouth,Bournemouth,73.6,73.3,69.9,69.9
+Finn Dahmen,GAR,29.0,4.98,FC Augsburg,FC Augsburg,CA Osasuna,CA Osasuna,46.2,42.4,39.9,39.9
+Keven Schlotterbeck,DC,30.0,7.33,FC Augsburg,FC Augsburg,FC Augsburg,FC Augsburg,81.5,72.8,58.6,58.6
+Marius Wolf,LAT,32.0,2.73,FC Augsburg,FC Augsburg,Samsunspor,Samsunspor,30.9,27.6,26.0,26.0
+Kristijan Jakic,MDEF,30.0,3.25,FC Augsburg,FC Augsburg,Herta Berlin,Herta Berlin,38.5,34.6,29.2,29.2
+Fabian Rieder,MOFF,25.0,6.22,FC Augsburg,FC Augsburg,FC Utrecht,FC Utrecht,55.4,47.1,49.8,49.8
+Alexis Claude-Maurice,AIL,29.0,3.57,FC Augsburg,FC Augsburg,FC Augsburg,FC Augsburg,46.2,39.7,31.2,31.2
+Michael Gregoritsch,AC,33.0,2.71,FC Augsburg,FC Augsburg,FC Augsburg,FC Augsburg,36.4,32.7,25.9,25.9
+Frederik Rönnow,GAR,35.0,5.99,Union Berlin,Union Berlin,US Cremonese,US Cremonese,61.1,56.4,47.9,47.9
+Danilho Doekhi,DC,29.0,5.7,Union Berlin,Union Berlin,Union Berlin,Union Berlin,53.6,51.4,45.6,45.6
+Tom Rothe,LAT,23.0,9.11,Union Berlin,Union Berlin,Manchester United,Manchester United,58.5,56.7,64.3,64.3
+Rani Khedira,MDEF,34.0,3.26,Union Berlin,Union Berlin,FC Twente,FC Twente,30.4,31.2,29.3,29.3
+Janik Haberer,MOFF,33.0,3.2,Union Berlin,Union Berlin,Udinese Calcio,Udinese Calcio,25.7,23.7,28.9,28.9
+Woo-yeong Jeong,AIL,28.0,1.75,Union Berlin,Sunderland,Sunderland,Sunderland,23.5,22.0,20.0,20.0
+Andrej Ilic,AC,27.0,5.59,Union Berlin,Union Berlin,Torino FC,Torino FC,61.7,60.5,44.7,44.7
+Daniel Heuer Fernandes,GAR,35.0,1.55,Hamburger SV,Hamburger SV,Hamburger SV,Hamburger SV,25.6,21.4,17.7,17.7
+Luka Vuskovic,DC,20.0,5.15,Hamburger SV,Hamburger SV,Red Star FC,Red Star FC,43.5,39.9,41.2,41.2
+Miro Muheim,LAT,29.0,1.81,Hamburger SV,Hamburger SV,Hamburger SV,Hamburger SV,33.8,28.1,20.4,20.4
+Nicolai Remberg,MDEF,27.0,1.26,Hamburger SV,Hamburger SV,Hamburger SV,Hamburger SV,32.0,29.1,14.4,14.4
+Fábio Vieira,MOFF,27.0,5.89,Hamburger SV,Hamburger SV,Hamburger SV,Hamburger SV,75.3,67.3,47.1,47.1
+Philip Otele,AIL,28.0,2.09,Hamburger SV,Hamburger SV,Hamburger SV,Hamburger SV,23.5,19.3,22.1,22.1
+Ransford Königsdörffer,AC,26.0,2.29,Hamburger SV,Hamburger SV,Everton FC,Everton FC,36.8,36.1,23.3,23.3
+Marvin Schwäbe,GAR,32.0,4.97,Fc Köln,Fc Köln,Fc Köln,Fc Köln,43.6,38.9,39.8,39.8
+Timo Hübers,DC,31.0,2.86,Fc Köln,Fc Köln,Fc Köln,Fc Köln,22.0,21.0,26.8,26.8
+Sebastian Sebulonsen,LAT,28.0,0.97,Fc Köln,Fc Köln,Fc Köln,Fc Köln,10.9,10.2,11.0,11.0
+Eric Martel,MDEF,25.0,7.76,Fc Köln,Fc Köln,Fc Köln,Fc Köln,70.0,66.5,60.7,60.7
+Alessio Castro-Montes,MOFF,30.0,3.1,Fc Köln,Herta Berlin,Herta Berlin,Herta Berlin,44.7,37.6,28.3,28.3
+Said El Mala,AIL,21.0,9.56,Fc Köln,Gil Vicente,Gil Vicente,Gil Vicente,59.5,52.9,65.5,65.5
+Ragnar Ache,AC,29.0,3.52,Fc Köln,Fc Köln,Fc Köln,Fc Köln,23.5,22.3,30.9,30.9
+Nikola Vasilj,GAR,32.0,3.5,FC Saint Pauli,FC Saint Pauli,FC Saint Pauli,FC Saint Pauli,43.6,39.1,30.8,30.8
+Eric Smith,DC,31.0,2.3,FC Saint Pauli,FC Saint Pauli,FC Saint Pauli,FC Saint Pauli,31.3,30.5,23.4,23.4
+Arkadiusz Pyrka,LAT,25.0,1.23,FC Saint Pauli,FC Saint Pauli,FC Groningen,FC Groningen,15.4,14.2,14.0,14.0
+James Sands,MDEF,27.0,1.02,FC Saint Pauli,Sporting Charleroi,Sporting Charleroi,Sporting Charleroi,26.8,24.0,11.6,11.6
+Joel Chima Fujita,MOFF,25.0,1.13,FC Saint Pauli,FC Saint Pauli,FC Saint Pauli,FC Saint Pauli,20.2,18.8,12.9,12.9
+Mathias Pereira Lage,AIL,31.0,3.99,FC Saint Pauli,Göztepe,Göztepe,Göztepe,37.9,33.6,33.8,33.8
+Martijn Kaars,AC,28.0,1.15,FC Saint Pauli,FC Saint Pauli,FC Saint Pauli,FC Saint Pauli,14.4,12.8,13.1,13.1
+Tjark Ernst,GAR,24.0,2.82,Herta Berlin,Real Oviedo,AS Saint-Etienne,AS Saint-Etienne,21.1,20.9,26.6,26.6
+Linus Gechter,DC,23.0,2.74,Herta Berlin,Herta Berlin,Herta Berlin,SO Millau,22.8,19.7,26.1,26.1
+Michal Karbownik,LAT,26.0,0.68,Herta Berlin,Herta Berlin,Herta Berlin,Herta Berlin,25.0,20.5,7.7,7.7
+Kennet Eichhorn,MDEF,18.0,0.02,Herta Berlin,Herta Berlin,Tottenham,Plouhinec FC,18.5,0.0,0.1,0.1
+Michaël Cuisance,MOFF,28.0,1.19,Herta Berlin,Newcastle,AS Anus,AS Anus,19.0,13.5,13.6,13.6
+Fabian Reese,AIL,30.0,2.22,Herta Berlin,Herta Berlin,Herta Berlin,Herta Berlin,32.7,28.0,22.9,22.9
+Dawid Kownacki,AC,30.0,1.24,Herta Berlin,Herta Berlin,Herta Berlin,Herta Berlin,18.1,13.2,14.1,14.1
+Dennis Seimen,GAR,22.0,0.96,SC Paderborn,SC Paderborn,SC Paderborn,Plouhinec FC,9.4,8.9,10.9,10.9
+Felix Götze,DC,29.0,6.12,SC Paderborn,SC Paderborn,SC Paderborn,SC Paderborn,72.1,63.6,49.0,49.0
+Raphael Obermair,LAT,31.0,0.82,SC Paderborn,Brentford,Brentford,Brentford,17.6,11.8,9.3,9.3
+Mika Baur,MDEF,23.0,0.44,SC Paderborn,SC Paderborn,SC Paderborn,SC Paderborn,4.7,3.8,4.9,4.9
+Sebastian Klaas,MOFF,29.0,0.25,SC Paderborn,SC Paderborn,FC Nantes,FC Nantes,3.9,3.2,2.8,2.8
+Filip Bilbija,AIL,27.0,0.84,SC Paderborn,SC Paderborn,SC Paderborn,SC Paderborn,26.8,22.8,9.5,9.5
+Kennedy Okpala,AC,23.0,0.51,SC Paderborn,Celta Vigo,Celta Vigo,Celta Vigo,4.7,4.7,5.8,5.8
+Nahuel Noll,GAR,24.0,1.34,Hannover 96,RCD Mallorca,RCD Mallorca,RCD Mallorca,11.7,10.5,15.3,15.3
+Virgil Ghiță,DC,,,Hannover 96,Hannover 96,FC Nantes,,10.9,9.4,7.0,
+Maurice Neubauer,LAT,31.0,1.96,Hannover 96,Hannover 96,Udinese Calcio,Udinese Calcio,22.0,16.9,21.3,21.3
+Noel Aseko,MDEF,22.0,0.24,Hannover 96,Hannover 96,FC Nantes,FC Nantes,3.5,2.8,2.6,2.6
+Enzo Leopold,MOFF,27.0,1.59,Hannover 96,Hannover 96,Wolverhampton,Wolverhampton,45.3,39.8,18.2,18.2
+Elias Saad,AIL,28.0,1.14,Hannover 96,Hannover 96,Hannover 96,Hannover 96,19.0,15.0,13.0,13.0
+Benjamin Källman,AC,29.0,1.08,Hannover 96,SC Paderborn,SC Paderborn,SC Paderborn,19.0,15.0,12.3,12.3
+Maduka Okoye,GAR,28.0,3.42,Udinese Calcio,Udinese Calcio,Udinese Calcio,Udinese Calcio,28.8,24.9,30.3,30.3
+Oumar Solet,DC,27.0,6.72,Udinese Calcio,Udinese Calcio,Udinese Calcio,Udinese Calcio,75.3,69.1,53.8,53.8
+Jordan Zemura,LAT,28.0,0.65,Udinese Calcio,Udinese Calcio,FC Nantes,FC Nantes,10.9,10.0,7.3,7.3
+Jesper Karlström,MDEF,32.0,4.07,Udinese Calcio,Udinese Calcio,Udinese Calcio,Udinese Calcio,30.9,28.5,34.3,34.3
+Nicolò Zaniolo,MOFF,28.0,2.51,Udinese Calcio,Udinese Calcio,Rayo Vallecano,Uchiha Palaiseau,40.0,34.1,24.7,24.7
+Idrissa Gueye,AIL,21.0,3.76,Udinese Calcio,Udinese Calcio,Uchiha Palaiseau,Uchiha Palaiseau,29.4,25.4,32.4,32.4
+Keinan Davis,AC,29.0,2.81,Udinese Calcio,Udinese Calcio,Udinese Calcio,Udinese Calcio,19.0,14.3,26.5,26.5
+Emil Audero,GAR,31.0,5.67,US Cremonese,US Cremonese,Deportivo Alavés,AS Anus,50.2,46.5,45.4,45.4
+Federico Baschirotto,DC,31.0,7.06,US Cremonese,US Cremonese,Newcastle,Newcastle,31.3,32.3,56.5,56.5
+Filippo Terracciano,LAT,24.0,12.34,US Cremonese,AS Monaco,AS Monaco,AS Monaco,83.6,78.0,72.9,72.9
+Warren Bondo,MDEF,24.0,6.85,US Cremonese,US Cremonese,Hoffenheim,Uchiha Palaiseau,41.1,42.2,54.8,54.8
+Jari Vandeputte,MOFF,31.0,1.38,US Cremonese,US Cremonese,US Cremonese,US Cremonese,17.6,15.4,15.8,15.8
+Dennis Johnsen,AIL,29.0,1.12,US Cremonese,US Cremonese,US Sassuolo,US Sassuolo,14.4,14.7,12.8,12.8
+Antonio Sanabria,AC,31.0,5.3,US Cremonese,US Cremonese,US Cremonese,US Cremonese,37.9,37.7,42.4,42.4
+Arijanet Murić,GAR,29.0,1.11,US Sassuolo,US Sassuolo,US Sassuolo,US Sassuolo,19.0,15.7,12.7,12.7
+Jay Idzes,DC,27.0,1.0,US Sassuolo,US Sassuolo,US Sassuolo,US Sassuolo,32.0,29.7,11.4,11.4
+Sebastian Walukiewicz,LAT,,,US Sassuolo,US Sassuolo,Rodez AF,,26.8,22.6,13.2,
+Kristian Thorstvedt,MDEF,28.0,2.06,US Sassuolo,US Sassuolo,US Sassuolo,Rodez AF,40.0,33.9,21.9,21.9
+Ismaël Koné,MOFF,25.0,6.74,US Sassuolo,US Sassuolo,Werder Bremen,Werder Bremen,39.5,35.2,53.9,53.9
+Domenico Berardi,AIL,,,US Sassuolo,US Sassuolo,FC Nantes,,74.8,63.3,50.5,
+Andrea Pinamonti,AC,28.0,2.04,US Sassuolo,US Sassuolo,Genoa CFC,Genoa CFC,33.8,28.6,21.8,21.8
+Elia Caprile,GAR,26.0,4.27,Cagliari Calcio,Wolfsburg,Wolfsburg,Wolfsburg,67.1,62.4,35.5,35.5
+Sebastiano Luperto,DC,31.0,2.34,Cagliari Calcio,Cagliari Calcio,Cagliari Calcio,Cagliari Calcio,37.9,33.2,23.6,23.6
+Marco Palestra,LAT,22.0,5.49,Cagliari Calcio,US Lecce,US Lecce,US Lecce,59.3,50.3,43.9,43.9
+Michel Adopo,MDEF,27.0,1.0,Cagliari Calcio,Cagliari Calcio,Cagliari Calcio,Cagliari Calcio,32.0,29.1,11.4,11.4
+Michael Folorunsho,MOFF,29.0,1.73,Cagliari Calcio,Cagliari Calcio,Cagliari Calcio,Cagliari Calcio,33.8,28.1,19.8,19.8
+Sebastiano Esposito,AIL,25.0,11.44,Cagliari Calcio,Cagliari Calcio,SL Benfica,SL Benfica,63.5,55.3,70.5,70.5
+Andrea Belotti,AC,34.0,3.6,Cagliari Calcio,Cagliari Calcio,Cagliari Calcio,Cagliari Calcio,42.2,36.2,31.4,31.4
+Wladimiro Falcone,GAR,32.0,7.36,US Lecce,FC Utrecht,FC Utrecht,FC Utrecht,69.3,63.5,58.9,58.9
+Tiago Gabriel,DC,23.0,7.1,US Lecce,Alanyaspor,Alanyaspor,Alanyaspor,58.5,55.6,56.8,56.8
+Antonino Gallo,LAT,28.0,2.38,US Lecce,Genoa CFC,Genoa CFC,Genoa CFC,33.8,31.1,23.9,23.9
+Ylber Ramadani,MDEF,31.0,0.55,US Lecce,US Lecce,US Lecce,US Lecce,10.0,8.6,6.2,6.2
+Omri Gandelman,MOFF,27.0,0.8,US Lecce,US Lecce,SC Paderborn,SC Paderborn,26.8,23.2,9.1,9.1
+Santiago Pierotti,AIL,26.0,1.74,US Lecce,US Lecce,Brighton,Brighton,25.0,23.1,19.9,19.9
+Francesco Camarda,AC,19.0,0.27,US Lecce,US Lecce,West Ham,West Ham,36.3,19.6,3.0,3.0
+Zion Suzuki,GAR,25.0,10.12,Parma Calcio,Getafe,Getafe,Getafe,81.7,75.4,67.0,67.0
+Alessandro Circati,DC,24.0,3.47,Parma Calcio,Parma Calcio,Parma Calcio,Parma Calcio,33.6,32.1,30.6,30.6
+Enrico Delprato,LAT,28.0,1.58,Parma Calcio,Parma Calcio,Parma Calcio,Parma Calcio,33.8,28.1,18.0,18.0
+Mandela Keita,MDEF,25.0,5.78,Parma Calcio,Parma Calcio,Parma Calcio,Parma Calcio,70.0,60.8,46.2,46.2
+Adrián Bernabé,MOFF,26.0,2.48,Parma Calcio,Parma Calcio,Alanyaspor,Alanyaspor,52.6,45.2,24.5,24.5
+Jacob Ondrejka,AIL,25.0,6.08,Parma Calcio,Parma Calcio,Royal Anterwerp FC,Royal Anterwerp FC,47.6,44.7,48.6,48.6
+Mateo Pellegrino,AC,26.0,1.18,Parma Calcio,Parma Calcio,RCD Mallorca,RCD Mallorca,25.0,25.3,13.5,13.5
+Nicola Leali,GAR,34.0,0.77,Genoa CFC,Genoa CFC,Genoa CFC,Genoa CFC,12.9,10.7,8.7,8.7
+Johan Vásquez,DC,29.0,2.89,Genoa CFC,Genoa CFC,Genoa CFC,Genoa CFC,33.8,31.5,27.0,27.0
+Brooke Norton-Cuffy,LAT,24.0,3.13,Genoa CFC,Deportivo Alavés,Deportivo Alavés,Deportivo Alavés,28.3,26.4,28.5,28.5
+Morten Frendrup,MDEF,26.0,6.28,Genoa CFC,Sparta Rotterdam,Sparta Rotterdam,Sparta Rotterdam,67.1,61.0,50.2,50.2
+Ruslan Malinovskyi,MOFF,34.0,1.63,Genoa CFC,Genoa CFC,Genoa CFC,Genoa CFC,36.0,30.9,18.6,18.6
+Maxwel Cornet,AIL,31.0,1.77,Genoa CFC,Genoa CFC,Genoa CFC,Genoa CFC,27.6,22.7,20.1,20.1
+Vitinha Oliveira,AC,27.0,3.93,Genoa CFC,Genoa CFC,Alanyaspor,Alanyaspor,52.9,48.2,33.4,33.4
+Adrian Semper,GAR,30.0,1.83,Pisa SC,Herta Berlin,Herta Berlin,Herta Berlin,27.9,23.4,20.5,20.5
+Simone Canestrelli,DC,27.0,0.92,Pisa SC,Pisa SC,Pisa SC,Pisa SC,20.5,18.5,10.5,10.5
+Idrissa Touré,LAT,29.0,0.91,Pisa SC,Pisa SC,Pisa SC,Pisa SC,14.4,11.0,10.3,10.3
+Michel Aebischer,MDEF,31.0,4.22,Pisa SC,Moreirense FC,Moreirense FC,Moreirense FC,44.1,36.4,35.2,35.2
+Calvin Stengs,MOFF,29.0,2.01,Pisa SC,Pisa SC,Pisa SC,Pisa SC,40.0,34.5,21.6,21.6
+Matteo Tramoni,AIL,28.0,1.68,Pisa SC,Pisa SC,Wolverhampton,Wolverhampton,28.8,23.9,19.2,19.2
+M'Bala Nzola,AC,31.0,2.12,Pisa SC,Pisa SC,Pisa SC,Pisa SC,31.3,27.2,22.3,22.3
+Lorenzo Montipò,GAR,31.0,3.99,Hellas Verona,Hellas Verona,Hellas Verona,Hellas Verona,37.9,34.0,33.8,33.8
+Victor Nelsson,DC,,,Hellas Verona,Hellas Verona,AS Saint-Etienne,,33.8,29.8,25.6,
+Rafik Belghali,LAT,,,Hellas Verona,Cagliari Calcio,Red Star FC,,15.4,12.1,10.6,
+Moatasem Al-Musrati,MDEF,31.0,1.51,Hellas Verona,Hellas Verona,Hellas Verona,Hellas Verona,27.6,21.9,17.2,17.2
+Suat Serdar,MOFF,30.0,2.25,Hellas Verona,Hellas Verona,Hellas Verona,Hellas Verona,38.5,31.8,23.1,23.1
+Amin Sarr,AIL,26.0,1.2,Hellas Verona,Hellas Verona,Hellas Verona,Hellas Verona,29.9,29.8,13.7,13.7
+Gift Orban,AC,25.0,6.03,Hellas Verona,Hellas Verona,Hellas Verona,Hellas Verona,55.4,50.2,48.2,48.2
+Franco Israel,GAR,27.0,5.04,Torino FC,Torino FC,Real Oviedo,Real Oviedo,52.9,57.3,40.3,40.3
+Guillermo Maripán,DC,33.0,3.86,Torino FC,Torino FC,Torino FC,AS Anus,30.6,33.7,33.0,33.0
+Valentino Lazaro,LAT,31.0,4.24,Torino FC,Torino FC,Göztepe,Göztepe,37.9,38.1,35.3,35.3
+Kristjan Asllani,MDEF,25.0,7.22,Torino FC,Torino FC,Torino FC,Torino FC,63.5,64.9,57.8,57.8
+Nikola Vlašić,MOFF,30.0,6.66,Torino FC,Torino FC,Torino FC,Torino FC,57.7,58.7,53.3,53.3
+Zakaria Aboukhlal,AIL,27.0,6.28,Torino FC,Torino FC,Torino FC,Torino FC,61.7,67.8,50.2,50.2
+Giovanni Simeone,AC,32.0,7.11,Torino FC,Torino FC,FC Lorient,FC Lorient,37.3,42.0,56.9,56.9
+Gaëtan Poussin,GAR,28.0,0.24,Red Star FC,Red Star FC,Tottenham,Tottenham,1.0,1.7,2.7,2.7
+Dylan Durivaux,DC,25.0,3.28,Red Star FC,Red Star FC,Wolverhampton,Wolverhampton,25.0,25.8,29.4,29.4
+Dembo Sylla,LAT,24.0,0.31,Red Star FC,Red Star FC,Leeds United,Leeds United,2.9,3.5,3.5,3.5
+Giovanni Haag,MDEF,,,Red Star FC,Red Star FC,Red Star FC,,5.4,5.0,2.2,
+Ryad Hachem,MOFF,28.0,0.14,Red Star FC,Red Star FC,Eintracht Francfort,Eintracht Francfort,0.4,0.1,1.5,1.5
+Damien Durand,AIL,,,Red Star FC,Red Star FC,Red Star FC,,1.5,1.4,1.0,
+Jovany Ikanga,AC,,,Red Star FC,Red Star FC,Red Star FC,,7.6,7.6,3.9,
+Adrián Ortolá,GAR,,,Plouhinec FC,Plouhinec FC,Plouhinec FC,,4.6,4.4,4.2,
+Donatien Gomis,DC,32.0,0.64,Plouhinec FC,Plouhinec FC,Espanyol Barcelona,Espanyol Barcelona,7.9,6.8,7.2,7.2
+Alpha Sissoko,LAT,30.0,0.3,Plouhinec FC,Plouhinec FC,FC Augsburg,FC Augsburg,4.9,3.6,3.3,3.3
+Kalidou Sidibé,MDEF,,,Plouhinec FC,Plouhinec FC,Plouhinec FC,,19.0,16.5,13.8,
+Amine Hemia,MOFF,,,Plouhinec FC,Plouhinec FC,Plouhinec FC,,8.2,6.0,4.6,
+Jérémy Hatchi,AIL,22.0,0.72,Plouhinec FC,Plouhinec FC,Plouhinec FC,Plouhinec FC,5.2,5.2,8.2,8.2
+Louis Mafouta ,AC,32.0,0.12,Plouhinec FC,Plouhinec FC,Parma Calcio,Parma Calcio,1.4,1.5,1.3,1.3
+Alban Lafont,GAR,27.0,0.36,FC Nantes,FC Nantes,Burnley,FC Nantes,3.9,3.7,4.0,4.0
+Chidozie Awaziem,DC,29.0,0.22,FC Nantes,FC Nantes,Leeds United,Leeds United,3.7,3.3,2.4,2.4
+Kelvin Amian,LAT,28.0,0.39,FC Nantes,FC Nantes,Eintracht Francfort,Eintracht Francfort,1.8,1.3,4.4,4.4
+Johann Lepenant,MDEF,24.0,0.18,FC Nantes,FC Nantes,Gil Vicente,Gil Vicente,0.2,1.0,2.0,2.0
+Louis Leroux,MOFF,20.0,0.37,FC Nantes,FC Nantes,Brentford,Brentford,1.2,2.2,4.1,4.1
+Herba Guirassy,AIL,20.0,1.36,FC Nantes,FC Nantes,Cagliari Calcio,Red Star FC,5.6,6.1,15.5,15.5
+Matthis Abline,AC,23.0,1.94,FC Nantes,FC Nantes,Leeds United,Leeds United,11.7,13.0,21.2,21.2
+Obed Nkambadio,GAR,23.0,1.9,AS Anus,AS Anus,FC Augsburg,Plouzané AC,16.2,18.1,20.9,20.9
+Otávio,DC,24.0,1.06,AS Anus,AS Anus,Olympique Lyonnais,Olympique Lyonnais,4.3,5.6,12.1,12.1
+Thibault De Smet,LAT,28.0,0.06,AS Anus,AS Anus,West Ham,West Ham,0.4,0.5,0.6,0.6
+Maxime Lopez,MDEF,29.0,0.69,AS Anus,AS Anus,Nottingham Forest,Nottingham Forest,10.3,8.8,7.8,7.8
+Vincent Marchetti,MOFF,29.0,0.18,AS Anus,AS Anus,Burnley,Burnley,3.7,2.9,1.9,1.9
+Moses Simon,AIL,31.0,0.15,AS Anus,AS Anus,Tottenham,Tottenham,0.8,0.9,1.6,1.6
+Willem Geubbels,AC,25.0,0.71,AS Anus,AS Anus,Fulham FC,Fulham FC,5.9,6.2,8.0,8.0
+Radoslaw Majecki,GAR,25.0,0.31,SO Millau,SO Millau,Celta Vigo,Celta Vigo,4.2,4.5,3.4,3.4
+Brendan Chardonnet,DC,32.0,0.11,SO Millau,SO Millau,Séville FC,Séville FC,0.6,0.6,1.2,1.2
+Bradley Locko,LAT,24.0,0.91,SO Millau,SO Millau,Hannover 96,Red Star FC,10.6,9.0,10.4,10.4
+Joris Chotard,MDEF,25.0,0.04,SO Millau,SO Millau,Burnley,Burnley,0.1,0.2,0.3,0.3
+Junior Dina Ebimbe,MOFF,26.0,0.5,SO Millau,SO Millau,FC Augsburg,FC Augsburg,15.7,12.4,5.6,5.6
+Romain Del Castillo,AIL,30.0,0.98,SO Millau,SO Millau,Atalanta,Atalanta,4.9,4.6,11.1,11.1
+Ludovic Ajorque,AC,32.0,0.13,SO Millau,SO Millau,Tottenham,Tottenham,0.6,0.8,1.4,1.4
+Hervé Koffi,GAR,31.0,5.54,Angers SCO,Angers SCO,Angers SCO,Angers SCO,31.3,31.9,44.3,44.3
+Ousmane Camara,DC,24.0,3.39,Angers SCO,Atalanta,Atalanta,AS Saint-Etienne,16.2,16.7,30.1,30.1
+Carlens Arcus,LAT,31.0,1.67,Angers SCO,Angers SCO,Angers SCO,Rodez AF,17.6,12.6,19.1,19.1
+Haris Belkebla,MDEF,33.0,4.71,Angers SCO,Angers SCO,Angers SCO,Angers SCO,30.6,29.5,38.2,38.2
+Himad Abdelli,MOFF,28.0,4.46,Angers SCO,Angers SCO,Angers SCO,Plouhinec FC,40.0,35.8,36.7,36.7
+Yassin Belkhdim,AIL,25.0,5.36,Angers SCO,Angers SCO,Angers SCO,Plouzané AC,26.3,26.5,42.9,42.9
+Sidiki Chérif,AC,21.0,5.81,Angers SCO,Angers SCO,Plouhinec FC,Plouhinec FC,35.9,40.1,46.5,46.5
+Mory Diaw,GAR,33.0,0.28,Uchiha Palaiseau,Uchiha Palaiseau,Parma Calcio,Parma Calcio,2.6,2.3,3.1,3.1
+Arouna Sangante,DC,,,Uchiha Palaiseau,Uchiha Palaiseau,Uchiha Palaiseau,,33.1,31.0,29.1,
+Fodé Doucouré,LAT,,,Uchiha Palaiseau,Uchiha Palaiseau,Uchiha Palaiseau,,18.6,14.8,5.7,
+Abdoulaye Touré,MDEF,,,Uchiha Palaiseau,Uchiha Palaiseau,Uchiha Palaiseau,,17.1,12.9,11.3,
+Sofiane Boufal,MOFF,33.0,0.07,Uchiha Palaiseau,Uchiha Palaiseau,Fulham FC,Fulham FC,2.6,1.8,0.7,0.7
+Issa Soumaré,AIL,26.0,0.04,Uchiha Palaiseau,Uchiha Palaiseau,Parma Calcio,Parma Calcio,1.3,1.2,0.4,0.4
+Ally Samatta,AC,34.0,0.58,Uchiha Palaiseau,Uchiha Palaiseau,Brentford,Brentford,9.5,7.8,6.6,6.6
+Jonathan Fischer,GAR,,,Plouzané AC,Plouzané AC,Plouzané AC,,18.6,20.8,10.1,
+Jean-Philippe Gbamin,DC,31.0,0.6,Plouzané AC,Plouzané AC,Hellas Verona,Hellas Verona,8.1,6.9,6.8,6.8
+Koffi Kouao,LAT,,,Plouzané AC,Plouzané AC,Plouzané AC,,1.8,1.9,1.1,
+Jessy Deminguet,MDEF,,,Plouzané AC,Plouzané AC,Plouzané AC,,0.3,0.4,0.5,
+Gauthier Hein,MOFF,,,Plouzané AC,Plouzané AC,Plouzané AC,,1.6,1.6,0.8,
+Giorgi Tsitaishvili,AIL,,,Plouzané AC,Plouzané AC,Plouzané AC,,11.6,12.7,7.4,
+Habib Diallo,AC,31.0,1.43,Plouzané AC,Plouzané AC,Sunderland,Sunderland,13.3,12.0,16.3,16.3
+Quentin Braat,GAR,29.0,0.29,Rodez AF,Rodez AF,Séville FC,Séville FC,2.8,2.6,3.2,3.2
+Raphaël Lipinsk,DC,24.0,0.45,Rodez AF,Rodez AF,Gil Vicente,Gil Vicente,2.1,3.1,5.1,5.1
+Evans Jean-Lambert,LAT,28.0,0.16,Rodez AF,Rodez AF,Burnley,Burnley,1.8,1.9,1.7,1.7
+Jordan Mendes,MDEF,23.0,0.58,Rodez AF,Rodez AF,Olympique Lyonnais,Olympique Lyonnais,6.6,5.5,6.5,6.5
+Octave Joly,MOFF,24.0,0.19,Rodez AF,Rodez AF,Parma Calcio,Parma Calcio,2.1,2.1,2.1,2.1
+Taïryk Arconte,AIL,23.0,2.94,Rodez AF,Rodez AF,Juventus Turin,Juventus Turin,11.7,10.5,27.3,27.3
+Ibrahima Baldé,AC,24.0,2.46,Rodez AF,Rodez AF,Atalanta,Atalanta,6.1,6.3,24.4,24.4
+Gautier Larsonneur,GAR,29.0,0.4,AS Saint-Etienne,AS Saint-Etienne,Cagliari Calcio,Cagliari Calcio,5.1,3.9,4.5,4.5
+Mickaël Nadé,DC,27.0,0.09,AS Saint-Etienne,AS Saint-Etienne,Fulham FC,FC Nantes,0.0,0.3,0.9,0.9
+Ebenezer Annan,LAT,24.0,0.34,AS Saint-Etienne,AS Saint-Etienne,Cagliari Calcio,Cagliari Calcio,2.1,2.4,3.8,3.8
+Mahmoud Jaber,MDEF,27.0,0.03,AS Saint-Etienne,AS Saint-Etienne,Celta Vigo,Celta Vigo,1.0,0.7,0.2,0.2
+Igor Miladinovic,MOFF,23.0,0.74,AS Saint-Etienne,AS Saint-Etienne,AS Monaco,AS Monaco,3.1,3.0,8.4,8.4
+Zuriko Davitashvili,AIL,25.0,2.08,AS Saint-Etienne,AS Saint-Etienne,Olympique Lyonnais,Olympique Lyonnais,10.1,8.3,22.0,22.0
+Lucas Stassin,AC,22.0,0.9,AS Saint-Etienne,AS Saint-Etienne,Burnley,Burnley,9.2,8.4,10.2,10.2
+Paul Creti,AC,17.0,0.01,,West Ham,AS Saint-Etienne,AS Saint-Etienne,,0.0,0.0,0.0
+Joueur indisponible #1,MOFF,35.0,1.0,,,,Wolfsburg,,,,1.0
+Joueur indisponible #2,AIL,35.0,1.0,,,,Wolfsburg,,,,1.0
+Joueur indisponible #3,MDEF,35.0,1.0,,,,Hoffenheim,,,,1.0
+Joueur indisponible #4,DC,35.0,1.0,,,,Juventus Turin,,,,1.0
+Joueur indisponible #5,DC,35.0,1.0,,,,Atalanta,,,,1.0
+Joueur indisponible #6,GAR,35.0,1.0,,,,FC Lorient,,,,1.0
+Joueur indisponible #7,LAT,35.0,1.0,,,,Moreirense FC,,,,1.0
+Joueur indisponible #8,AC,35.0,1.0,,,,Basaksehir FK,,,,1.0
+Joueur indisponible #9,LAT,35.0,1.0,,,,KV Mechelen,,,,1.0
+Joueur indisponible #10,AC,35.0,1.0,,,,Sporting Charleroi,,,,1.0
+Joueur indisponible #11,LAT,35.0,1.0,,,,Tottenham,,,,1.0
+Joueur indisponible #12,MDEF,35.0,1.0,,,,Tottenham,,,,1.0
+Joueur indisponible #13,DC,35.0,1.0,,,,Everton FC,,,,1.0
+Joueur indisponible #14,DC,35.0,1.0,,,,Fulham FC,,,,1.0
+Joueur indisponible #15,MDEF,35.0,1.0,,,,Sunderland,,,,1.0
+Joueur indisponible #16,GAR,35.0,1.0,,,,Burnley,,,,1.0
+Joueur indisponible #17,AIL,35.0,1.0,,,,West Ham,,,,1.0
+Joueur indisponible #18,MOFF,35.0,1.0,,,,Rayo Vallecano,,,,1.0
+Joueur indisponible #19,GAR,35.0,1.0,,,,Deportivo Alavés,,,,1.0
+Joueur indisponible #20,MDEF,35.0,1.0,,,,Real Oviedo,,,,1.0
+Joueur indisponible #21,AC,35.0,1.0,,,,Real Oviedo,,,,1.0
+Joueur indisponible #22,GAR,35.0,1.0,,,,FC Augsburg,,,,1.0
+Joueur indisponible #23,MDEF,35.0,1.0,,,,Union Berlin,,,,1.0
+Joueur indisponible #24,DC,35.0,1.0,,,,Herta Berlin,,,,1.0
+Joueur indisponible #25,GAR,35.0,1.0,,,,SC Paderborn,,,,1.0
+Joueur indisponible #26,LAT,35.0,1.0,,,,Hannover 96,,,,1.0
+Joueur indisponible #27,MDEF,35.0,1.0,,,,Hannover 96,,,,1.0
+Joueur indisponible #28,MDEF,35.0,1.0,,,,US Sassuolo,,,,1.0
+Joueur indisponible #29,AIL,35.0,1.0,,,,Cagliari Calcio,,,,1.0
+Joueur indisponible #30,MOFF,35.0,1.0,,,,US Lecce,,,,1.0
+Joueur indisponible #31,DC,35.0,1.0,,,,Torino FC,,,,1.0
+Joueur indisponible #32,LAT,35.0,1.0,,,,Angers SCO,,,,1.0
+Joueur indisponible #33,MOFF,35.0,1.0,,,,Angers SCO,,,,1.0
+Joueur indisponible #34,AIL,35.0,1.0,,,,Angers SCO,,,,1.0

@@ -33,6 +33,13 @@ plus besoin de faire F5 ni de cliquer pour déplier les matchs.
 - **Page « 👤 joueurs »** : les **joueurs d'une ligue par poste**, triables —
   choisis la compétition et le poste, chaque joueur ouvre sa fiche. (Accessible
   aussi en cliquant une stat dans une fiche.)
+- **Page « 📈 »** : compare la **célébrité entre deux saisons**, avec
+  les plus fortes hausses et baisses, un filtre par poste (GAR, MOFF, AC, …)
+  et un résumé des évolutions moyennes et extrêmes pour chaque rôle. Les valeurs
+  sont exactes et viennent de l'export CSV complet de la page `/joueurs`, qui
+  inclut aussi les joueurs absents de la table actuelle. L'app actualise
+  automatiquement cet export au démarrage et via le bouton `↻` de la page ;
+  `data_joueurs.csv` embarqué sert de repli hors ligne.
 - **Page « 📊 stats »** : un **classement complet triable** (points, buts, diff,
   possession et occasions moyennes, **salaire et célébrité moyens**) + des faits
   marquants (meilleure attaque, meilleure défense, possession, occasions,
@@ -82,6 +89,9 @@ pwsh ./scripts/build_windows.ps1
 
 Le fichier sort dans `dist/FootLive.exe`.
 
+Le build embarque aussi `data_joueurs.csv`, afin que la page d'évolution reste
+disponible hors ligne dès le premier lancement.
+
 Le workflow GitHub Actions `.github/workflows/windows-exe.yml` construit aussi
 `FootLive.exe` à chaque push sur `main`, l'ajoute comme artefact, puis publie une
 release roulante `main-latest` avec l'asset `FootLive.exe`.
@@ -112,6 +122,7 @@ $env:FOOT_LIVE_DISABLE_AUTO_UPDATE = "1"
 | Clic sur une équipe| Ouvrir son historique de matchs + ses statistiques moyennes     |
 | Clic sur un joueur | Ouvrir sa fiche (stats par poste, rang, perfs par saison)       |
 | `👤 joueurs`       | Joueurs d'une ligue par poste (triable)                         |
+| `📈`               | Plus fortes hausses/baisses de célébrité par saison et poste    |
 | `📊 stats`         | Ouvrir le classement triable + les faits marquants              |
 | `toutes les N s`   | Intervalle de rafraîchissement                                  |
 | `↻`                | Rafraîchir tout de suite                                        |
@@ -148,3 +159,6 @@ le bip) → afficher. Zéro dépendance externe.
 
 Les stats d'effectif (salaire / célébrité) viennent de la page `/joueurs`,
 chargée une seule fois au démarrage puis agrégée par équipe.
+Les évolutions de célébrité utilisent l'export CSV exact déclenché par le bouton
+de téléchargement de cette même page ; le CSV local est remplacé atomiquement
+quand une nouvelle version est disponible.
