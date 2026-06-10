@@ -117,12 +117,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete main-latest --yes --cleanup-tag || true
-          git push origin ":refs/tags/main-latest" || true
-          gh release create main-latest \
-            "release-assets/FootLive.exe#FootLive.exe" \
-            "release-assets/FootLive.apk#FootLive.apk" \
-            --target "$GITHUB_SHA" \
-            --title "Latest main build" \
-            --notes-file "WHATS_NEW.md" \
-            --prerelease
+          if gh release view main-latest >/dev/null 2>&1; then
+            gh release edit main-latest \
+              --target "$GITHUB_SHA" \
+              --title "Latest main build" \
+              --notes-file "WHATS_NEW.md" \
+              --prerelease
+            gh release upload main-latest \
+              "release-assets/FootLive.exe#FootLive.exe" \
+              "release-assets/FootLive.apk#FootLive.apk" \
+              --clobber
+          else
+            gh release create main-latest \
+              "release-assets/FootLive.exe#FootLive.exe" \
+              "release-assets/FootLive.apk#FootLive.apk" \
+              --target "$GITHUB_SHA" \
+              --title "Latest main build" \
+              --notes-file "WHATS_NEW.md" \
+              --prerelease
+          fi
