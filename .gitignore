@@ -31,6 +31,7 @@ MANIFEST
 #   before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+!buildozer.spec
 build_info.py
 
 # Installer logs
@@ -223,3 +224,10 @@ foot_scores_config.json
 
 # Manuel du jeu (doc de référence locale, non nécessaire au runtime)
 Présentation-générale.pdf
+
+# Android build caches and local artifacts
+.buildozer/
+.buildozer-global/
+.android-signing/
+android/footlive.keystore
+bin/

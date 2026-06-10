@@ -118,6 +118,42 @@ $env:FOOT_LIVE_DISABLE_AUTO_UPDATE = "1"
 .\FootLive.exe
 ```
 
+## Android `.apk`
+
+L'application Android propose les scores, le classement et les évolutions dans
+une interface adaptée au téléphone :
+
+```text
+https://github.com/ikitof/foothunter-watcher/releases/download/main-latest/FootLive.apk
+```
+
+Télécharge l'APK depuis le téléphone, autorise l'installation depuis le
+navigateur lorsque Android le demande, puis ouvre `Foot Live`. L'APK prend en
+charge Android 7.0 et les versions plus récentes.
+
+Le serveur actuel utilise HTTP. L'APK autorise donc explicitement le trafic HTTP
+vers `foothunter.wiriath.com` pour fonctionner sans attendre la mise en place de
+HTTPS. Une alerte dans l'application signale les nouveaux APK ; Android demande
+toujours une confirmation avant leur installation.
+
+Le build Android local utilise Buildozer :
+
+```bash
+docker pull kivy/buildozer:latest
+docker run --rm \
+  --volume "$PWD":/home/user/hostcwd \
+  --volume "$PWD/.buildozer-global":/root/.buildozer \
+  --entrypoint /bin/bash \
+  kivy/buildozer:latest \
+  -lc "cd /home/user/hostcwd && ./scripts/build_android.sh"
+```
+
+Le fichier sort dans `bin/FootLive.apk`. Le workflow GitHub construit et publie
+automatiquement l'APK avec l'exécutable Windows.
+
+L'APK de téléchargement direct utilise une clé de signature stable dédiée à ce
+projet afin qu'Android accepte les futures versions comme mises à jour.
+
 ## Utilisation
 
 | Contrôle           | Effet                                                            |
