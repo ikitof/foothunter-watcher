@@ -59,6 +59,7 @@ UPDATE_RELEASE_TAG = os.environ.get("FOOT_LIVE_UPDATE_TAG", "main-latest")
 UPDATE_ASSET_NAME = os.environ.get("FOOT_LIVE_UPDATE_ASSET", "FootLive.exe")
 UPDATE_TIMEOUT = 20
 PLAYER_DATA_NAME = "data_joueurs.csv"
+WHATS_NEW_NAME = "WHATS_NEW.md"
 
 try:
     from build_info import APP_COMMIT, APP_BRANCH, APP_BUILD_TIME
@@ -113,6 +114,27 @@ def current_build_commit():
             stderr=subprocess.DEVNULL, text=True
         ).strip()
     except Exception:
+        return ""
+
+
+def whats_new_build_id():
+    """Identifiant stable du build utilisé pour n'afficher la note qu'une fois."""
+    return current_build_commit() or APP_BUILD_TIME.strip()
+
+
+def should_show_whats_new(cfg, build_id=None, enabled=None):
+    """True si la note de version du build courant n'a pas encore été vue."""
+    if enabled is None:
+        enabled = is_windows_frozen() or _env_truthy("FOOT_LIVE_SHOW_WHATS_NEW")
+    build_id = build_id if build_id is not None else whats_new_build_id()
+    return bool(enabled and build_id and cfg.get("whats_new_seen_build") != build_id)
+
+
+def load_whats_new():
+    try:
+        with open(resource_path(WHATS_NEW_NAME), encoding="utf-8") as f:
+            return f.read().strip()
+    except OSError:
         return ""
 
 
@@ -1559,6 +1581,16 @@ def selftest_offline():
     assert parsed["players"][1]["salaire"] is None
     print("  ✓ parse_player_history_csv OK (saisons dynamiques, valeurs manquantes)")
 
+    # 15) note de version : affichée une seule fois par build.
+    assert should_show_whats_new({}, "abc", enabled=True)
+    assert not should_show_whats_new({"whats_new_seen_build": "abc"}, "abc", enabled=True)
+    assert should_show_whats_new({"whats_new_seen_build": "old"}, "abc", enabled=True)
+    assert not should_show_whats_new({}, "abc", enabled=False)
+    notes = load_whats_new()
+    assert "Nouveautés" in notes
+    assert not any(term in notes for term in ("CSV", "/joueurs", "GitHub", "implémentation"))
+    print("  ✓ note de version affichée une seule fois par build")
+
 
 def selftest():
     print("→ Tests hors-ligne…")
@@ -1630,14 +1662,14 @@ def run_gui():
             return {}
 
     def save_config():
-        cfg = {
+        cfg.update({
             "competition": comp_var.get(),
             "interval": interval_var.get(),
             "live_only": bool(live_only_var.get()),
             "topmost": bool(topmost_var.get()),
             "beep": bool(beep_var.get()),
             "geometry": root.geometry(),
-        }
+        })
         try:
             write_config_file(cfg)
         except Exception:
@@ -2422,30 +2454,33 @@ def run_gui():
                          fill="x", padx=10, pady=(10, 2))
             grid = tk.Frame(parent, bg=BG)
             grid.pack(fill="x", padx=6)
-            headers = ["#", "Joueur", "Poste", "Équipe", "Avant → après", "Δ"]
-            widths = [3, 22, 6, 20, 15, 7]
+            headers = ["#", "Joueur", "Poste", "Âge", "Équipe", "Avant → après", "Δ"]
+            widths = [3, 20, 6, 5, 18, 15, 7]
             for ci, header in enumerate(headers):
-                cell(grid, 0, ci, header, HDR, MUTED, left=ci in (1, 3), bold=True,
+                cell(grid, 0, ci, header, HDR, MUTED, left=ci in (1, 4), bold=True,
                      width=widths[ci])
             ordered = sorted(rows, key=lambda r: r["delta"], reverse=descending)[:12]
             for ri, row in enumerate(ordered, start=1):
                 rowbg = CARD if ri % 2 else BG
                 color = GREEN if row["delta"] > 0 else (LIVE if row["delta"] < 0 else MUTED)
+                age = row["player"].get("age")
+                age_text = str(int(age)) if isinstance(age, (int, float)) else "—"
                 labels = [
                     cell(grid, ri, 0, str(ri), rowbg, MUTED, width=widths[0]),
                     cell(grid, ri, 1, row["nom"] or "?", rowbg, FG, left=True, width=widths[1]),
                     cell(grid, ri, 2, row["poste"] or "?", rowbg, MUTED, width=widths[2]),
-                    cell(grid, ri, 3, row["team"] or "?", rowbg, MUTED, left=True, width=widths[3]),
-                    cell(grid, ri, 4, f"{row['before']:.1f} → {row['after']:.1f}", rowbg,
-                         width=widths[4]),
-                    cell(grid, ri, 5, delta_text(row["delta"]), rowbg, color, bold=True,
+                    cell(grid, ri, 3, age_text, rowbg, MUTED, width=widths[3]),
+                    cell(grid, ri, 4, row["team"] or "?", rowbg, MUTED, left=True, width=widths[4]),
+                    cell(grid, ri, 5, f"{row['before']:.1f} → {row['after']:.1f}", rowbg,
                          width=widths[5]),
+                    cell(grid, ri, 6, delta_text(row["delta"]), rowbg, color, bold=True,
+                         width=widths[6]),
                 ]
                 for label in labels:
                     label.configure(cursor="hand2")
                     label.bind("<Button-1>", lambda _e, r=row: open_row(r))
             grid.grid_columnconfigure(1, weight=1)
-            grid.grid_columnconfigure(3, weight=1)
+            grid.grid_columnconfigure(4, weight=1)
 
         def render():
             page = tk.Frame(content, bg=BG)
@@ -3106,6 +3141,71 @@ def run_gui():
         except (RuntimeError, tk.TclError):
             pass
 
+    def show_whats_new_once():
+        build_id = whats_new_build_id()
+        if not should_show_whats_new(cfg, build_id):
+            return
+        notes = load_whats_new()
+        cfg["whats_new_seen_build"] = build_id
+        save_config()
+        if not notes:
+            return
+
+        win = tk.Toplevel(root)
+        win.title("Nouveautés Foot Live")
+        win.configure(bg=BG)
+        win.geometry("580x500")
+        win.minsize(440, 320)
+        win.transient(root)
+        try:
+            win.attributes("-topmost", bool(topmost_var.get()))
+        except tk.TclError:
+            pass
+
+        header = tk.Frame(win, bg=HDR)
+        header.pack(fill="x")
+        tk.Label(header, text="Nouveautés", bg=HDR, fg=FG, anchor="w",
+                 font=("TkDefaultFont", 15, "bold")).pack(
+                     side="left", padx=14, pady=(12, 2))
+        build_label = build_id[:7] if build_id else "build local"
+        tk.Label(header, text=build_label, bg=HDR, fg=MUTED,
+                 font=("TkDefaultFont", 8)).pack(side="right", padx=14, pady=(14, 2))
+        tk.Label(header, text="Cette note apparaît une seule fois après la mise à jour.",
+                 bg=HDR, fg=MUTED, anchor="w", font=("TkDefaultFont", 8)).pack(
+                     fill="x", padx=14, pady=(0, 12))
+
+        wrap = tk.Frame(win, bg=BG)
+        wrap.pack(fill="both", expand=True, padx=12, pady=12)
+        scroll = tk.Scrollbar(wrap)
+        scroll.pack(side="right", fill="y")
+        text = tk.Text(wrap, bg=CARD, fg=FG, insertbackground=FG, relief="flat",
+                       bd=0, padx=14, pady=12, wrap="word", yscrollcommand=scroll.set,
+                       font=("TkDefaultFont", 10), cursor="arrow")
+        text.pack(side="left", fill="both", expand=True)
+        scroll.configure(command=text.yview)
+        text.tag_configure("h1", foreground=ACCENT, font=("TkDefaultFont", 13, "bold"),
+                           spacing1=4, spacing3=8)
+        text.tag_configure("h2", foreground=ACCENT, font=("TkDefaultFont", 11, "bold"),
+                           spacing1=12, spacing3=5)
+        text.tag_configure("bullet", lmargin1=12, lmargin2=28, spacing3=4)
+        for line in notes.splitlines():
+            if line.startswith("# "):
+                continue  # le titre est déjà affiché dans l'en-tête de la fenêtre
+            elif line.startswith("## "):
+                text.insert("end", line[3:] + "\n", "h2")
+            elif line.startswith("- "):
+                text.insert("end", "• " + line[2:] + "\n", "bullet")
+            else:
+                text.insert("end", line + "\n")
+        text.configure(state="disabled")
+
+        tk.Button(win, text="Fermer", command=win.destroy, bg=ACCENT, fg="#fff",
+                  activebackground=GREEN, activeforeground="#fff", relief="flat",
+                  bd=0, padx=18, pady=6, cursor="hand2",
+                  font=("TkDefaultFont", 9, "bold")).pack(
+                      side="bottom", anchor="e", padx=12, pady=(0, 12))
+        win.lift()
+
     def start_update_check():
         if not auto_update_enabled():
             return
@@ -3241,10 +3341,9 @@ def run_gui():
                     nonlocal competitions
                     competitions = vals
                     comp_box.configure(values=vals)
-                    cfg2 = load_config()
-                    cfg2["competitions"] = names
+                    cfg["competitions"] = names
                     try:
-                        write_config_file(cfg2)
+                        write_config_file(cfg)
                     except Exception:
                         pass
                 root.after(0, apply)
@@ -3283,6 +3382,7 @@ def run_gui():
     root.protocol("WM_DELETE_WINDOW", on_close)
     section_header("chargement…", MUTED)
     start_update_check()
+    root.after(900, show_whats_new_once)
     threading.Thread(target=load_comp_list, daemon=True).start()
     threading.Thread(target=load_squads, daemon=True).start()
     threading.Thread(target=load_history, daemon=True).start()

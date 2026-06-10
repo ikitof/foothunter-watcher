@@ -58,5 +58,5 @@ jobs:
             "dist/FootLive.exe#FootLive.exe" `
             --target "$env:GITHUB_SHA" `
             --title "Latest main build" `
-            --notes "Automated Windows build from main commit $env:GITHUB_SHA" `
+            --notes-file "WHATS_NEW.md" `
             --prerelease

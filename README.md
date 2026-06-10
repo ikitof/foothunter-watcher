@@ -35,8 +35,10 @@ plus besoin de faire F5 ni de cliquer pour déplier les matchs.
   aussi en cliquant une stat dans une fiche.)
 - **Page « 📈 »** : compare la **célébrité entre deux saisons**, avec
   les plus fortes hausses et baisses, un filtre par poste (GAR, MOFF, AC, …)
-  et un résumé des évolutions moyennes et extrêmes pour chaque rôle. Les valeurs
-  sont exactes et viennent de l'export CSV complet de la page `/joueurs`, qui
+  et un résumé des évolutions moyennes et extrêmes pour chaque rôle. Les
+  classements affichent aussi l'âge actuel de chaque joueur lorsqu'il est
+  disponible. Les valeurs sont exactes et viennent de l'export CSV complet de
+  la page `/joueurs`, qui
   inclut aussi les joueurs absents de la table actuelle. L'app actualise
   automatiquement cet export au démarrage et via le bouton `↻` de la page ;
   `data_joueurs.csv` embarqué sert de repli hors ligne.
@@ -103,7 +105,9 @@ workflow, quand la release `main-latest` existe.
 L'exécutable Windows vérifie au démarrage le dernier build publié depuis `main`
 sur GitHub. S'il est plus récent que le commit inclus dans l'exe, il télécharge
 automatiquement `FootLive.exe` depuis la release `main-latest`, puis propose de
-redémarrer pour remplacer l'exe courant.
+redémarrer pour remplacer l'exe courant. Après le redémarrage, une fenêtre
+**Nouveautés** affiche une seule fois la note du nouveau build. Cette même note,
+maintenue dans `WHATS_NEW.md`, est publiée sur la release GitHub.
 
 Il n'y a pas besoin d'installer Git sur le PC de l'utilisateur. En pratique,
 l'app ne fait pas un `git pull` directement : elle récupère l'exe reconstruit
