@@ -45,9 +45,7 @@ jobs:
       - name: Restore Android build cache
         uses: actions/cache@v4
         with:
-          path: |
-            .buildozer-global
-            .buildozer
+          path: .buildozer-global
           key: buildozer-android-arm64-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
             buildozer-android-arm64-
