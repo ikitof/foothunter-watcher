@@ -3,8 +3,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-commit="$(git rev-parse HEAD 2>/dev/null || printf local)"
-branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || printf local)"
+commit="$(git -c safe.directory="$PWD" rev-parse HEAD 2>/dev/null || printf local)"
+branch="$(git -c safe.directory="$PWD" rev-parse --abbrev-ref HEAD 2>/dev/null || printf local)"
 build_time="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 cat > build_info.py <<EOF
