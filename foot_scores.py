@@ -3363,7 +3363,7 @@ def run_gui():
     def load_history():
         """Charge les saisons passées depuis les CSV embarqués (resource_path), si présents."""
         hist = {}
-        for n in (0, 1):
+        for n in (0, 1, 2):
             try:
                 with open(resource_path(f"matchs_saison_{n}.csv"), encoding="utf-8") as f:
                     hist[n] = season_domstats_from_csv(f.read())
