@@ -2814,8 +2814,8 @@ def run_gui():
 
     def open_stats():
         title, rows = _stats_rows()
-        if not rows:
-            return
+        if rows is None:
+            return                       # rien de chargé encore (avant le 1er rendu)
         prefetch_squads([r["team"] for r in rows])   # salaire/célébrité en arrière-plan
         show_stats_window(title, rows)
 
@@ -2879,6 +2879,14 @@ def run_gui():
                 return
             for w in content.winfo_children():
                 w.destroy()
+            if not rows:
+                tk.Label(content,
+                         text="Aucun match joué pour le moment — le classement et "
+                              "les stats apparaîtront dès les premiers résultats de "
+                              "la saison.",
+                         bg=BG, fg=MUTED, anchor="w", justify="left", wraplength=700,
+                         font=("TkDefaultFont", 9)).pack(fill="x", padx=12, pady=16)
+                return
             # salaire / célébrité en direct depuis le cache (préchargement progressif)
             for r in rows:
                 agg = _team_squad_agg(r["team"])

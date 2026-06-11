@@ -381,6 +381,11 @@ class FootLiveMobileApp(App):
             self.content.add_widget(label("Chargement du classement...", color=MUTED, height=50))
             return
         rows = core.leaderboard(self.groups)
+        if not rows:
+            self.content.add_widget(label(
+                "Aucun match joué pour le moment — le classement apparaîtra dès "
+                "les premiers résultats.", color=MUTED, height=70))
+            return
         for index, row in enumerate(rows, start=1):
             card = Surface(
                 orientation="horizontal",
