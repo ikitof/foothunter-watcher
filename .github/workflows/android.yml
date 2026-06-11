@@ -1,4 +1,4 @@
-name: Desktop and Android builds
+name: Android build
 
 on:
   push:
@@ -9,32 +9,10 @@ permissions:
   contents: write
 
 concurrency:
-  group: desktop-android-${{ github.ref }}
+  group: android-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Build Windows executable
-        shell: pwsh
-        run: ./scripts/build_windows.ps1
-
-      - name: Upload executable artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: FootLive-windows
-          path: dist/FootLive.exe
-
   build-android:
     runs-on: ubuntu-latest
 
@@ -98,8 +76,8 @@ jobs:
           name: FootLive-android
           path: bin/FootLive.apk
 
-  publish:
-    needs: [build-windows, build-android]
+  publish-android:
+    needs: build-android
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
@@ -107,32 +85,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download application artifacts
+      - name: Download Android artifact
         uses: actions/download-artifact@v4
         with:
+          name: FootLive-android
           path: release-assets
-          merge-multiple: true
 
-      - name: Publish rolling main release
+      - name: Publish Android build to the rolling release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view main-latest >/dev/null 2>&1; then
-            gh release edit main-latest \
-              --target "$GITHUB_SHA" \
-              --title "Latest main build" \
-              --notes-file "WHATS_NEW.md" \
-              --prerelease
-            gh release upload main-latest \
-              "release-assets/FootLive.exe#FootLive.exe" \
-              "release-assets/FootLive.apk#FootLive.apk" \
-              --clobber
-          else
-            gh release create main-latest \
-              "release-assets/FootLive.exe#FootLive.exe" \
-              "release-assets/FootLive.apk#FootLive.apk" \
-              --target "$GITHUB_SHA" \
-              --title "Latest main build" \
-              --notes-file "WHATS_NEW.md" \
-              --prerelease
-          fi
+          # La release est normalement créée par le workflow Windows ; on la crée
+          # ici aussi au cas où l'APK serait publié en premier. On NE touche PAS
+          # target_commitish : il est réservé au build Windows (mise à jour auto de
+          # l'exe), et l'avancer ici ferait croire à un nouvel exe inexistant.
+          gh release create main-latest \
+            --target "$GITHUB_SHA" --title "Latest main build" \
+            --notes-file WHATS_NEW.md --prerelease 2>/dev/null || true
+
+          gh release upload main-latest \
+            "release-assets/FootLive.apk#FootLive.apk" --clobber

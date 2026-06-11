@@ -1,0 +1,73 @@
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build Windows executable
+        shell: pwsh
+        run: ./scripts/build_windows.ps1
+
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FootLive-windows
+          path: dist/FootLive.exe
+
+  publish-windows:
+    needs: build-windows
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: FootLive-windows
+          path: release-assets
+
+      - name: Publish Windows build to the rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Crée la release roulante si elle n'existe pas encore. Le `|| true`
+          # absorbe le cas où le workflow Android l'a déjà créée (course bénigne).
+          gh release create main-latest \
+            --target "$GITHUB_SHA" --title "Latest main build" \
+            --notes-file WHATS_NEW.md --prerelease 2>/dev/null || true
+
+          # 1) Publier l'exe AVANT de faire pointer la release sur ce commit :
+          #    sinon un client Windows pourrait voir le nouveau commit mais
+          #    télécharger l'ancien exe (latest_published_build lit target_commitish).
+          gh release upload main-latest \
+            "release-assets/FootLive.exe#FootLive.exe" --clobber
+
+          # 2) Aligner target_commitish + notes sur ce build : c'est ce que lit la
+          #    mise à jour automatique de l'exe Windows.
+          gh release edit main-latest \
+            --target "$GITHUB_SHA" --title "Latest main build" \
+            --notes-file WHATS_NEW.md --prerelease
