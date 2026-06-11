@@ -33,6 +33,7 @@ if certifi:
 
 APP_VERSION = "0.1.0"
 APK_ASSET_NAME = "FootLive.apk"
+APK_COMMIT_ASSET_NAME = "android-commit.txt"
 
 BG = (0.055, 0.067, 0.09, 1)
 CARD = (0.10, 0.115, 0.145, 1)
@@ -534,14 +535,21 @@ class FootLiveMobileApp(App):
         try:
             url = f"https://api.github.com/repos/{core.GITHUB_REPO}/releases/tags/{core.UPDATE_RELEASE_TAG}"
             release = json.loads(core._http_get_url(url, timeout=core.UPDATE_TIMEOUT))
-            latest = (release.get("target_commitish") or "").strip()
+            assets = release.get("assets") or []
+            apk = next((a for a in assets if a.get("name") == APK_ASSET_NAME), None)
+            marker = next((a for a in assets if a.get("name") == APK_COMMIT_ASSET_NAME), None)
             current = getattr(core, "APP_COMMIT", "").strip()
-            asset = next(
-                (item for item in release.get("assets") or [] if item.get("name") == APK_ASSET_NAME),
-                None,
-            )
-            if asset and latest and current and not core._same_commit(latest, current):
-                self.update_url = asset.get("browser_download_url") or ""
+            if not (apk and marker and current):
+                return
+            # On compare le commit RÉEL de l'APK publié (marqueur déposé par le
+            # workflow Android), pas target_commitish : depuis la séparation des
+            # pipelines, ce dernier suit l'exe Windows et avancerait sans qu'un
+            # nouvel APK existe -> fausse « mise à jour » en boucle.
+            latest = core._http_get_url(
+                marker.get("browser_download_url") or "", timeout=core.UPDATE_TIMEOUT
+            ).strip()
+            if latest and not core._same_commit(latest, current):
+                self.update_url = apk.get("browser_download_url") or ""
                 Clock.schedule_once(lambda _dt: self.enable_update(), 0)
         except Exception:
             pass

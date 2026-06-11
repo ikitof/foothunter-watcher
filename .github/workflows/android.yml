@@ -103,5 +103,12 @@ jobs:
             --target "$GITHUB_SHA" --title "Latest main build" \
             --notes-file WHATS_NEW.md --prerelease 2>/dev/null || true
 
+          # Publier l'APK PUIS son marqueur de commit. L'app Android compare ce
+          # marqueur (et non target_commitish, qui suit l'exe Windows) pour savoir
+          # si une vraie nouvelle version de l'APK est disponible. L'ordre compte :
+          # si l'upload de l'APK échoue, le marqueur n'avance pas -> pas de fausse maj.
           gh release upload main-latest \
             "release-assets/FootLive.apk#FootLive.apk" --clobber
+          printf '%s' "$GITHUB_SHA" > android-commit.txt
+          gh release upload main-latest \
+            "android-commit.txt#android-commit.txt" --clobber
