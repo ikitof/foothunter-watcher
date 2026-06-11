@@ -11,7 +11,7 @@ import webbrowser
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.graphics import Color, RoundedRectangle
+from kivy.graphics import Color, Rectangle, RoundedRectangle
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -117,6 +117,8 @@ class FootLiveMobileApp(App):
         self.refresh_event = None
         self.config_data = {}
         self.update_url = ""
+        self.last_update_ts = None
+        self.last_error = None
 
     @property
     def config_path(self):
@@ -143,11 +145,24 @@ class FootLiveMobileApp(App):
     def build(self):
         Window.clearcolor = BG
         self.load_config()
+        # Hauteur des barres système Android (0 ailleurs) : on étend l'en-tête et le
+        # pied dessous pour que le contenu ne passe pas sous elles. Avec android.api
+        # = 35, Android impose l'edge-to-edge, sinon les barres recouvrent l'app.
+        self._inset_top = self._android_inset("status_bar_height")
+        self._inset_bottom = self._android_inset("navigation_bar_height")
+
         self.root_layout = BoxLayout(orientation="vertical", spacing=0)
         self.root_layout.add_widget(self._build_header())
         self.root_layout.add_widget(self._build_tabs())
 
         self.scroll = ScrollView(do_scroll_x=False, bar_width=dp(3))
+        # Fond opaque derrière la zone scrollable : sans lui, les labels (fond
+        # transparent) laissent des traînées (« rayures ») au défilement sur Android.
+        with self.scroll.canvas.before:
+            Color(*BG)
+            self._scroll_bg = Rectangle(pos=self.scroll.pos, size=self.scroll.size)
+        self.scroll.bind(pos=self._sync_scroll_bg, size=self._sync_scroll_bg)
+
         self.content = BoxLayout(
             orientation="vertical",
             spacing=dp(8),
@@ -163,23 +178,65 @@ class FootLiveMobileApp(App):
             orientation="horizontal",
             color=HEADER,
             size_hint_y=None,
-            height=dp(30),
-            padding=(dp(10), 0),
+            height=dp(30) + self._inset_bottom,
+            padding=(dp(10), 0, dp(10), self._inset_bottom),
         )
         footer.add_widget(self.status)
         self.root_layout.add_widget(footer)
 
         Clock.schedule_once(lambda _dt: self.startup(), 0.2)
         self.refresh_event = Clock.schedule_interval(lambda _dt: self.refresh(), 30)
+        # Rafraîchit le « Actualisé il y a … » du pied sans refaire d'appel réseau.
+        Clock.schedule_interval(self._render_status, 5)
         return self.root_layout
+
+    def _android_inset(self, name):
+        """Hauteur (px) d'une barre système Android via ses ressources ; 0 hors Android."""
+        try:
+            from jnius import autoclass
+            activity = autoclass("org.kivy.android.PythonActivity").mActivity
+            res = activity.getResources()
+            rid = res.getIdentifier(name, "dimen", "android")
+            return res.getDimensionPixelSize(rid) if rid > 0 else 0
+        except Exception:
+            return 0
+
+    def _sync_scroll_bg(self, *_):
+        self._scroll_bg.pos = self.scroll.pos
+        self._scroll_bg.size = self.scroll.size
+
+    def _age_str(self, secs):
+        secs = int(secs)
+        if secs < 5:
+            return "à l'instant"
+        if secs < 60:
+            return f"il y a {secs} s"
+        mins = secs // 60
+        if mins < 60:
+            return f"il y a {mins} min"
+        return f"il y a {mins // 60} h {mins % 60:02d}"
+
+    def _render_status(self, *_):
+        """Affiche l'état du pied : en cours, hors ligne, ou fraîcheur des données."""
+        if self.loading:
+            self.set_status("Actualisation...")
+        elif self.last_error and not self.last_update_ts:
+            self.set_status(f"Hors ligne : {self.last_error}")
+        elif self.last_error:
+            self.set_status(
+                f"Hors ligne · dernière maj {self._age_str(time.time() - self.last_update_ts)}")
+        elif self.last_update_ts:
+            self.set_status(f"Actualisé {self._age_str(time.time() - self.last_update_ts)}")
+        else:
+            self.set_status("Chargement...")
 
     def _build_header(self):
         header = Surface(
             orientation="horizontal",
             color=HEADER,
             size_hint_y=None,
-            height=dp(64),
-            padding=(dp(12), dp(8)),
+            height=dp(64) + self._inset_top,
+            padding=(dp(12), dp(8) + self._inset_top, dp(12), dp(8)),
             spacing=dp(8),
         )
         title_box = BoxLayout(orientation="vertical")
@@ -281,7 +338,7 @@ class FootLiveMobileApp(App):
         if self.current_tab == "evolution" and not force:
             return
         self.loading = True
-        self.set_status("Actualisation...")
+        self._render_status()
 
         def work():
             try:
@@ -294,10 +351,12 @@ class FootLiveMobileApp(App):
             def finish(_dt):
                 self.loading = False
                 if error:
-                    self.set_status(f"Hors ligne : {error[:80]}")
+                    self.last_error = error[:80]
                 else:
-                    self.set_status(f"Mis à jour à {time.strftime('%H:%M:%S')}")
+                    self.last_error = None
+                    self.last_update_ts = time.time()
                     self.render_current()
+                self._render_status()
             Clock.schedule_once(finish, 0)
         threading.Thread(target=work, daemon=True).start()
 
