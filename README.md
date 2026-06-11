@@ -1,7 +1,7 @@
 # ⚽ Foot Live
 
 Petite fenêtre **toujours au-dessus** qui suit les scores de
-`http://foothunter.wiriath.com:6767/resultats/saison2/` **automatiquement** —
+`http://foothunter.wiriath.com:6767/resultats/saison3/` **automatiquement** —
 plus besoin de faire F5 ni de cliquer pour déplier les matchs.
 
 ![icone](foot-live.png)

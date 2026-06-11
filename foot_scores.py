@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Foot Live — petite fenêtre "always-on-top" qui suit les scores de
-http://foothunter.wiriath.com:6767/resultats/saison2/
+http://foothunter.wiriath.com:6767/resultats/saison3/
 
 - Rafraîchissement automatique (plus besoin de F5)
 - Affiche tous les matchs (plus besoin de cliquer pour déplier)
@@ -42,7 +42,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # Configuration / constantes
 # ----------------------------------------------------------------------------
 BASE_URL = "http://foothunter.wiriath.com:6767"
-SAISON_PATH = "/resultats/saison2"
+SAISON_PATH = "/resultats/saison3"
 ALL_KEY = "★ Toutes (live)"          # entrée spéciale du sélecteur de compétition
 LIVE_GRACE = 200                      # secondes pendant lesquelles un match reste "LIVE" après un changement
 HTTP_TIMEOUT = 25
@@ -494,7 +494,7 @@ def _subtree_has_class(d, eid, markers):
 
 
 def parse_competitions(menu_html):
-    """Liste (nom, chemin) des compétitions depuis la page menu saison2."""
+    """Liste (nom, chemin) des compétitions depuis la page menu saison3."""
     d = parse_elements(menu_html)
     out = []
     seen = set()
