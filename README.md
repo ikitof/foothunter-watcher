@@ -67,6 +67,20 @@ python3 foot_scores.py
 ./run.sh
 ```
 
+### Saison suivie
+
+Par défaut l'app suit la saison en cours (saison 3). Pour suivre une autre
+saison sans toucher au code, exporte `FOOT_LIVE_SEASON` :
+
+```bash
+FOOT_LIVE_SEASON=4 python3 foot_scores.py
+```
+
+`FOOT_LIVE_SEASON` pilote à la fois la page de résultats interrogée
+(`/resultats/saison<N>`) et les saisons passées chargées depuis les CSV
+embarqués (`matchs_saison_0` … `matchs_saison_<N-1>.csv`). Pour un cas
+particulier, le chemin complet peut aussi être forcé via `FOOT_LIVE_SAISON_PATH`.
+
 ### Icône sur le bureau / menu d'applications
 
 Le script `install.sh` détecte automatiquement le chemin du dossier — aucun

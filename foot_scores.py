@@ -42,7 +42,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # Configuration / constantes
 # ----------------------------------------------------------------------------
 BASE_URL = "http://foothunter.wiriath.com:6767"
-SAISON_PATH = "/resultats/saison3"
+# Saison suivie. Surchargeable via FOOT_LIVE_SEASON pour ne plus toucher au
+# code à chaque nouvelle saison ; à défaut on suit la saison courante (3).
+try:
+    SEASON = int(os.environ.get("FOOT_LIVE_SEASON", "3"))
+except ValueError:
+    SEASON = 3
+SAISON_PATH = os.environ.get("FOOT_LIVE_SAISON_PATH") or f"/resultats/saison{SEASON}"
 ALL_KEY = "★ Toutes (live)"          # entrée spéciale du sélecteur de compétition
 LIVE_GRACE = 200                      # secondes pendant lesquelles un match reste "LIVE" après un changement
 HTTP_TIMEOUT = 25
@@ -3363,7 +3369,7 @@ def run_gui():
     def load_history():
         """Charge les saisons passées depuis les CSV embarqués (resource_path), si présents."""
         hist = {}
-        for n in (0, 1, 2):
+        for n in range(SEASON):
             try:
                 with open(resource_path(f"matchs_saison_{n}.csv"), encoding="utf-8") as f:
                     hist[n] = season_domstats_from_csv(f.read())
