@@ -189,10 +189,23 @@ class FootLiveMobileApp(App):
         self.root_layout.add_widget(footer)
 
         Clock.schedule_once(lambda _dt: self.startup(), 0.2)
-        self.refresh_event = Clock.schedule_interval(lambda _dt: self.refresh(), 30)
+        self._apply_refresh_interval()
         # Rafraîchit le « Actualisé il y a … » du pied sans refaire d'appel réseau.
         Clock.schedule_interval(self._render_status, 5)
         return self.root_layout
+
+    def _refresh_secs(self):
+        """Intervalle d'actualisation auto choisi dans les réglages (10-300 s)."""
+        try:
+            return max(10, min(300, int(self.config_data.get("refresh_secs", 30))))
+        except (TypeError, ValueError):
+            return 30
+
+    def _apply_refresh_interval(self):
+        if self.refresh_event:
+            self.refresh_event.cancel()
+        self.refresh_event = Clock.schedule_interval(
+            lambda _dt: self.refresh(), self._refresh_secs())
 
     def _android_inset(self, name):
         """Hauteur (px) d'une barre système Android via ses ressources ; 0 hors Android."""
@@ -732,6 +745,27 @@ class FootLiveMobileApp(App):
                                GREEN if on0 else CARD_ALT, 132)
         row1.add_widget(holder["btn"])
         body.add_widget(row1)
+
+        # Fréquence d'actualisation auto.
+        row2 = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(48), spacing=dp(8))
+        row2.add_widget(label("Actualisation auto", height=46))
+        options = ["10 s", "15 s", "30 s", "60 s", "120 s"]
+        current = f"{self._refresh_secs()} s"
+        if current not in options:
+            options.append(current)
+        spinner = Spinner(text=current, values=options, size_hint_x=None, width=dp(120),
+                          color=FG, background_normal="", background_color=CARD, font_size=dp(14))
+
+        def on_rate(_spinner, value):
+            try:
+                self.config_data["refresh_secs"] = int(value.split()[0])
+                self.save_config()
+                self._apply_refresh_interval()
+            except (ValueError, IndexError):
+                pass
+        spinner.bind(text=on_rate)
+        row2.add_widget(spinner)
+        body.add_widget(row2)
 
         body.add_widget(Widget())   # pousse le bouton « Fermer » en bas
         popup = Popup(title="Réglages", content=body, size_hint=(0.92, 0.55),
