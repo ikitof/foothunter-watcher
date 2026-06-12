@@ -320,8 +320,10 @@ class FootLiveMobileApp(App):
         self.update_button = action("MISE A JOUR", lambda *_: self.open_update(), GREEN, 116)
         self.update_button.opacity = 0
         self.update_button.disabled = True
+        self.update_button.width = 0   # masqué = n'occupe pas de place tant qu'absent
         header.add_widget(self.update_button)
-        header.add_widget(action("ACTUALISER", lambda *_: self.refresh(force=True), ACCENT, 112))
+        header.add_widget(action("Réglages", lambda *_: self.open_settings(), CARD_ALT, 96))
+        header.add_widget(action("ACTUALISER", lambda *_: self.refresh(force=True), ACCENT, 104))
         return header
 
     def _build_tabs(self):
@@ -435,7 +437,7 @@ class FootLiveMobileApp(App):
                     self.last_update_ts = time.time()
                     goal = self._detect_goals(self.groups)
                     self.render_current()
-                    if goal:
+                    if goal and self.config_data.get("goal_alert", True):
                         self._goal_alert()
                 self._render_status()
             Clock.schedule_once(finish, 0)
@@ -698,6 +700,7 @@ class FootLiveMobileApp(App):
     def enable_update(self):
         self.update_button.opacity = 1
         self.update_button.disabled = False
+        self.update_button.width = dp(116)
 
     def open_update(self):
         if not self.update_url:
@@ -709,6 +712,32 @@ class FootLiveMobileApp(App):
             "TELECHARGER",
             lambda: open_url(self.update_url),
         )
+
+    def open_settings(self):
+        body = BoxLayout(orientation="vertical", spacing=dp(12), padding=dp(16))
+
+        # Alerte but (son · flash · vibration) : bouton bascule activée/désactivée.
+        row1 = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(48), spacing=dp(8))
+        row1.add_widget(label("Alerte de but (son · flash · vibration)", height=44))
+        holder = {}
+
+        def toggle_alert(*_):
+            on = not bool(self.config_data.get("goal_alert", True))
+            self.config_data["goal_alert"] = on
+            self.save_config()
+            holder["btn"].text = "Activée" if on else "Désactivée"
+            holder["btn"].background_color = GREEN if on else CARD_ALT
+        on0 = bool(self.config_data.get("goal_alert", True))
+        holder["btn"] = action("Activée" if on0 else "Désactivée", toggle_alert,
+                               GREEN if on0 else CARD_ALT, 132)
+        row1.add_widget(holder["btn"])
+        body.add_widget(row1)
+
+        body.add_widget(Widget())   # pousse le bouton « Fermer » en bas
+        popup = Popup(title="Réglages", content=body, size_hint=(0.92, 0.55),
+                      background_color=HEADER, separator_color=ACCENT)
+        body.add_widget(action("FERMER", lambda *_: popup.dismiss(), ACCENT))
+        popup.open()
 
 
 def open_url(url):
