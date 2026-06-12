@@ -9,7 +9,9 @@ import urllib.parse
 import webbrowser
 
 from kivy.app import App
+from kivy.animation import Animation
 from kivy.clock import Clock
+from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
 from kivy.graphics import Color, Rectangle, RoundedRectangle
 from kivy.metrics import dp
@@ -119,6 +121,8 @@ class FootLiveMobileApp(App):
         self.update_url = ""
         self.last_update_ts = None
         self.last_error = None
+        self.match_scores = {}   # clé match -> total de buts, pour détecter un but
+        self.goal_sound = None
 
     @property
     def config_path(self):
@@ -230,6 +234,76 @@ class FootLiveMobileApp(App):
         else:
             self.set_status("Chargement...")
 
+    def _detect_goals(self, groups):
+        """True si un score a augmenté depuis le dernier rafraîchissement (= but).
+
+        On mémorise le total de buts par match (compétition + journée + équipes).
+        Le premier passage — ou un changement de compétition — sert de référence
+        et ne déclenche rien ; ensuite toute hausse du total signale un but.
+        """
+        fired = False
+        seen = {}
+        for group in groups or []:
+            for match in group.get("matches", []):
+                a, b = match.get("a"), match.get("b")
+                score = core._pair(match.get("mid"))
+                if not (a and b and score):
+                    continue
+                key = (self.current_comp, group.get("label"), a, b)
+                total = score[0] + score[1]
+                seen[key] = total
+                previous = self.match_scores.get(key)
+                if previous is not None and total > previous:
+                    fired = True
+        self.match_scores = seen
+        return fired
+
+    def _goal_alert(self):
+        """BUT ! Klaxon + flash plein écran + vibration."""
+        self._play_buzzer()
+        self._vibrate()
+        self._flash()
+
+    def _play_buzzer(self):
+        sound = self.goal_sound
+        if not sound:
+            return
+        try:
+            sound.stop()        # relance depuis le début si déjà en cours
+            sound.volume = 1.0
+            sound.play()
+        except Exception:
+            pass
+
+    def _vibrate(self):
+        try:
+            from jnius import autoclass
+            activity = autoclass("org.kivy.android.PythonActivity").mActivity
+            Context = autoclass("android.content.Context")
+            vib = activity.getSystemService(Context.VIBRATOR_SERVICE)
+            if not vib:
+                return
+            try:    # API 26+ : motif klaxon (buzz / pause / buzz)
+                VibrationEffect = autoclass("android.os.VibrationEffect")
+                vib.vibrate(VibrationEffect.createWaveform([0, 500, 150, 500], -1))
+            except Exception:
+                vib.vibrate(900)        # API < 26
+        except Exception:
+            pass
+
+    def _flash(self):
+        overlay = Widget(opacity=0)
+        with overlay.canvas:
+            Color(*GREEN)
+            Rectangle(pos=(0, 0), size=Window.size)
+        Window.add_widget(overlay)
+
+        def pulse():    # instances neuves : réutiliser la même corromprait l'état
+            return Animation(opacity=0.85, d=0.10) + Animation(opacity=0.0, d=0.16)
+        anim = pulse() + pulse() + pulse()
+        anim.bind(on_complete=lambda *_: Window.remove_widget(overlay))
+        anim.start(overlay)
+
     def _build_header(self):
         header = Surface(
             orientation="horizontal",
@@ -276,6 +350,10 @@ class FootLiveMobileApp(App):
             button.background_color = ACCENT if key == self.current_tab else CARD_ALT
 
     def startup(self):
+        try:
+            self.goal_sound = SoundLoader.load(core.resource_path("goal_buzzer.wav"))
+        except Exception:
+            self.goal_sound = None
         self.load_local_player_data()
         self.render_current()
         self.show_whats_new_once()
@@ -355,7 +433,10 @@ class FootLiveMobileApp(App):
                 else:
                     self.last_error = None
                     self.last_update_ts = time.time()
+                    goal = self._detect_goals(self.groups)
                     self.render_current()
+                    if goal:
+                        self._goal_alert()
                 self._render_status()
             Clock.schedule_once(finish, 0)
         threading.Thread(target=work, daemon=True).start()
@@ -388,6 +469,7 @@ class FootLiveMobileApp(App):
         def change(_spinner, value):
             if value != self.current_comp:
                 self.current_comp = value
+                self.match_scores = {}   # nouvelle compétition -> repart d'une référence
                 self.save_config()
                 self.refresh(force=True)
         picker.bind(text=change)

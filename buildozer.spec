@@ -3,7 +3,7 @@ title = Foot Live
 package.name = footlive
 package.domain = com.wiriath
 source.dir = .
-source.include_exts = py,png,csv,md,xml
+source.include_exts = py,png,csv,md,xml,wav
 source.exclude_dirs = .git,.github,.buildozer,.buildozer-global,.android-signing,.claude,android,bin,dist,scripts
 source.exclude_patterns = error.jpeg,foot_scores_config.json
 version.regex = APP_VERSION = "(.*)"
@@ -13,7 +13,7 @@ icon.filename = %(source.dir)s/foot-live.png
 orientation = portrait
 fullscreen = 0
 
-android.permissions = INTERNET
+android.permissions = INTERNET,VIBRATE
 android.api = 35
 android.minapi = 24
 android.ndk_api = 24
