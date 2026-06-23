@@ -42,12 +42,21 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # Configuration / constantes
 # ----------------------------------------------------------------------------
 BASE_URL = "http://foothunter.wiriath.com:6767"
-# Saison suivie. Surchargeable via FOOT_LIVE_SEASON pour ne plus toucher au
-# code à chaque nouvelle saison ; à défaut on suit la saison courante (3).
-try:
-    SEASON = int(os.environ.get("FOOT_LIVE_SEASON", "3"))
-except ValueError:
-    SEASON = 3
+API_BASE = "/api"                     # routes JSON exposées par l'API Foothunter
+OFFLINE_FALLBACK_SEASON = 3           # saison par défaut si l'API est injoignable
+# Saison suivie. Priorité : FOOT_LIVE_SEASON (override explicite) ; sinon auto-détectée
+# depuis l'API au démarrage via refresh_current_season() — prête pour la saison 4 sans
+# toucher au code ; à défaut OFFLINE_FALLBACK_SEASON.
+def _env_season():
+    env = os.environ.get("FOOT_LIVE_SEASON")
+    if env:
+        try:
+            return int(env)
+        except ValueError:
+            pass
+    return OFFLINE_FALLBACK_SEASON
+
+SEASON = _env_season()
 SAISON_PATH = os.environ.get("FOOT_LIVE_SAISON_PATH") or f"/resultats/saison{SEASON}"
 ALL_KEY = "★ Toutes (live)"          # entrée spéciale du sélecteur de compétition
 LIVE_GRACE = 200                      # secondes pendant lesquelles un match reste "LIVE" après un changement
@@ -277,6 +286,165 @@ def http_get(path):
         return r.read().decode("utf-8", "replace")
 
 
+# ----------------------------------------------------------------------------
+# Client API JSON Foothunter (/api/...) — source des résultats, du live, de
+# l'historique, de la liste des compétitions et de la saison courante. Le HTML
+# (parse_elements/parse_matches) ne sert plus qu'aux données absentes de l'API :
+# calendrier des matchs à venir + dates, et l'export joueurs/effectifs.
+# ----------------------------------------------------------------------------
+_api_cache = {}          # path -> (timestamp, valeur) ; TTL court pour mutualiser un cycle
+_api_locks = {}          # path -> Lock (single-flight : un seul téléchargement par chemin)
+_api_locks_guard = threading.Lock()
+
+
+def _api_get_json(path, ttl=0):
+    """GET JSON depuis l'API. ``ttl``>0 met le résultat en cache : la vue « Toutes »
+    interroge ~25 compétitions d'affilée — on ne veut ni re-télécharger la saison à
+    chaque fois ni la marteler en parallèle (single-flight via un verrou par chemin).
+    Lève en cas d'échec réseau/HTTP/JSON (une saison inexistante renvoie HTTP 500)."""
+    if not ttl:
+        return json.loads(http_get(path))
+    hit = _api_cache.get(path)
+    if hit and (time.time() - hit[0]) < ttl:
+        return hit[1]
+    with _api_locks_guard:
+        lock = _api_locks.setdefault(path, threading.Lock())
+    with lock:
+        hit = _api_cache.get(path)          # re-vérifie après attente du verrou
+        if hit and (time.time() - hit[0]) < ttl:
+            return hit[1]
+        data = json.loads(http_get(path))
+        _api_cache[path] = (time.time(), data)
+        return data
+
+
+def api_season_matches(season_number):
+    """Matchs JOUÉS d'une saison via /api/matchs_par_saison. [] si absente/injoignable."""
+    try:
+        d = _api_get_json(f"{API_BASE}/matchs_par_saison?season_number={int(season_number)}", ttl=5)
+        return d.get("resultats") or []
+    except Exception:
+        return []
+
+
+def api_all_matchs():
+    """Saisons TERMINÉES via /api/all_matchs -> {'saison0': [...], ...}. {} si injoignable.
+    Le nombre de clés == numéro de la saison courante (les saisons finies sont 0..N-1)."""
+    try:
+        d = _api_get_json(f"{API_BASE}/all_matchs", ttl=600)
+        return d.get("resultats") or {}
+    except Exception:
+        return {}
+
+
+def api_live_matchs():
+    """Matchs EN DIRECT via /api/live_matchs -> [match, ...]. [] si aucun/injoignable."""
+    try:
+        d = _api_get_json(f"{API_BASE}/live_matchs", ttl=5)
+        return d.get("resultats") or []
+    except Exception:
+        return []
+
+
+def _api_pair_str(x, y, suffix=""):
+    """'x - y' (suffixe optionnel, ex. '%'), ou None si une moitié manque — pour ne pas
+    produire 'None - None' (cas d'un match live aux stats partielles)."""
+    if x is None or y is None:
+        return None
+    return f"{x}{suffix} - {y}{suffix}"
+
+
+def _api_match_to_dict(o):
+    """Objet match JOUÉ de l'API (/matchs_par_saison, /all_matchs) -> dict interne au
+    format de parse_matches. mid/poss/occ sont des chaînes parsables par _pair, ou None."""
+    return dict(
+        a=o.get("Equipe dom"), b=o.get("Equipe ext"),
+        mid=_api_pair_str(o.get("Score dom"), o.get("Score ext")),
+        status="result",
+        poss=_api_pair_str(o.get("Posses dom"), o.get("Posses ext"), "%"),
+        occ=_api_pair_str(o.get("Occas dom"), o.get("Occas ext")),
+        site_live=False,
+    )
+
+
+def _live_index(name):
+    """Matchs EN DIRECT d'une compétition -> {(dom, ext): objet live}. Le flux
+    /live_matchs a SES PROPRES champs : nom_equipe_dom/ext, score_dom/ext, occas_dom/ext
+    où occas_* est un BOOLÉEN « but imminent » (pas un compte), sans Phase ni possession."""
+    idx = {}
+    for o in api_live_matchs():
+        if o.get("competition") == name:
+            idx[(o.get("nom_equipe_dom"), o.get("nom_equipe_ext"))] = o
+    return idx
+
+
+def _live_match_to_dict(lo):
+    """Objet live -> dict match (match en direct absent des résultats joués)."""
+    return dict(
+        a=lo.get("nom_equipe_dom"), b=lo.get("nom_equipe_ext"),
+        mid=_api_pair_str(lo.get("score_dom"), lo.get("score_ext")),
+        status="result", poss=None, occ=None, site_live=True,
+        imminent_dom=bool(lo.get("occas_dom")), imminent_ext=bool(lo.get("occas_ext")),
+    )
+
+
+def _apply_live(match, lo):
+    """Superpose le live (score frais + but imminent) sur un match déjà présent."""
+    mid = _api_pair_str(lo.get("score_dom"), lo.get("score_ext"))
+    if mid is not None:
+        match["mid"] = mid
+    match["site_live"] = True
+    match["imminent_dom"] = bool(lo.get("occas_dom"))
+    match["imminent_ext"] = bool(lo.get("occas_ext"))
+
+
+def season_domstats_from_api(matches):
+    """Stats par domaine et par équipe d'une saison depuis les objets match de l'API
+    (équivalent JSON de season_domstats_from_csv)."""
+    grp = [{"label": "saison", "matches": [_api_match_to_dict(o) for o in matches]}]
+    return team_domain_stats(grp)
+
+
+def _standings_from_leaderboard(groups):
+    """Classement aux mêmes clés que la table HTML (Rang/Équipe/Points/Diff/Buts),
+    calculé depuis les résultats — l'API n'expose pas de classement."""
+    rows = leaderboard(groups)
+    if not rows:
+        return None
+    return [{"Rang": i, "Équipe": r["team"], "Points": r["points"],
+             "Diff": f"{r['gd']:+d}", "Buts": r["gf"]}
+            for i, r in enumerate(rows, 1)]
+
+
+def fetch_competitions(season_number=None):
+    """Liste des compétitions à proposer dans le sélecteur. Part de DEFAULT_COMPETITIONS
+    (ordre d'affichage stable, jamais vide même en tout début de saison où l'API n'a pas
+    encore de match joué) et y ajoute toute compétition vue dans l'API et absente."""
+    if season_number is None:
+        season_number = SEASON
+    names = list(DEFAULT_COMPETITIONS)
+    for o in api_season_matches(season_number):
+        c = o.get("competition")
+        if c and c not in names:
+            names.append(c)
+    return names
+
+
+def refresh_current_season():
+    """Recale SEASON/SAISON_PATH sur la saison courante = nombre de saisons terminées
+    dans /api/all_matchs (best-effort, sans réseau au démarrage). FOOT_LIVE_SEASON et
+    FOOT_LIVE_SAISON_PATH restent prioritaires. Renvoie la saison retenue."""
+    global SEASON, SAISON_PATH
+    if os.environ.get("FOOT_LIVE_SEASON"):
+        return SEASON
+    n = len(api_all_matchs())
+    if n > 0:
+        SEASON = n
+        if not os.environ.get("FOOT_LIVE_SAISON_PATH"):
+            SAISON_PATH = f"/resultats/saison{SEASON}"
+    return SEASON
+
+
 def _read_exact(reader, size):
     data = bytearray()
     while len(data) < size:
@@ -497,23 +665,6 @@ def _subtree_has_class(d, eid, markers):
             if _subtree_has_class(d, sid, markers):
                 return True
     return False
-
-
-def parse_competitions(menu_html):
-    """Liste (nom, chemin) des compétitions depuis la page menu saison3."""
-    d = parse_elements(menu_html)
-    out = []
-    seen = set()
-    if not d:
-        return out
-    for v in d.values():
-        if v.get("tag") == "nicegui-link":
-            href = (v.get("props") or {}).get("href", "")
-            name = v.get("text")
-            if href.startswith(SAISON_PATH + "/") and name and name not in seen:
-                seen.add(name)
-                out.append(name)
-    return out
 
 
 def parse_matches(d):
@@ -942,12 +1093,59 @@ def parse_celebrity_history(html, current=None):
 
 
 def fetch_competition(name):
-    """Récupère et parse une compétition. Renvoie (groups, standings)."""
-    html = http_get(SAISON_PATH + "/" + urllib.parse.quote(name))
-    d = parse_elements(html)
-    if d is None:
-        raise ValueError("Réponse inattendue (pas de parseElements)")
-    return parse_matches(d), parse_standings(d)
+    """Récupère une compétition. Résultats + live via l'API ; calendrier (matchs à
+    venir + dates) via le HTML, que l'API ne fournit pas. Renvoie (groups, standings)
+    au même format que parse_matches/parse_standings pour rester compatible partout."""
+    groups_by_phase = {}
+    order = []
+
+    def bucket(phase):
+        if phase not in groups_by_phase:
+            groups_by_phase[phase] = []
+            order.append(phase)
+        return groups_by_phase[phase]
+
+    # Matchs en direct (flux dédié, champs distincts), indexés par (dom, ext) — le live
+    # n'a pas de Phase, donc pas de clé Phase.
+    live = _live_index(name)
+
+    # 1) Résultats joués (API), avec le score frais + « but imminent » si en direct.
+    api_had_results = False
+    for o in api_season_matches(SEASON):
+        if o.get("competition") != name:
+            continue
+        api_had_results = True
+        m = _api_match_to_dict(o)
+        lo = live.pop((o.get("Equipe dom"), o.get("Equipe ext")), None)
+        if lo is not None:
+            _apply_live(m, lo)
+        bucket(o.get("Phase") or "").append(m)
+
+    # 2) Matchs en direct pas encore dans les résultats (flux live, sans Phase).
+    for lo in live.values():
+        bucket("En direct").append(_live_match_to_dict(lo))
+
+    # 3) Calendrier (matchs à venir + dates) depuis le HTML — absent de l'API. Repli
+    #    résilient : si l'API n'a renvoyé AUCUN résultat, on prend aussi les résultats
+    #    HTML pour ne pas afficher une page vide. Dédoublonnage sur (a, b) déjà présents.
+    try:
+        d = parse_elements(http_get(SAISON_PATH + "/" + urllib.parse.quote(name)))
+        if d:
+            seen = {(m.get("a"), m.get("b")) for ms in groups_by_phase.values() for m in ms}
+            for g in parse_matches(d):
+                for m in g["matches"]:
+                    if (m.get("a"), m.get("b")) in seen:
+                        continue
+                    if m.get("status") == "scheduled" or (
+                            not api_had_results and m.get("status") == "result"):
+                        bucket(g["label"]).append(m)
+                        seen.add((m.get("a"), m.get("b")))
+    except Exception:
+        pass
+
+    groups = [{"label": ph, "matches": groups_by_phase[ph]}
+              for ph in order if groups_by_phase[ph]]
+    return groups, _standings_from_leaderboard(groups)
 
 
 def fetch_players():
@@ -1027,7 +1225,7 @@ def team_history(groups, team):
                 continue
             home = (a == team)
             opp = b if home else a
-            if m.get("status") == "result":
+            if m.get("status") == "result" and not m.get("site_live"):
                 sc = _pair(m.get("mid"))
                 if not sc:
                     continue
@@ -1084,8 +1282,8 @@ def leaderboard(groups):
 
     for g in groups:
         for m in g["matches"]:
-            if m.get("status") != "result":
-                continue
+            if m.get("status") != "result" or m.get("site_live"):
+                continue              # un match en cours ne compte pas comme résultat final
             sc = _pair(m.get("mid"))
             a, b = m.get("a"), m.get("b")
             if not sc or not a or not b:
@@ -1262,8 +1460,8 @@ def team_domain_stats(groups):
 
     for g in groups:
         for m in g["matches"]:
-            if m.get("status") != "result":
-                continue
+            if m.get("status") != "result" or m.get("site_live"):
+                continue              # un match en cours ne compte pas comme résultat final
             sc = _pair(m.get("mid"))
             a, b = m.get("a"), m.get("b")
             if not sc or not a or not b:
@@ -1601,8 +1799,12 @@ def selftest_offline():
 def selftest():
     print("→ Tests hors-ligne…")
     selftest_offline()
-    print("→ Récupération du menu…")
-    comps = parse_competitions(http_get(SAISON_PATH))
+    print("→ Détection de la saison + API…")
+    refresh_current_season()
+    print(f"  saison courante détectée = {SEASON}")
+    assert api_season_matches(SEASON), "API: aucun match pour la saison courante"
+    assert api_all_matchs(), "API: /all_matchs vide"
+    comps = fetch_competitions(SEASON)
     print(f"  {len(comps)} compétitions : {', '.join(comps[:6])} …")
     assert comps, "aucune compétition trouvée"
 
@@ -2298,12 +2500,12 @@ def run_gui():
             cur_ds = _domain_stats_for(comp)
             for n in sorted(clubs):
                 club = clubs[n]
-                tds_n = cur_ds.get(club) if n == 2 else (hist.get(n) or {}).get(club)
+                tds_n = cur_ds.get(club) if n == SEASON else (hist.get(n) or {}).get(club)
                 v = tds_n.get(prim_key) if tds_n else None
                 vtxt = "—" if v is None else (f"{v}%" if prim_key in PERCENT_STATS else f"{v}")
                 row = tk.Frame(seas, bg=CARD)
                 row.pack(fill="x", padx=8, pady=1)
-                suffix = " (en cours)" if n == 2 else ""
+                suffix = " (en cours)" if n == SEASON else ""
                 tk.Label(row, text=f"Saison {n} · {club}{suffix}", bg=CARD, fg=FG, anchor="w",
                          font=("TkDefaultFont", 8)).pack(side="left", padx=8, pady=2)
                 tk.Label(row, text=f"{prim_label} {vtxt}" if tds_n else "données indispo.",
@@ -3009,11 +3211,11 @@ def run_gui():
         if m["status"] == "result":
             sc_fg = LIVE if live else FG
             sc_font = ("TkDefaultFont", 11, "bold")
-            sc_text = m["mid"]
+            sc_text = m.get("mid") or "—"
         else:
             sc_fg = MUTED
             sc_font = ("TkDefaultFont", 9)
-            sc_text = m["mid"]
+            sc_text = m.get("mid") or "—"
         sc = tk.Label(line, text=f"  {sc_text}  ", bg=bg, fg=sc_fg, font=sc_font)
         sc.grid(row=0, column=1)
         tb = tk.Label(line, text=short(m["b"]), bg=bg, fg=FG, anchor="w",
@@ -3027,6 +3229,8 @@ def run_gui():
         bits = []
         if live:
             bits.append(("🔴 LIVE", LIVE))
+        if m.get("imminent_dom") or m.get("imminent_ext"):
+            bits.append(("⚡ but imminent", LIVE))
         if show_comp:
             bits.append((comp, ACCENT))
         if m.get("poss"):
@@ -3263,6 +3467,7 @@ def run_gui():
 
     def poll_loop():
         while not state["stop"]:
+            refresh_current_season()   # recale SEASON (réessaie si l'API était down, suit le rollover)
             gen = state["generation"]
             comp = comp_var.get()
             try:
@@ -3348,7 +3553,8 @@ def run_gui():
     # ---- chargement de la vraie liste de compétitions (en tâche de fond) --
     def load_comp_list():
         try:
-            names = parse_competitions(http_get(SAISON_PATH))
+            refresh_current_season()
+            names = fetch_competitions(SEASON)
             if names:
                 vals = [ALL_KEY] + names
                 def apply():
@@ -3375,12 +3581,15 @@ def run_gui():
             pass
 
     def load_history():
-        """Charge les saisons passées depuis les CSV embarqués (resource_path), si présents."""
+        """Charge les saisons terminées depuis l'API /api/all_matchs (remplace les CSV embarqués)."""
         hist = {}
-        for n in range(SEASON):
+        for key, matches in api_all_matchs().items():
             try:
-                with open(resource_path(f"matchs_saison_{n}.csv"), encoding="utf-8") as f:
-                    hist[n] = season_domstats_from_csv(f.read())
+                n = int(str(key).replace("saison", ""))
+            except ValueError:
+                continue
+            try:
+                hist[n] = season_domstats_from_api(matches)
             except Exception:
                 pass
         if hist:

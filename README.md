@@ -69,17 +69,22 @@ python3 foot_scores.py
 
 ### Saison suivie
 
-Par défaut l'app suit la saison en cours (saison 3). Pour suivre une autre
-saison sans toucher au code, exporte `FOOT_LIVE_SEASON` :
+La saison courante est **détectée automatiquement** via l'API
+(`/api/all_matchs` : le nombre de saisons terminées donne la saison en cours) —
+l'app passe donc seule à la saison suivante dès son ouverture, sans rien changer
+au code. Les résultats, le live, le classement et l'historique des saisons
+passées viennent de l'API ; seul le calendrier des matchs à venir (dates) est
+encore lu sur le HTML.
+
+Pour épingler une saison précise (tests, saison non encore détectée), exporte
+`FOOT_LIVE_SEASON` :
 
 ```bash
 FOOT_LIVE_SEASON=4 python3 foot_scores.py
 ```
 
-`FOOT_LIVE_SEASON` pilote à la fois la page de résultats interrogée
-(`/resultats/saison<N>`) et les saisons passées chargées depuis les CSV
-embarqués (`matchs_saison_0` … `matchs_saison_<N-1>.csv`). Pour un cas
-particulier, le chemin complet peut aussi être forcé via `FOOT_LIVE_SAISON_PATH`.
+`FOOT_LIVE_SEASON` reste prioritaire sur la détection ; `FOOT_LIVE_SAISON_PATH`
+force le chemin HTML utilisé pour le calendrier.
 
 ### Icône sur le bureau / menu d'applications
 

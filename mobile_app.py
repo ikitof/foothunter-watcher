@@ -404,7 +404,8 @@ class FootLiveMobileApp(App):
 
     def load_competitions(self):
         try:
-            names = core.parse_competitions(core.http_get(core.SAISON_PATH))
+            core.refresh_current_season()
+            names = core.fetch_competitions(core.SEASON)
             if names:
                 self.competitions = names
                 if self.current_comp not in names:
@@ -435,6 +436,7 @@ class FootLiveMobileApp(App):
 
         def work():
             try:
+                core.refresh_current_season()
                 groups, standings = core.fetch_competition(self.current_comp)
                 self.groups, self.standings = groups, standings
                 error = None
