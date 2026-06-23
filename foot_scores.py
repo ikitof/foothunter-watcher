@@ -460,6 +460,66 @@ def team_domain_investment(signings):
     return {d: round(v, 2) for d, v in out.items()}
 
 
+# Pour chaque poste : (stat d'équipe pertinente, libellé, postes adverses dont la
+# célébrité mesure l'« adversité » affrontée dans ce rôle). Stats issues de
+# team_domain_stats ; « plus c'est haut, mieux c'est ».
+ROLE_RELEVANCE = {
+    "GAR":  ("save",       "Arrêts %",            ["AC", "AIL", "MOFF"]),
+    "DC":   ("clean",      "Clean sheets",        ["AC", "AIL", "MOFF"]),
+    "LAT":  ("clean",      "Clean sheets",        ["AIL", "AC"]),
+    "MDEF": ("poss",       "Possession %",        ["MOFF", "AIL"]),
+    "MOFF": ("occ_for_pm", "Occasions créées /m", ["MDEF", "DC"]),
+    "AIL":  ("conv",       "Conversion %",        ["LAT", "DC"]),
+    "AC":   ("gf_pm",      "Buts / match",        ["GAR", "DC"]),
+}
+
+
+def role_scout_rows(competition, poste, pool):
+    """Joueurs d'un poste dans une compétition, avec la stat pertinente de leur équipe
+    pour ce rôle (ex. GAR -> Arrêts %) et l'« adversité » : célébrité moyenne des postes
+    adverses pertinents affrontés (ex. finisseurs adverses pour un GAR). L'adversité
+    capture le niveau de la ligue ET des adversaires, à partir des données réelles.
+    Renvoie [{nom, team, celebrite, salaire, age, stat, opp}]."""
+    poste = (poste or "").upper()
+    if poste not in ROLE_RELEVANCE:
+        return []
+    stat_key, _label, counters = ROLE_RELEVANCE[poste]
+    groups, _ = fetch_competition(competition)
+    tds = team_domain_stats(groups)
+    opp_map = {}
+    for g in groups:
+        for m in g["matches"]:
+            if m.get("status") != "result" or m.get("site_live"):
+                continue
+            a, b = m.get("a"), m.get("b")
+            if a and b:
+                opp_map.setdefault(a, []).append(b)
+                opp_map.setdefault(b, []).append(a)
+    roster = {}
+    for p in pool:
+        roster.setdefault(p.get("nom_equipe"), {})[(p.get("poste") or "").upper()] = _num(p.get("celebrite"))
+    rows = []
+    for p in pool:
+        if (p.get("poste") or "").upper() != poste:
+            continue
+        team = p.get("nom_equipe")
+        if team not in tds:
+            continue
+        qs = []
+        for opp in opp_map.get(team, []):
+            r = roster.get(opp, {})
+            cs = [r[c] for c in counters if r.get(c) is not None]
+            if cs:
+                qs.append(sum(cs) / len(cs))
+        rows.append({
+            "nom": p.get("nom"), "team": team, "celebrite": _num(p.get("celebrite")),
+            "salaire": _num(p.get("salaire")), "age": _num(p.get("age")),
+            "stat": tds.get(team, {}).get(stat_key),
+            "opp": round(sum(qs) / len(qs), 1) if qs else None,
+        })
+    return rows
+
+
 def squad_aggregate(players):
     """Résumé d'un effectif : effectif, moyennes célébrité/âge, masse salariale, postes."""
     cel = [c for c in (_num(p.get("celebrite")) for p in players) if c is not None]
@@ -1964,8 +2024,13 @@ def selftest():
     joueurs = api_all_joueurs(SEASON)
     assert len(joueurs) > 500, "API: infos_all_joueurs vide"
     assert {"nom", "poste", "celebrite", "salaire", "age"} <= set(joueurs[0])
-    print(f"  ✓ {len(joueurs)} joueurs via l'API ; force estimée d'un échantillon : "
-          f"{team_domain_strength(joueurs[:11])}")
+    print(f"  ✓ {len(joueurs)} joueurs via l'API")
+
+    scout = role_scout_rows(comps[0] if comps else "Premier League", "GAR", joueurs)
+    assert scout and any(r["stat"] is not None for r in scout), "scout GAR vide"
+    ex = max(scout, key=lambda r: r.get("celebrite") or 0)
+    print(f"  ✓ role_scout_rows : {len(scout)} gardiens, ex. {ex['nom']} "
+          f"arrêts={ex['stat']} adversité={ex['opp']}")
 
     tr = LiveTracker()
     for comp in ["Premier League", "Champions League"]:
@@ -3276,48 +3341,64 @@ def run_gui():
             e.bind("<KeyRelease>", lambda *_: render())
             return e
 
-        PCOLS = [("#", None), ("Joueur", "nom"), ("Équipe", "nom_equipe"), ("Âge", "age"),
-                 ("Célé.", "celebrite"), ("Sal. M€", "salaire"), ("Célé/M€", "value")]
-
         def render_players():
-            tk.Label(controls, text="Poste", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
-            _combo(controls, poste_v, ["Tous"] + list(POSTE_DOMAIN_WEIGHTS), 6)
+            tk.Label(controls, text="Compétition", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
+            _combo(controls, comp_v, real_comps, 16)
+            tk.Label(controls, text="Poste", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+            _combo(controls, poste_v, list(POSTE_DOMAIN_WEIGHTS), 6)
             tk.Label(controls, text="Prix", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
             _entry(controls, pmin_v)
             tk.Label(controls, text="à", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left")
             _entry(controls, pmax_v)
+            poste = poste_v.get()
+            if poste not in ROLE_RELEVANCE:
+                poste = "GAR"
+                poste_v.set(poste)
+            comp = comp_v.get()
             pool = state.get("mercato_pool") or []
             if not pool:
                 tk.Label(content, text="Chargement des joueurs…", bg=BG, fg=MUTED,
                          font=("TkDefaultFont", 9)).pack(anchor="w", padx=10, pady=8)
                 return
+            cache = state.setdefault("scout_cache", {})
+            ck = (comp, poste)
+            if ck not in cache:
+                tk.Label(content, text=f"Analyse de {comp}…", bg=BG, fg=MUTED,
+                         font=("TkDefaultFont", 9)).pack(anchor="w", padx=10, pady=8)
+
+                def load(cc=comp, pp=poste):
+                    try:
+                        cache[(cc, pp)] = role_scout_rows(cc, pp, pool)
+                    except Exception:
+                        cache[(cc, pp)] = []
+                    if win.winfo_exists():
+                        root.after(0, render)
+                threading.Thread(target=load, daemon=True).start()
+                return
+            stat_key, stat_label, counters = ROLE_RELEVANCE[poste]
             lo, hi = _f(pmin_v, 0), _f(pmax_v, 1e9)
-            pf = poste_v.get()
-            rows = []
-            for p in pool:
-                if pf != "Tous" and (p.get("poste") or "").upper() != pf:
-                    continue
-                sal, cel = _num(p.get("salaire")), _num(p.get("celebrite"))
-                if sal is None or not (lo <= sal <= hi):
-                    continue
-                rows.append({"nom": p.get("nom"), "nom_equipe": p.get("nom_equipe"),
-                             "age": _num(p.get("age")), "celebrite": cel, "salaire": sal,
-                             "value": round(cel / sal, 1) if (cel is not None and sal) else None})
+            rows = [dict(r) for r in cache[ck] if r["salaire"] is not None and lo <= r["salaire"] <= hi]
+            for r in rows:
+                r["value"] = round(r["celebrite"] / r["salaire"], 1) \
+                    if (r["celebrite"] is not None and r["salaire"]) else None
+            cols = [("#", None), ("Joueur", "nom"), ("Équipe", "team"), (stat_label, "stat"),
+                    ("Adversité", "opp"), ("Célé.", "celebrite"), ("Sal.", "salaire"), ("Célé/M€", "value")]
+            valid = [c[1] for c in cols if c[1]]
+            if sortst["key"] not in valid:
+                sortst["key"], sortst["rev"] = "stat", True
             k = sortst["key"]
-            if k in ("nom", "nom_equipe"):
+            if k in ("nom", "team"):
                 rows.sort(key=lambda r: (r.get(k) or "").lower(), reverse=not sortst["rev"])
             else:
                 rows.sort(key=lambda r: (r.get(k) is None,
                                          -(r.get(k) or 0) if sortst["rev"] else (r.get(k) or 0)))
-            if pf != "Tous":
-                top = max(POSTE_DOMAIN_WEIGHTS[pf].items(), key=lambda kv: kv[1])[0]
-                hint.config(text=f"{len(rows)} joueurs · poste {pf} (domaine clé : {DOMAIN_LABELS[top]}) · "
-                                 "« Célé/M€ » = bonnes affaires (joueurs sous-cotés)")
-            else:
-                hint.config(text=f"{len(rows)} joueurs · « Célé/M€ » repère les bonnes affaires (sous-cotés)")
+            top_dom = max(POSTE_DOMAIN_WEIGHTS[poste].items(), key=lambda kv: kv[1])[0]
+            hint.config(text=f"{len(rows)} {poste} en {comp} · stat clé : {stat_label} "
+                             f"({DOMAIN_LABELS[top_dom]}) · « Adversité » = célé moyenne des "
+                             f"{'/'.join(counters)} affrontés · « Célé/M€ » = bonne affaire")
             grid = tk.Frame(content, bg=BG)
             grid.pack(fill="both", expand=True, padx=6, pady=4)
-            for ci, (lbl, key) in enumerate(PCOLS):
+            for ci, (lbl, key) in enumerate(cols):
                 arrow = (" ▾" if sortst["rev"] else " ▴") if key == sortst["key"] else ""
                 hh = tk.Label(grid, text=lbl + arrow, bg=HDR, fg=ACCENT if key else MUTED,
                               font=("TkDefaultFont", 8, "bold"),
@@ -3326,7 +3407,7 @@ def run_gui():
                 if key:
                     hh.configure(cursor="hand2")
                     hh.bind("<Button-1>", lambda _e, kk=key: (sortst.update(
-                        key=kk, rev=(not sortst["rev"]) if sortst["key"] == kk else (kk not in ("nom", "nom_equipe"))),
+                        key=kk, rev=(not sortst["rev"]) if sortst["key"] == kk else (kk not in ("nom", "team"))),
                         render()))
             for ri, r in enumerate(rows[:200], start=1):
                 rowbg = CARD if ri % 2 else BG
@@ -3336,11 +3417,12 @@ def run_gui():
                              anchor="w" if left else "center", padx=4).grid(row=ri, column=ci, sticky="we", padx=1)
                 cell(0, str(ri), MUTED)
                 cell(1, r["nom"] or "?", FG, True)
-                cell(2, r["nom_equipe"] or "?", MUTED, True)
-                cell(3, f"{r['age']:g}" if r["age"] is not None else "—")
-                cell(4, f"{r['celebrite']:g}" if r["celebrite"] is not None else "—")
-                cell(5, f"{r['salaire']:g}" if r["salaire"] is not None else "—")
-                cell(6, f"{r['value']:g}" if r["value"] is not None else "—", GREEN)
+                cell(2, r["team"] or "?", MUTED, True)
+                cell(3, f"{r['stat']:g}" if r["stat"] is not None else "—", ACCENT)
+                cell(4, f"{r['opp']:g}" if r["opp"] is not None else "—")
+                cell(5, f"{r['celebrite']:g}" if r["celebrite"] is not None else "—")
+                cell(6, f"{r['salaire']:g}" if r["salaire"] is not None else "—")
+                cell(7, f"{r['value']:g}" if r["value"] is not None else "—", GREEN)
             grid.grid_columnconfigure(1, weight=1)
 
         def render_teams():
