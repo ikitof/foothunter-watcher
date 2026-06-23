@@ -2117,6 +2117,12 @@ def run_gui():
                               command=lambda: open_evolution_window())
     evolution_btn.pack(side="right", padx=(0, 4))
 
+    mercato_btn = tk.Button(bar2, text="🛒 mercato", bg=CARD, fg=FG, bd=0, relief="flat",
+                            activebackground=ACCENT, activeforeground="#fff",
+                            font=("TkDefaultFont", 8), cursor="hand2",
+                            command=lambda: show_mercato_window())
+    mercato_btn.pack(side="right", padx=(0, 4))
+
     # ---- zone défilante ---------------------------------------------------
     body_wrap = tk.Frame(root, bg=BG)
     body_wrap.pack(fill="both", expand=True)
@@ -2961,6 +2967,222 @@ def run_gui():
             comp = names[0] if names else None
         if comp:
             show_league_window(comp)
+
+    def show_mercato_window():
+        """Simulateur de mercato : choisir une formation + un budget, remplir les
+        postes avec des joueurs filtrés par prix, voir le coût (salaire × années payé
+        d'avance) vs budget et la force estimée de l'équipe par domaine."""
+        old = state.get("mercato_win")
+        if old is not None and old.winfo_exists():
+            old.destroy()
+            return
+        win = tk.Toplevel(root)
+        state["mercato_win"] = win
+        win.title("🛒 Mercato — simulateur d'équipe")
+        win.configure(bg=BG)
+        win.geometry("760x720")
+        win.minsize(560, 480)
+        try:
+            win.attributes("-topmost", bool(topmost_var.get()))
+        except tk.TclError:
+            pass
+        win.lift()
+
+        pool = {"players": state.get("mercato_pool")}
+        squad = {}          # slot_id -> joueur
+        years = {}          # slot_id -> nb d'années de contrat (1/2/3)
+        formation_v = tk.StringVar(value="4-3-3")
+        cap_v = tk.StringVar(value="250")
+        pmin_v = tk.StringVar(value="0")
+        pmax_v = tk.StringVar(value="40")
+
+        def _f(var, default):
+            try:
+                return float(var.get())
+            except (TypeError, ValueError):
+                return default
+
+        def slots():
+            out = []
+            for poste, n in FORMATIONS.get(formation_v.get(), {}).items():
+                for i in range(n):
+                    out.append((poste, f"{poste}{i + 1}"))
+            return out
+
+        bar = tk.Frame(win, bg=HDR)
+        bar.pack(fill="x", side="top")
+        tk.Label(bar, text="Formation", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
+        ttk.Combobox(bar, textvariable=formation_v, values=list(FORMATIONS), state="readonly",
+                     width=8).pack(side="left", padx=(0, 8), pady=4)
+        tk.Label(bar, text="Budget M€", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+        tk.Entry(bar, textvariable=cap_v, width=6, bg=CARD, fg=FG, insertbackground=FG,
+                 relief="flat").pack(side="left", padx=(0, 8), pady=4)
+        tk.Label(bar, text="Prix", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+        tk.Entry(bar, textvariable=pmin_v, width=4, bg=CARD, fg=FG, insertbackground=FG,
+                 relief="flat").pack(side="left", pady=4)
+        tk.Label(bar, text="à", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=2)
+        tk.Entry(bar, textvariable=pmax_v, width=4, bg=CARD, fg=FG, insertbackground=FG,
+                 relief="flat").pack(side="left", padx=(0, 8), pady=4)
+        tk.Button(bar, text="vider", bg=CARD, fg=FG, bd=0, relief="flat", cursor="hand2",
+                  activebackground=ACCENT, activeforeground="#fff", font=("TkDefaultFont", 8),
+                  command=lambda: (squad.clear(), years.clear(), render())).pack(side="right", padx=6, pady=4)
+
+        tk.Label(win, text="Choisis une formation et un budget, clique « + » pour recruter à chaque poste "
+                           "(salaire × années, payé d'avance). Force estimée d'après la célébrité.",
+                 bg=BG, fg=MUTED, anchor="w", justify="left", wraplength=720,
+                 font=("TkDefaultFont", 8)).pack(fill="x", padx=8, pady=(4, 0))
+
+        cv = tk.Canvas(win, bg=BG, highlightthickness=0, bd=0)
+        sb = tk.Scrollbar(win, orient="vertical", command=cv.yview)
+        cv.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        cv.pack(side="left", fill="both", expand=True)
+        content = tk.Frame(cv, bg=BG)
+        bid = cv.create_window((0, 0), window=content, anchor="nw")
+        content.bind("<Configure>", lambda _e: cv.configure(scrollregion=cv.bbox("all")))
+        cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
+
+        def _wheel(e):
+            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            return "break"
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            win.bind(seq, _wheel)
+
+        def eligible(poste):
+            lo, hi = _f(pmin_v, 0), _f(pmax_v, 1e9)
+            taken = {p.get("id") for p in squad.values() if p}
+            out = [p for p in (pool["players"] or [])
+                   if (p.get("poste") or "").upper() == poste
+                   and p.get("id") not in taken
+                   and (lambda s: s is not None and lo <= s <= hi)(_num(p.get("salaire")))]
+            out.sort(key=lambda p: -(_num(p.get("celebrite")) or 0))
+            return out
+
+        def open_picker(poste, slot_id):
+            cands = eligible(poste)
+            pick = tk.Toplevel(win)
+            pick.title(f"Recruter — {poste}")
+            pick.configure(bg=BG)
+            pick.geometry("420x460")
+            try:
+                pick.attributes("-topmost", bool(topmost_var.get()))
+            except tk.TclError:
+                pass
+            tk.Label(pick, text=f"{len(cands)} joueurs · {poste} · prix {_f(pmin_v,0):g}-{_f(pmax_v,0):g} M€",
+                     bg=BG, fg=MUTED, anchor="w", font=("TkDefaultFont", 8)).pack(fill="x", padx=8, pady=4)
+            lb = tk.Listbox(pick, bg=CARD, fg=FG, selectbackground=ACCENT, relief="flat",
+                            font=("TkDefaultFont", 9), activestyle="none")
+            lb.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+            for p in cands:
+                lb.insert("end", f"{p.get('nom')}  ·  {p.get('nom_equipe')}  ·  "
+                                 f"célé {p.get('celebrite')}  ·  {p.get('salaire')} M€/an")
+
+            def assign(*_):
+                sel = lb.curselection()
+                if sel:
+                    squad[slot_id] = cands[sel[0]]
+                    years.setdefault(slot_id, 1)
+                    pick.destroy()
+                    render()
+            lb.bind("<Double-Button-1>", assign)
+            tk.Button(pick, text="Recruter", bg=ACCENT, fg="#fff", bd=0, relief="flat",
+                      cursor="hand2", command=assign).pack(fill="x", padx=8, pady=(0, 8))
+
+        def _draw_strength(parent, strength):
+            h = 8 + 18 * len(DOMAINS)
+            chart = tk.Canvas(parent, bg=CARD, height=h, highlightthickness=0, bd=0)
+            chart.pack(fill="x", padx=8, pady=4)
+
+            def redraw(*_):
+                chart.delete("all")
+                w = chart.winfo_width() or 700
+                x0, barw = 120, max(40, w - 170)
+                for i, dom in enumerate(DOMAINS):
+                    y = 6 + i * 18
+                    v = strength.get(dom) or 0
+                    chart.create_text(6, y + 6, text=DOMAIN_LABELS[dom], fill=FG, anchor="w",
+                                      font=("TkDefaultFont", 8))
+                    chart.create_rectangle(x0, y, x0 + barw, y + 11, fill=HDR, outline="")
+                    chart.create_rectangle(x0, y, x0 + barw * min(100, v) / 100.0, y + 11,
+                                           fill=ACCENT, outline="")
+                    chart.create_text(x0 + barw + 4, y + 6, text=f"{v:g}", fill=MUTED, anchor="w",
+                                      font=("TkDefaultFont", 8))
+            chart.bind("<Configure>", redraw)
+            redraw()
+
+        def render(*_):
+            for w in content.winfo_children():
+                w.destroy()
+            if pool["players"] is None:
+                tk.Label(content, text="Chargement des joueurs…", bg=BG, fg=MUTED,
+                         font=("TkDefaultFont", 9)).pack(anchor="w", padx=10, pady=8)
+                return
+            total = 0.0
+            filled = []
+            grid = tk.Frame(content, bg=BG)
+            grid.pack(fill="x", padx=6, pady=(4, 4))
+            for ri, (poste, slot_id) in enumerate(slots()):
+                p = squad.get(slot_id)
+                rowbg = CARD if ri % 2 else BG
+                tk.Label(grid, text=poste, bg=rowbg, fg=ACCENT, width=5, anchor="w",
+                         font=("TkDefaultFont", 8, "bold")).grid(row=ri, column=0, sticky="we", padx=1, pady=1)
+                if p:
+                    yr = years.get(slot_id, 1)
+                    cost = contract_cost(p.get("salaire"), yr) or 0
+                    total += cost
+                    filled.append(p)
+                    tk.Label(grid, text=f"{p.get('nom')} · {p.get('nom_equipe')}", bg=rowbg, fg=FG,
+                             anchor="w", font=("TkDefaultFont", 8)).grid(row=ri, column=1, sticky="we", padx=2)
+                    yv = tk.StringVar(value=str(yr))
+                    yb = ttk.Combobox(grid, textvariable=yv, values=["1", "2", "3"], state="readonly", width=2)
+                    yb.grid(row=ri, column=2, padx=2)
+                    yb.bind("<<ComboboxSelected>>",
+                            lambda _e, s=slot_id, v=yv: (years.__setitem__(s, int(v.get())), render()))
+                    tk.Label(grid, text=f"{cost:g} M€", bg=rowbg, fg=MUTED, width=9,
+                             font=("TkDefaultFont", 8)).grid(row=ri, column=3, padx=2)
+                    tk.Button(grid, text="✕", bg=rowbg, fg=LIVE, bd=0, relief="flat", cursor="hand2",
+                              font=("TkDefaultFont", 8),
+                              command=lambda s=slot_id: (squad.pop(s, None), years.pop(s, None), render())
+                              ).grid(row=ri, column=4, padx=2)
+                else:
+                    tk.Label(grid, text="— vide —", bg=rowbg, fg=MUTED, anchor="w",
+                             font=("TkDefaultFont", 8)).grid(row=ri, column=1, sticky="we", padx=2)
+                    tk.Button(grid, text="+ recruter", bg=rowbg, fg=GREEN, bd=0, relief="flat",
+                              cursor="hand2", font=("TkDefaultFont", 8),
+                              command=lambda ps=poste, s=slot_id: open_picker(ps, s)
+                              ).grid(row=ri, column=3, columnspan=2, sticky="we", padx=2)
+            grid.grid_columnconfigure(1, weight=1)
+
+            cap = _f(cap_v, 0)
+            agg = squad_aggregate(filled)
+            over = total > cap > 0
+            summ = tk.Frame(content, bg=BG)
+            summ.pack(fill="x", padx=10, pady=(8, 2))
+            tk.Label(summ, text=f"Budget : {total:g} / {cap:g} M€", bg=BG,
+                     fg=(LIVE if over else GREEN), anchor="w",
+                     font=("TkDefaultFont", 11, "bold")).pack(side="left")
+            tk.Label(summ, text=f"  {agg['count']}/11 joueurs · célé moy. {agg['avg_celebrite'] or '—'} · "
+                                f"âge moy. {agg['avg_age'] or '—'}", bg=BG, fg=MUTED,
+                     anchor="w", font=("TkDefaultFont", 9)).pack(side="left")
+            if over:
+                tk.Label(content, text="⚠ budget dépassé", bg=BG, fg=LIVE, anchor="w",
+                         font=("TkDefaultFont", 8)).pack(fill="x", padx=10)
+            tk.Label(content, text="Force estimée par domaine", bg=BG, fg=ACCENT, anchor="w",
+                     font=("TkDefaultFont", 9, "bold")).pack(fill="x", padx=10, pady=(6, 0))
+            _draw_strength(content, team_domain_strength(filled))
+
+        for v in (formation_v, cap_v, pmin_v, pmax_v):
+            v.trace_add("write", lambda *_: render())
+        render()
+
+        if pool["players"] is None:
+            def load():
+                ps = api_all_joueurs(SEASON)
+                state["mercato_pool"] = ps
+                pool["players"] = ps
+                if win.winfo_exists():
+                    root.after(0, render)
+            threading.Thread(target=load, daemon=True).start()
 
     def show_league_window(comp, poste=None, sort_key=None, sort_high=True):
         old = state.get("league_win")
