@@ -47,8 +47,6 @@ python -m PyInstaller `
     --name FootLive `
     --icon "foot-live.ico" `
     --add-data "foot-live.png;." `
-    --add-data "matchs_saison_0.csv;." `
-    --add-data "matchs_saison_1.csv;." `
     --add-data "data_joueurs.csv;." `
     --add-data "WHATS_NEW.md;." `
     "foot_scores.py"
