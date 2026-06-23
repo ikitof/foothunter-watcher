@@ -346,6 +346,128 @@ def api_live_matchs():
         return []
 
 
+def api_all_joueurs(season_number=None):
+    """Tous les joueurs d'une saison via /api/infos_all_joueurs -> [{id, nom, poste,
+    nom_equipe, age, celebrite, salaire}]. [] si injoignable. Source de données joueurs
+    (remplace l'export CSV websocket + le scraping des fiches)."""
+    if season_number is None:
+        season_number = SEASON
+    try:
+        d = _api_get_json(f"{API_BASE}/infos_all_joueurs?season_number={int(season_number)}", ttl=600)
+        return d.get("resultats") or []
+    except Exception:
+        return []
+
+
+def api_joueur_saison(nom_joueur, season_number=None):
+    """Infos d'un joueur pour une saison via /api/infos_joueur_saison -> dict ({} si KO)."""
+    if season_number is None:
+        season_number = SEASON
+    try:
+        q = urllib.parse.quote(str(nom_joueur))
+        d = _api_get_json(f"{API_BASE}/infos_joueur_saison?nom_joueur={q}&season_number={int(season_number)}")
+        return d.get("resultats") or {}
+    except Exception:
+        return {}
+
+
+# ----------------------------------------------------------------------------
+# Modèle Mercato / simulation (règles tirées du manuel Présentation-générale.pdf)
+# ----------------------------------------------------------------------------
+# Contribution de chaque poste aux domaines de jeu (% du niveau du poste, manuel p.20).
+# Le niveau réel des joueurs est CACHÉ par le jeu : on estime la force d'une équipe à
+# partir de la CÉLÉBRITÉ (proxy visible) pondérée par cette matrice.
+POSTE_DOMAIN_WEIGHTS = {
+    "GAR":  {"arrets": 80, "conservation": 20},
+    "DC":   {"defense": 60, "recuperation": 20, "conservation": 20},
+    "LAT":  {"defense": 50, "recuperation": 30, "creation": 20},
+    "MDEF": {"recuperation": 50, "conservation": 40, "creation": 10},
+    "MOFF": {"creation": 60, "concretisation": 30, "finition": 10},
+    "AIL":  {"concretisation": 50, "creation": 20, "finition": 30},
+    "AC":   {"finition": 60, "conservation": 20, "concretisation": 20},
+}
+DOMAINS = ["arrets", "defense", "recuperation", "conservation",
+           "creation", "concretisation", "finition"]
+DOMAIN_LABELS = {
+    "arrets": "Arrêts", "defense": "Défense", "recuperation": "Récupération",
+    "conservation": "Conservation", "creation": "Création",
+    "concretisation": "Concrétisation", "finition": "Finition",
+}
+# Formations : nombre de joueurs par poste (somme = 11).
+FORMATIONS = {
+    "4-3-3":   {"GAR": 1, "DC": 2, "LAT": 2, "MDEF": 1, "MOFF": 2, "AIL": 2, "AC": 1},
+    "4-4-2":   {"GAR": 1, "DC": 2, "LAT": 2, "MDEF": 2, "MOFF": 2, "AIL": 0, "AC": 2},
+    "3-5-2":   {"GAR": 1, "DC": 3, "LAT": 0, "MDEF": 2, "MOFF": 2, "AIL": 1, "AC": 2},
+    "4-2-3-1": {"GAR": 1, "DC": 2, "LAT": 2, "MDEF": 2, "MOFF": 2, "AIL": 1, "AC": 1},
+}
+
+
+def _num(x):
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return None
+
+
+def contract_cost(salaire, years):
+    """Coût d'un recrutement : salaire annuel payé d'avance pour `years` (1/2/3) ans."""
+    s = _num(salaire)
+    return None if s is None else round(s * max(1, int(years)), 2)
+
+
+def extension_cost(old_salary, current_salary):
+    """Coût d'une prolongation (manuel) : +10% sur le salaire courant si la célébrité a
+    monté (salaire courant > ancien), sinon l'ancien salaire."""
+    o, c = _num(old_salary), _num(current_salary)
+    if c is None:
+        return o
+    if o is not None and c > o:
+        return round(c * 1.10, 2)
+    return o if o is not None else c
+
+
+def team_domain_strength(players):
+    """Force estimée par domaine (0-100) d'un effectif : célébrité (proxy du niveau caché)
+    moyennée par poste puis pondérée par POSTE_DOMAIN_WEIGHTS. Un poste absent compte 0
+    (équipe déséquilibrée). Renvoie {domaine: valeur|None}."""
+    by_poste = {}
+    for p in players:
+        poste = (p.get("poste") or "").upper()
+        cel = _num(p.get("celebrite"))
+        if poste in POSTE_DOMAIN_WEIGHTS and cel is not None:
+            by_poste.setdefault(poste, []).append(cel)
+    avg_poste = {k: sum(v) / len(v) for k, v in by_poste.items()}
+    out = {}
+    for dom in DOMAINS:
+        num = den = 0.0
+        for poste, weights in POSTE_DOMAIN_WEIGHTS.items():
+            w = weights.get(dom)
+            if not w:
+                continue
+            den += w
+            num += w * avg_poste.get(poste, 0.0)
+        out[dom] = round(num / den, 1) if den else None
+    return out
+
+
+def squad_aggregate(players):
+    """Résumé d'un effectif : effectif, moyennes célébrité/âge, masse salariale, postes."""
+    cel = [c for c in (_num(p.get("celebrite")) for p in players) if c is not None]
+    age = [a for a in (_num(p.get("age")) for p in players) if a is not None]
+    sal = [s for s in (_num(p.get("salaire")) for p in players) if s is not None]
+    postes = {}
+    for p in players:
+        k = (p.get("poste") or "?").upper()
+        postes[k] = postes.get(k, 0) + 1
+    return {
+        "count": len(players),
+        "avg_celebrite": round(sum(cel) / len(cel), 1) if cel else None,
+        "avg_age": round(sum(age) / len(age), 1) if age else None,
+        "total_salaire": round(sum(sal), 2) if sal else 0.0,
+        "postes": postes,
+    }
+
+
 def _api_pair_str(x, y, suffix=""):
     """'x - y' (suffixe optionnel, ex. '%'), ou None si une moitié manque — pour ne pas
     produire 'None - None' (cas d'un match live aux stats partielles)."""
@@ -1785,6 +1907,19 @@ def selftest_offline():
     assert parsed["players"][1]["salaire"] is None
     print("  ✓ parse_player_history_csv OK (saisons dynamiques, valeurs manquantes)")
 
+    # 14b) modèle mercato / simulation (coût contrat, prolongation, force par domaine).
+    assert contract_cost(2.0, 3) == 6.0 and contract_cost(2.0, 1) == 2.0
+    assert extension_cost(4.0, 5.0) == 5.5      # célébrité montée -> +10%
+    assert extension_cost(5.0, 4.0) == 5.0      # célébrité baissée -> ancien salaire
+    _squad = [{"poste": "GAR", "celebrite": 90, "age": 30, "salaire": 20},
+              {"poste": "AC", "celebrite": 80, "age": 25, "salaire": 15}]
+    _st = team_domain_strength(_squad)
+    assert _st["arrets"] == 90.0 and _st["finition"] == 48.0   # GAR seul -> arrêts ; AC -> finition
+    _agg = squad_aggregate(_squad)
+    assert _agg["count"] == 2 and _agg["total_salaire"] == 35.0 and _agg["avg_age"] == 27.5
+    assert sum(FORMATIONS["4-3-3"].values()) == 11
+    print("  ✓ modèle mercato OK (coût contrat, supplément, force par domaine, agrégats)")
+
     # 15) note de version : affichée une seule fois par build.
     assert should_show_whats_new({}, "abc", enabled=True)
     assert not should_show_whats_new({"whats_new_seen_build": "abc"}, "abc", enabled=True)
@@ -1812,6 +1947,13 @@ def selftest():
     exported = parse_player_history_csv(download_players_csv())
     assert len(exported["players"]) > 500 and len(exported["seasons"]) >= 2
     print(f"  ✓ {len(exported['players'])} joueurs, saisons {exported['seasons']}")
+
+    print("→ Joueurs via l'API /infos_all_joueurs…")
+    joueurs = api_all_joueurs(SEASON)
+    assert len(joueurs) > 500, "API: infos_all_joueurs vide"
+    assert {"nom", "poste", "celebrite", "salaire", "age"} <= set(joueurs[0])
+    print(f"  ✓ {len(joueurs)} joueurs via l'API ; force estimée d'un échantillon : "
+          f"{team_domain_strength(joueurs[:11])}")
 
     tr = LiveTracker()
     for comp in ["Premier League", "Champions League"]:
