@@ -393,13 +393,9 @@ DOMAIN_LABELS = {
     "conservation": "Conservation", "creation": "Création",
     "concretisation": "Concrétisation", "finition": "Finition",
 }
-# Formations : nombre de joueurs par poste (somme = 11).
-FORMATIONS = {
-    "4-3-3":   {"GAR": 1, "DC": 2, "LAT": 2, "MDEF": 1, "MOFF": 2, "AIL": 2, "AC": 1},
-    "4-4-2":   {"GAR": 1, "DC": 2, "LAT": 2, "MDEF": 2, "MOFF": 2, "AIL": 0, "AC": 2},
-    "3-5-2":   {"GAR": 1, "DC": 3, "LAT": 0, "MDEF": 2, "MOFF": 2, "AIL": 1, "AC": 2},
-    "4-2-3-1": {"GAR": 1, "DC": 2, "LAT": 2, "MDEF": 2, "MOFF": 2, "AIL": 1, "AC": 1},
-}
+# Composition réelle d'une équipe Foothunter : exactement 1 joueur par poste
+# (vérifié sur les 140 équipes de l'API — 7 joueurs, un par poste).
+TEAM_POSTES = ["GAR", "DC", "LAT", "MDEF", "MOFF", "AIL", "AC"]
 
 
 def _num(x):
@@ -448,6 +444,20 @@ def team_domain_strength(players):
             num += w * avg_poste.get(poste, 0.0)
         out[dom] = round(num / den, 1) if den else None
     return out
+
+
+def team_domain_investment(signings):
+    """Argent investi par domaine (M€) : la dépense de chaque joueur est répartie sur
+    les domaines de son poste au prorata de POSTE_DOMAIN_WEIGHTS. C'est l'indicateur
+    « où va le budget » du mercato. signings = [(poste, montant)]."""
+    out = {d: 0.0 for d in DOMAINS}
+    for poste, money in signings:
+        m = _num(money)
+        if m is None:
+            continue
+        for dom, w in POSTE_DOMAIN_WEIGHTS.get((poste or "").upper(), {}).items():
+            out[dom] += m * w / 100.0
+    return {d: round(v, 2) for d, v in out.items()}
 
 
 def squad_aggregate(players):
@@ -1917,8 +1927,10 @@ def selftest_offline():
     assert _st["arrets"] == 90.0 and _st["finition"] == 48.0   # GAR seul -> arrêts ; AC -> finition
     _agg = squad_aggregate(_squad)
     assert _agg["count"] == 2 and _agg["total_salaire"] == 35.0 and _agg["avg_age"] == 27.5
-    assert sum(FORMATIONS["4-3-3"].values()) == 11
-    print("  ✓ modèle mercato OK (coût contrat, supplément, force par domaine, agrégats)")
+    assert len(TEAM_POSTES) == 7 and "AIL" in TEAM_POSTES   # 1 joueur par poste
+    _inv = team_domain_investment([("GAR", 20.0), ("AC", 30.0)])
+    assert _inv["arrets"] == 16.0 and _inv["finition"] == 18.0   # 20×80% ; 30×60%
+    print("  ✓ modèle mercato OK (coût, supplément, force, investissement/domaine, agrégats)")
 
     # 15) note de version : affichée une seule fois par build.
     assert should_show_whats_new({}, "abc", enabled=True)
@@ -2995,9 +3007,8 @@ def run_gui():
         win.lift()
 
         pool = {"players": state.get("mercato_pool")}
-        squad = {}          # slot_id -> joueur
-        years = {}          # slot_id -> nb d'années de contrat (1/2/3)
-        formation_v = tk.StringVar(value="4-3-3")
+        squad = {}          # poste -> joueur (une équipe = 1 joueur par poste)
+        years = {}          # poste -> nb d'années de contrat (1/2/3)
         cap_v = tk.StringVar(value="250")
         pmin_v = tk.StringVar(value="0")
         pmax_v = tk.StringVar(value="40")
@@ -3009,18 +3020,12 @@ def run_gui():
                 return default
 
         def slots():
-            out = []
-            for poste, n in FORMATIONS.get(formation_v.get(), {}).items():
-                for i in range(n):
-                    out.append((poste, f"{poste}{i + 1}"))
-            return out
+            # Une équipe Foothunter = exactement 1 joueur par poste (slot_id = poste).
+            return [(poste, poste) for poste in TEAM_POSTES]
 
         bar = tk.Frame(win, bg=HDR)
         bar.pack(fill="x", side="top")
-        tk.Label(bar, text="Formation", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
-        ttk.Combobox(bar, textvariable=formation_v, values=list(FORMATIONS), state="readonly",
-                     width=8).pack(side="left", padx=(0, 8), pady=4)
-        tk.Label(bar, text="Budget M€", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+        tk.Label(bar, text="Budget M€", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
         tk.Entry(bar, textvariable=cap_v, width=6, bg=CARD, fg=FG, insertbackground=FG,
                  relief="flat").pack(side="left", padx=(0, 8), pady=4)
         tk.Label(bar, text="Prix", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
@@ -3094,24 +3099,25 @@ def run_gui():
             tk.Button(pick, text="Recruter", bg=ACCENT, fg="#fff", bd=0, relief="flat",
                       cursor="hand2", command=assign).pack(fill="x", padx=8, pady=(0, 8))
 
-        def _draw_strength(parent, strength):
+        def _draw_invest(parent, invest):
             h = 8 + 18 * len(DOMAINS)
             chart = tk.Canvas(parent, bg=CARD, height=h, highlightthickness=0, bd=0)
             chart.pack(fill="x", padx=8, pady=4)
+            vmax = max([v or 0 for v in invest.values()] + [1.0])
 
             def redraw(*_):
                 chart.delete("all")
                 w = chart.winfo_width() or 700
-                x0, barw = 120, max(40, w - 170)
+                x0, barw = 120, max(40, w - 200)
                 for i, dom in enumerate(DOMAINS):
                     y = 6 + i * 18
-                    v = strength.get(dom) or 0
+                    v = invest.get(dom) or 0
                     chart.create_text(6, y + 6, text=DOMAIN_LABELS[dom], fill=FG, anchor="w",
                                       font=("TkDefaultFont", 8))
                     chart.create_rectangle(x0, y, x0 + barw, y + 11, fill=HDR, outline="")
-                    chart.create_rectangle(x0, y, x0 + barw * min(100, v) / 100.0, y + 11,
+                    chart.create_rectangle(x0, y, x0 + barw * (v / vmax), y + 11,
                                            fill=ACCENT, outline="")
-                    chart.create_text(x0 + barw + 4, y + 6, text=f"{v:g}", fill=MUTED, anchor="w",
+                    chart.create_text(x0 + barw + 4, y + 6, text=f"{v:g} M€", fill=MUTED, anchor="w",
                                       font=("TkDefaultFont", 8))
             chart.bind("<Configure>", redraw)
             redraw()
@@ -3125,6 +3131,7 @@ def run_gui():
                 return
             total = 0.0
             filled = []
+            signings = []
             grid = tk.Frame(content, bg=BG)
             grid.pack(fill="x", padx=6, pady=(4, 4))
             for ri, (poste, slot_id) in enumerate(slots()):
@@ -3137,6 +3144,7 @@ def run_gui():
                     cost = contract_cost(p.get("salaire"), yr) or 0
                     total += cost
                     filled.append(p)
+                    signings.append((poste, cost))
                     tk.Label(grid, text=f"{p.get('nom')} · {p.get('nom_equipe')}", bg=rowbg, fg=FG,
                              anchor="w", font=("TkDefaultFont", 8)).grid(row=ri, column=1, sticky="we", padx=2)
                     yv = tk.StringVar(value=str(yr))
@@ -3167,17 +3175,18 @@ def run_gui():
             tk.Label(summ, text=f"Budget : {total:g} / {cap:g} M€", bg=BG,
                      fg=(LIVE if over else GREEN), anchor="w",
                      font=("TkDefaultFont", 11, "bold")).pack(side="left")
-            tk.Label(summ, text=f"  {agg['count']}/11 joueurs · célé moy. {agg['avg_celebrite'] or '—'} · "
-                                f"âge moy. {agg['avg_age'] or '—'}", bg=BG, fg=MUTED,
-                     anchor="w", font=("TkDefaultFont", 9)).pack(side="left")
+            tk.Label(summ, text=f"  {agg['count']}/{len(TEAM_POSTES)} joueurs · célé moy. "
+                                f"{agg['avg_celebrite'] or '—'} · âge moy. {agg['avg_age'] or '—'}",
+                     bg=BG, fg=MUTED, anchor="w", font=("TkDefaultFont", 9)).pack(side="left")
             if over:
                 tk.Label(content, text="⚠ budget dépassé", bg=BG, fg=LIVE, anchor="w",
                          font=("TkDefaultFont", 8)).pack(fill="x", padx=10)
-            tk.Label(content, text="Force estimée par domaine", bg=BG, fg=ACCENT, anchor="w",
+            tk.Label(content, text="Budget investi par domaine (M€, au prorata du poste)",
+                     bg=BG, fg=ACCENT, anchor="w",
                      font=("TkDefaultFont", 9, "bold")).pack(fill="x", padx=10, pady=(6, 0))
-            _draw_strength(content, team_domain_strength(filled))
+            _draw_invest(content, team_domain_investment(signings))
 
-        for v in (formation_v, cap_v, pmin_v, pmax_v):
+        for v in (cap_v, pmin_v, pmax_v):
             v.trace_add("write", lambda *_: render())
         render()
 
@@ -3210,20 +3219,24 @@ def run_gui():
             pass
         win.lift()
 
-        PMETRICS = {"Salaire (M€)": "salaire", "Célébrité": "celebrite", "Âge": "age"}
         TMETRICS = {"Buts / match": "gf_pm", "Encaissés / match": "ga_pm",
                     "Possession %": "poss", "Conversion %": "conv", "Arrêts %": "save",
                     "Clean sheets": "clean", "Occasions / match": "occ_for_pm"}
-        PCOLORS = {"GAR": "#f4d35e", "DC": "#5898d4", "LAT": "#6ad0d0", "MDEF": "#9b8cff",
-                   "MOFF": "#6ddf6d", "AIL": "#f08a5d", "AC": "#ff5252"}
         real_comps = competitions[1:]
 
         mode_v = tk.StringVar(value="Joueurs")
-        x_v = tk.StringVar(value="Salaire (M€)")
-        y_v = tk.StringVar(value="Célébrité")
         poste_v = tk.StringVar(value="Tous")
+        pmin_v = tk.StringVar(value="0")
+        pmax_v = tk.StringVar(value="40")
         comp_v = tk.StringVar(value=real_comps[0] if real_comps else "")
         tmetric_v = tk.StringVar(value="Buts / match")
+        sortst = {"key": "celebrite", "rev": True}
+
+        def _f(var, d):
+            try:
+                return float(var.get())
+            except (TypeError, ValueError):
+                return d
 
         bar = tk.Frame(win, bg=HDR)
         bar.pack(fill="x", side="top")
@@ -3231,9 +3244,25 @@ def run_gui():
                      width=9).pack(side="left", padx=6, pady=4)
         controls = tk.Frame(win, bg=HDR)
         controls.pack(fill="x", side="top")
+        hint = tk.Label(win, text="", bg=BG, fg=MUTED, anchor="w", justify="left",
+                        wraplength=720, font=("TkDefaultFont", 8))
+        hint.pack(fill="x", padx=8, pady=(2, 0))
 
-        chart = tk.Canvas(win, bg=CARD, highlightthickness=0, bd=0)
-        chart.pack(fill="both", expand=True, padx=8, pady=8)
+        cv = tk.Canvas(win, bg=BG, highlightthickness=0, bd=0)
+        sb = tk.Scrollbar(win, orient="vertical", command=cv.yview)
+        cv.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        cv.pack(side="left", fill="both", expand=True)
+        content = tk.Frame(cv, bg=BG)
+        bid = cv.create_window((0, 0), window=content, anchor="nw")
+        content.bind("<Configure>", lambda _e: cv.configure(scrollregion=cv.bbox("all")))
+        cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
+
+        def _wheel(e):
+            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            return "break"
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            win.bind(seq, _wheel)
 
         def _combo(parent, var, values, w=14):
             c = ttk.Combobox(parent, textvariable=var, values=values, state="readonly", width=w)
@@ -3241,99 +3270,121 @@ def run_gui():
             c.bind("<<ComboboxSelected>>", lambda *_: render())
             return c
 
-        def players_pool():
-            return state.get("mercato_pool") or []
+        def _entry(parent, var, w=4):
+            e = tk.Entry(parent, textvariable=var, width=w, bg=CARD, fg=FG, insertbackground=FG, relief="flat")
+            e.pack(side="left", padx=(0, 6), pady=4)
+            e.bind("<KeyRelease>", lambda *_: render())
+            return e
 
-        def draw_scatter(pts, xlab, ylab):
-            chart.delete("all")
-            W = chart.winfo_width() or 720
-            H = chart.winfo_height() or 560
-            L, R, T, B = 54, 16, 16, 40
-            xs = [p[0] for p in pts]
-            ys = [p[1] for p in pts]
-            if not pts:
-                chart.create_text(W / 2, H / 2, text="Aucune donnée", fill=MUTED); return
-            xmin, xmax = min(xs), max(xs)
-            ymin, ymax = min(ys), max(ys)
-            xmax += (xmax == xmin) or 0.0001
-            ymax += (ymax == ymin) or 0.0001
-            def sx(x): return L + (x - xmin) / (xmax - xmin) * (W - L - R)
-            def sy(y): return H - B - (y - ymin) / (ymax - ymin) * (H - T - B)
-            chart.create_line(L, T, L, H - B, fill=MUTED)
-            chart.create_line(L, H - B, W - R, H - B, fill=MUTED)
-            for frac in (0, .25, .5, .75, 1):
-                xv = xmin + frac * (xmax - xmin)
-                yv = ymin + frac * (ymax - ymin)
-                chart.create_text(sx(xv), H - B + 12, text=f"{xv:g}", fill=MUTED, font=("TkDefaultFont", 7))
-                chart.create_text(L - 6, sy(yv), text=f"{yv:g}", fill=MUTED, anchor="e", font=("TkDefaultFont", 7))
-            for x, y, col, name in pts:
-                cx, cy = sx(x), sy(y)
-                chart.create_oval(cx - 3, cy - 3, cx + 3, cy + 3, fill=col, outline="")
-            chart.create_text(W / 2, H - 6, text=xlab, fill=FG, font=("TkDefaultFont", 8))
-            chart.create_text(12, T, text=ylab, fill=FG, anchor="nw", font=("TkDefaultFont", 8))
+        PCOLS = [("#", None), ("Joueur", "nom"), ("Équipe", "nom_equipe"), ("Âge", "age"),
+                 ("Célé.", "celebrite"), ("Sal. M€", "salaire"), ("Célé/M€", "value")]
 
-        def draw_bars(rows, label):
-            chart.delete("all")
-            W = chart.winfo_width() or 720
-            if not rows:
-                chart.create_text(W / 2, 40, text="Chargement / aucune donnée", fill=MUTED); return
-            x0 = 150
-            barw = max(40, W - x0 - 60)
+        def render_players():
+            tk.Label(controls, text="Poste", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
+            _combo(controls, poste_v, ["Tous"] + list(POSTE_DOMAIN_WEIGHTS), 6)
+            tk.Label(controls, text="Prix", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+            _entry(controls, pmin_v)
+            tk.Label(controls, text="à", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left")
+            _entry(controls, pmax_v)
+            pool = state.get("mercato_pool") or []
+            if not pool:
+                tk.Label(content, text="Chargement des joueurs…", bg=BG, fg=MUTED,
+                         font=("TkDefaultFont", 9)).pack(anchor="w", padx=10, pady=8)
+                return
+            lo, hi = _f(pmin_v, 0), _f(pmax_v, 1e9)
+            pf = poste_v.get()
+            rows = []
+            for p in pool:
+                if pf != "Tous" and (p.get("poste") or "").upper() != pf:
+                    continue
+                sal, cel = _num(p.get("salaire")), _num(p.get("celebrite"))
+                if sal is None or not (lo <= sal <= hi):
+                    continue
+                rows.append({"nom": p.get("nom"), "nom_equipe": p.get("nom_equipe"),
+                             "age": _num(p.get("age")), "celebrite": cel, "salaire": sal,
+                             "value": round(cel / sal, 1) if (cel is not None and sal) else None})
+            k = sortst["key"]
+            if k in ("nom", "nom_equipe"):
+                rows.sort(key=lambda r: (r.get(k) or "").lower(), reverse=not sortst["rev"])
+            else:
+                rows.sort(key=lambda r: (r.get(k) is None,
+                                         -(r.get(k) or 0) if sortst["rev"] else (r.get(k) or 0)))
+            if pf != "Tous":
+                top = max(POSTE_DOMAIN_WEIGHTS[pf].items(), key=lambda kv: kv[1])[0]
+                hint.config(text=f"{len(rows)} joueurs · poste {pf} (domaine clé : {DOMAIN_LABELS[top]}) · "
+                                 "« Célé/M€ » = bonnes affaires (joueurs sous-cotés)")
+            else:
+                hint.config(text=f"{len(rows)} joueurs · « Célé/M€ » repère les bonnes affaires (sous-cotés)")
+            grid = tk.Frame(content, bg=BG)
+            grid.pack(fill="both", expand=True, padx=6, pady=4)
+            for ci, (lbl, key) in enumerate(PCOLS):
+                arrow = (" ▾" if sortst["rev"] else " ▴") if key == sortst["key"] else ""
+                hh = tk.Label(grid, text=lbl + arrow, bg=HDR, fg=ACCENT if key else MUTED,
+                              font=("TkDefaultFont", 8, "bold"),
+                              anchor="w" if lbl in ("Joueur", "Équipe") else "center", padx=4)
+                hh.grid(row=0, column=ci, sticky="we", padx=1, pady=1)
+                if key:
+                    hh.configure(cursor="hand2")
+                    hh.bind("<Button-1>", lambda _e, kk=key: (sortst.update(
+                        key=kk, rev=(not sortst["rev"]) if sortst["key"] == kk else (kk not in ("nom", "nom_equipe"))),
+                        render()))
+            for ri, r in enumerate(rows[:200], start=1):
+                rowbg = CARD if ri % 2 else BG
+
+                def cell(ci, text, fg=FG, left=False):
+                    tk.Label(grid, text=text, bg=rowbg, fg=fg, font=("TkDefaultFont", 8),
+                             anchor="w" if left else "center", padx=4).grid(row=ri, column=ci, sticky="we", padx=1)
+                cell(0, str(ri), MUTED)
+                cell(1, r["nom"] or "?", FG, True)
+                cell(2, r["nom_equipe"] or "?", MUTED, True)
+                cell(3, f"{r['age']:g}" if r["age"] is not None else "—")
+                cell(4, f"{r['celebrite']:g}" if r["celebrite"] is not None else "—")
+                cell(5, f"{r['salaire']:g}" if r["salaire"] is not None else "—")
+                cell(6, f"{r['value']:g}" if r["value"] is not None else "—", GREEN)
+            grid.grid_columnconfigure(1, weight=1)
+
+        def render_teams():
+            tk.Label(controls, text="Compétition", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
+            _combo(controls, comp_v, real_comps, 16)
+            tk.Label(controls, text="Stat", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+            _combo(controls, tmetric_v, list(TMETRICS), 16)
+            comp = comp_v.get()
+            ensure_domstats(comp, on_ready=lambda: win.winfo_exists() and render())
+            ds = state["domstats"].get(comp) or {}
+            hint.config(text=f"Classement des équipes de {comp} par {tmetric_v.get()}")
+            if not ds:
+                tk.Label(content, text="Chargement de la compétition…", bg=BG, fg=MUTED,
+                         font=("TkDefaultFont", 9)).pack(anchor="w", padx=10, pady=8)
+                return
+            key = TMETRICS[tmetric_v.get()]
+            rows = sorted(((t, s.get(key)) for t, s in ds.items() if s.get(key) is not None),
+                          key=lambda r: -r[1])
             vmax = max((v for _, v in rows), default=1) or 1
-            for i, (name, v) in enumerate(rows[:18]):
-                y = 10 + i * 22
-                chart.create_text(8, y + 8, text=name[:20], fill=FG, anchor="w", font=("TkDefaultFont", 8))
-                chart.create_rectangle(x0, y, x0 + barw, y + 14, fill=HDR, outline="")
-                chart.create_rectangle(x0, y, x0 + barw * (v / vmax), y + 14, fill=ACCENT, outline="")
-                chart.create_text(x0 + barw + 4, y + 8, text=f"{v:g}", fill=MUTED, anchor="w",
-                                  font=("TkDefaultFont", 8))
-            chart.configure(scrollregion=(0, 0, W, 20 + 22 * min(18, len(rows))))
+            box = tk.Frame(content, bg=BG)
+            box.pack(fill="x", padx=8, pady=4)
+            for t, v in rows:
+                row = tk.Frame(box, bg=BG)
+                row.pack(fill="x", pady=1)
+                tk.Label(row, text=t[:22], bg=BG, fg=FG, width=20, anchor="w",
+                         font=("TkDefaultFont", 8)).pack(side="left")
+                tk.Label(row, text=f"{v:g}", bg=BG, fg=MUTED, width=6, anchor="e",
+                         font=("TkDefaultFont", 8)).pack(side="right")
+                track = tk.Frame(row, bg=HDR, height=14)
+                track.pack(side="left", fill="x", expand=True, padx=4)
+                track.pack_propagate(False)
+                tk.Frame(track, bg=ACCENT).place(relx=0, rely=0, relwidth=v / vmax, relheight=1)
 
         def render(*_):
             for w in controls.winfo_children():
                 w.destroy()
+            for w in content.winfo_children():
+                w.destroy()
             if mode_v.get() == "Joueurs":
-                tk.Label(controls, text="X", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
-                _combo(controls, x_v, list(PMETRICS), 12)
-                tk.Label(controls, text="Y", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
-                _combo(controls, y_v, list(PMETRICS), 12)
-                tk.Label(controls, text="Poste", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
-                _combo(controls, poste_v, ["Tous"] + list(POSTE_DOMAIN_WEIGHTS), 6)
-                pool = players_pool()
-                if not pool:
-                    chart.delete("all")
-                    chart.create_text((chart.winfo_width() or 720) / 2, 40, text="Chargement des joueurs…", fill=MUTED)
-                    return
-                xk, yk = PMETRICS[x_v.get()], PMETRICS[y_v.get()]
-                pf = poste_v.get()
-                pts = []
-                for p in pool:
-                    if pf != "Tous" and (p.get("poste") or "").upper() != pf:
-                        continue
-                    xv, yv = _num(p.get(xk)), _num(p.get(yk))
-                    if xv is None or yv is None:
-                        continue
-                    pts.append((xv, yv, PCOLORS.get((p.get("poste") or "").upper(), ACCENT), p.get("nom")))
-                draw_scatter(pts, x_v.get(), y_v.get())
+                render_players()
             else:
-                tk.Label(controls, text="Compétition", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
-                _combo(controls, comp_v, real_comps, 16)
-                tk.Label(controls, text="Stat", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
-                _combo(controls, tmetric_v, list(TMETRICS), 16)
-                comp = comp_v.get()
-                ensure_domstats(comp, on_ready=lambda: win.winfo_exists() and render())
-                ds = state["domstats"].get(comp) or {}
-                if not ds:
-                    chart.delete("all")
-                    chart.create_text((chart.winfo_width() or 720) / 2, 40, text="Chargement de la compétition…", fill=MUTED)
-                    return
-                key = TMETRICS[tmetric_v.get()]
-                rows = sorted(((t, s.get(key)) for t, s in ds.items() if s.get(key) is not None),
-                              key=lambda r: -r[1])
-                draw_bars(rows, tmetric_v.get())
+                render_teams()
 
         mode_v.trace_add("write", lambda *_: render())
-        chart.bind("<Configure>", lambda *_: render())
         render()
 
         if not state.get("mercato_pool"):
