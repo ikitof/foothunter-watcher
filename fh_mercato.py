@@ -32,6 +32,13 @@ DOMAIN_LABELS = {
 # (vérifié sur les 140 équipes de l'API — 7 joueurs, un par poste).
 TEAM_POSTES = ["GAR", "DC", "LAT", "MDEF", "MOFF", "AIL", "AC"]
 
+# Ligues (championnats, hors coupes) proposées au scouting multi-ligues. Une équipe
+# n'appartient qu'à un seul championnat -> l'union sur ces ligues ne double aucun joueur.
+SCOUT_LEAGUES = ["Premier League", "Liga", "Bundesliga", "Serie A", "Ligue 1",
+                 "Liga Nos", "Eredivisie", "Süper Lig", "Jupiler Pro League",
+                 "Championship", "Liga 2", "Bundesliga 2", "Serie B", "Ligue 2"]
+MAJOR_LEAGUES = ["Premier League", "Liga", "Bundesliga", "Serie A", "Ligue 1"]
+
 
 def _num(x):
     try:

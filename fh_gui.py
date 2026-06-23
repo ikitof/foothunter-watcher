@@ -1025,8 +1025,8 @@ def run_gui():
         win.lift()
 
         pool = {"players": state.get("mercato_pool")}
-        squad = {}          # poste -> joueur (une équipe = 1 joueur par poste)
-        years = {}          # poste -> nb d'années de contrat (1/2/3)
+        squad = state.setdefault("mercato_squad", {})   # poste -> joueur (partagé avec l'explorateur)
+        years = state.setdefault("mercato_years", {})   # poste -> nb d'années de contrat (1/2/3)
         cap_v = tk.StringVar(value="250")
         pmin_v = tk.StringVar(value="0")
         pmax_v = tk.StringVar(value="40")
@@ -1206,6 +1206,9 @@ def run_gui():
 
         for v in (cap_v, pmin_v, pmax_v):
             v.trace_add("write", lambda *_: render())
+        # Hook pour rafraîchir le mercato quand l'explorateur y ajoute un joueur.
+        state["mercato_render"] = lambda: win.winfo_exists() and render()
+        win.protocol("WM_DELETE_WINDOW", lambda: (state.pop("mercato_render", None), win.destroy()))
         render()
 
         if pool["players"] is None:
@@ -1248,7 +1251,13 @@ def run_gui():
         pmax_v = tk.StringVar(value="40")
         comp_v = tk.StringVar(value=real_comps[0] if real_comps else "")
         tmetric_v = tk.StringVar(value="Buts / match")
-        sortst = {"key": "celebrite", "rev": True}
+        sortst = {"key": "stat", "rev": True}
+        league_vars = {lg: tk.BooleanVar(value=(lg in MAJOR_LEAGUES)) for lg in SCOUT_LEAGUES}
+        LEAGUE_ABBR = {"Premier League": "PL", "Liga": "Liga", "Bundesliga": "Bund",
+                       "Serie A": "SerieA", "Ligue 1": "L1", "Liga Nos": "Por",
+                       "Eredivisie": "Ned", "Süper Lig": "Tur", "Jupiler Pro League": "Bel",
+                       "Championship": "Champ", "Liga 2": "Liga2", "Bundesliga 2": "Bund2",
+                       "Serie B": "SerieB", "Ligue 2": "L2"}
 
         def _f(var, d):
             try:
@@ -1295,87 +1304,117 @@ def run_gui():
             return e
 
         def render_players():
-            tk.Label(controls, text="Compétition", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
-            _combo(controls, comp_v, real_comps, 16)
-            tk.Label(controls, text="Poste", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
-            _combo(controls, poste_v, list(POSTE_DOMAIN_WEIGHTS), 6)
-            tk.Label(controls, text="Prix", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
-            _entry(controls, pmin_v)
-            tk.Label(controls, text="à", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left")
-            _entry(controls, pmax_v)
+            row1 = tk.Frame(controls, bg=HDR)
+            row1.pack(fill="x")
+            tk.Label(row1, text="Poste", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
+            _combo(row1, poste_v, list(POSTE_DOMAIN_WEIGHTS), 6)
+            tk.Label(row1, text="Prix", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+            _entry(row1, pmin_v)
+            tk.Label(row1, text="à", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left")
+            _entry(row1, pmax_v)
+            row2 = tk.Frame(controls, bg=HDR)
+            row2.pack(fill="x")
+            tk.Label(row2, text="Ligues", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).grid(row=0, column=0, sticky="w", padx=(6, 4))
+            for i, lg in enumerate(SCOUT_LEAGUES):
+                tk.Checkbutton(row2, text=LEAGUE_ABBR.get(lg, lg), variable=league_vars[lg],
+                               command=render, bg=HDR, fg=FG, selectcolor=CARD, activebackground=HDR,
+                               activeforeground=FG, bd=0, highlightthickness=0, cursor="hand2",
+                               font=("TkDefaultFont", 8)).grid(row=1 + i // 7, column=i % 7, sticky="w", padx=2)
+
             poste = poste_v.get()
             if poste not in ROLE_RELEVANCE:
                 poste = "GAR"
                 poste_v.set(poste)
-            comp = comp_v.get()
+            leagues = [lg for lg in SCOUT_LEAGUES if league_vars[lg].get()] or list(MAJOR_LEAGUES)
             pool = state.get("mercato_pool") or []
             if not pool:
                 tk.Label(content, text="Chargement des joueurs…", bg=BG, fg=MUTED,
                          font=("TkDefaultFont", 9)).pack(anchor="w", padx=10, pady=8)
                 return
             cache = state.setdefault("scout_cache", {})
-            ck = (comp, poste)
-            if ck not in cache:
-                tk.Label(content, text=f"Analyse de {comp}…", bg=BG, fg=MUTED,
+            missing = [lg for lg in leagues if (lg, poste) not in cache]
+            if missing:
+                tk.Label(content, text=f"Analyse de {len(missing)} ligue(s)…", bg=BG, fg=MUTED,
                          font=("TkDefaultFont", 9)).pack(anchor="w", padx=10, pady=8)
 
-                def load(cc=comp, pp=poste):
-                    try:
-                        cache[(cc, pp)] = role_scout_rows(cc, pp, pool)
-                    except Exception:
-                        cache[(cc, pp)] = []
+                def load(ls=tuple(missing), pp=poste):
+                    for lg in ls:
+                        try:
+                            cache[(lg, pp)] = role_scout_rows(lg, pp, pool)
+                        except Exception:
+                            cache[(lg, pp)] = []
                     if win.winfo_exists():
                         root.after(0, render)
                 threading.Thread(target=load, daemon=True).start()
                 return
+            seen, agg = set(), []
+            for lg in leagues:
+                for r in cache[(lg, poste)]:
+                    k = (r["nom"], r["team"])
+                    if k not in seen:
+                        seen.add(k)
+                        agg.append(r)
             stat_key, stat_label, counters = ROLE_RELEVANCE[poste]
             lo, hi = _f(pmin_v, 0), _f(pmax_v, 1e9)
-            rows = [dict(r) for r in cache[ck] if r["salaire"] is not None and lo <= r["salaire"] <= hi]
+            rows = [dict(r) for r in agg if r["salaire"] is not None and lo <= r["salaire"] <= hi]
             for r in rows:
                 r["value"] = round(r["celebrite"] / r["salaire"], 1) \
                     if (r["celebrite"] is not None and r["salaire"]) else None
-            cols = [("#", None), ("Joueur", "nom"), ("Équipe", "team"), (stat_label, "stat"),
-                    ("Adversité", "opp"), ("Célé.", "celebrite"), ("Sal.", "salaire"), ("Célé/M€", "value")]
+            cols = [("#", None), ("Joueur", "nom"), ("Équipe", "team"), ("Ligue", "competition"),
+                    (stat_label, "stat"), ("Adv.", "opp"), ("Célé", "celebrite"), ("Sal", "salaire"), ("C/M€", "value")]
             valid = [c[1] for c in cols if c[1]]
             if sortst["key"] not in valid:
                 sortst["key"], sortst["rev"] = "stat", True
             k = sortst["key"]
-            if k in ("nom", "team"):
+            if k in ("nom", "team", "competition"):
                 rows.sort(key=lambda r: (r.get(k) or "").lower(), reverse=not sortst["rev"])
             else:
                 rows.sort(key=lambda r: (r.get(k) is None,
                                          -(r.get(k) or 0) if sortst["rev"] else (r.get(k) or 0)))
             top_dom = max(POSTE_DOMAIN_WEIGHTS[poste].items(), key=lambda kv: kv[1])[0]
-            hint.config(text=f"{len(rows)} {poste} en {comp} · stat clé : {stat_label} "
-                             f"({DOMAIN_LABELS[top_dom]}) · « Adversité » = célé moyenne des "
-                             f"{'/'.join(counters)} affrontés · « Célé/M€ » = bonne affaire")
+            hint.config(text=f"{len(rows)} {poste} sur {len(leagues)} ligue(s) · stat clé : {stat_label} "
+                             f"({DOMAIN_LABELS[top_dom]}) · Adv. = célé {'/'.join(counters)} adverses · "
+                             "« + » ajoute au mercato")
             grid = tk.Frame(content, bg=BG)
             grid.pack(fill="both", expand=True, padx=6, pady=4)
             for ci, (lbl, key) in enumerate(cols):
                 arrow = (" ▾" if sortst["rev"] else " ▴") if key == sortst["key"] else ""
                 hh = tk.Label(grid, text=lbl + arrow, bg=HDR, fg=ACCENT if key else MUTED,
                               font=("TkDefaultFont", 8, "bold"),
-                              anchor="w" if lbl in ("Joueur", "Équipe") else "center", padx=4)
+                              anchor="w" if lbl in ("Joueur", "Équipe", "Ligue") else "center", padx=3)
                 hh.grid(row=0, column=ci, sticky="we", padx=1, pady=1)
                 if key:
                     hh.configure(cursor="hand2")
                     hh.bind("<Button-1>", lambda _e, kk=key: (sortst.update(
-                        key=kk, rev=(not sortst["rev"]) if sortst["key"] == kk else (kk not in ("nom", "team"))),
+                        key=kk, rev=(not sortst["rev"]) if sortst["key"] == kk else (kk not in ("nom", "team", "competition"))),
                         render()))
-            for ri, r in enumerate(rows[:200], start=1):
+            tk.Label(grid, text="", bg=HDR).grid(row=0, column=len(cols), padx=1, pady=1)
+            for ri, r in enumerate(rows[:300], start=1):
                 rowbg = CARD if ri % 2 else BG
 
                 def cell(ci, text, fg=FG, left=False):
                     tk.Label(grid, text=text, bg=rowbg, fg=fg, font=("TkDefaultFont", 8),
-                             anchor="w" if left else "center", padx=4).grid(row=ri, column=ci, sticky="we", padx=1)
+                             anchor="w" if left else "center", padx=3).grid(row=ri, column=ci, sticky="we", padx=1)
                 cell(0, str(ri), MUTED)
                 cell(1, r["nom"] or "?", FG, True)
                 cell(2, r["team"] or "?", MUTED, True)
-                cell(3, f"{r['stat']:g}" if r["stat"] is not None else "—", ACCENT)
-                cell(4, f"{r['opp']:g}" if r["opp"] is not None else "—")
-                cell(5, f"{r['celebrite']:g}" if r["celebrite"] is not None else "—")
-                cell(6, f"{r['salaire']:g}" if r["salaire"] is not None else "—")
-                cell(7, f"{r['value']:g}" if r["value"] is not None else "—", GREEN)
+                cell(3, LEAGUE_ABBR.get(r.get("competition"), r.get("competition") or "?"), MUTED, True)
+                cell(4, f"{r['stat']:g}" if r["stat"] is not None else "—", ACCENT)
+                cell(5, f"{r['opp']:g}" if r["opp"] is not None else "—")
+                cell(6, f"{r['celebrite']:g}" if r["celebrite"] is not None else "—")
+                cell(7, f"{r['salaire']:g}" if r["salaire"] is not None else "—")
+                cell(8, f"{r['value']:g}" if r["value"] is not None else "—", GREEN)
+
+                def add_merc(rr=r, pp=poste):
+                    state.setdefault("mercato_squad", {})[pp] = {
+                        "nom": rr["nom"], "poste": pp, "nom_equipe": rr["team"],
+                        "salaire": rr["salaire"], "celebrite": rr["celebrite"], "age": rr["age"]}
+                    state.setdefault("mercato_years", {}).setdefault(pp, 1)
+                    hook = state.get("mercato_render")
+                    if hook:
+                        hook()
+                tk.Button(grid, text="+ merc", bg=rowbg, fg=GREEN, bd=0, relief="flat", cursor="hand2",
+                          font=("TkDefaultFont", 8), command=add_merc).grid(row=ri, column=len(cols), sticky="we", padx=1)
             grid.grid_columnconfigure(1, weight=1)
 
         def render_teams():

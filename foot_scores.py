@@ -416,10 +416,21 @@ def role_scout_rows(competition, poste, pool):
         rows.append({
             "nom": p.get("nom"), "team": team, "celebrite": _num(p.get("celebrite")),
             "salaire": _num(p.get("salaire")), "age": _num(p.get("age")),
-            "stat": tds.get(team, {}).get(stat_key),
+            "stat": tds.get(team, {}).get(stat_key), "competition": competition,
             "opp": round(sum(qs) / len(qs), 1) if qs else None,
         })
     return rows
+
+
+def role_scout_multi(competitions, poste, pool):
+    """role_scout_rows agrégé sur plusieurs ligues : union des joueurs (une équipe
+    n'appartenant qu'à un championnat, aucun joueur n'est dédoublé). Chaque ligne porte
+    sa 'competition'. Permet de voir tous les joueurs d'un rôle au-delà d'une seule ligue."""
+    seen = {}
+    for comp in competitions:
+        for r in role_scout_rows(comp, poste, pool):
+            seen.setdefault((r["nom"], r["team"]), r)
+    return list(seen.values())
 
 
 
