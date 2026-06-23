@@ -1,0 +1,16 @@
+# Évite de copier le superflu dans le contexte de build (rapidité + image légère).
+.git
+.github
+.buildozer
+.buildozer-global
+.android-signing
+.claude
+bin
+dist
+__pycache__
+*.pyc
+*.pdf
+*.apk
+*.exe
+error.jpeg
+foot_scores_config.json

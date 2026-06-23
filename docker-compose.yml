@@ -1,0 +1,24 @@
+# Lance l'app desktop Foot Live dans un conteneur, affichage sur l'écran de l'hôte.
+#
+# Prérequis (hôte Linux avec serveur X11), une seule fois par session :
+#     xhost +local:docker
+# Puis :
+#     docker compose up --build
+#
+# Le socket X11 (/tmp/.X11-unix) et la variable DISPLAY sont partagés pour que la
+# fenêtre Tkinter s'affiche sur le bureau. Le réseau par défaut suffit pour joindre
+# l'API foothunter et vérifier les mises à jour.
+services:
+  foot-live:
+    build: .
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - foot-live-config:/root/.config   # persiste les réglages entre deux lancements
+    # Quitte proprement avec la fenêtre.
+    stdin_open: true
+    tty: true
+
+volumes:
+  foot-live-config:

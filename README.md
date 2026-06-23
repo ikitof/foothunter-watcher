@@ -99,6 +99,19 @@ chemin à modifier à la main.
 ./install.sh ~/Bureau     # ou  ./install.sh ~/Desktop
 ```
 
+### Lancer via Docker (Linux)
+
+Un `Dockerfile` + `docker-compose.yml` permettent de lancer l'app desktop dans un
+conteneur, la fenêtre s'affichant sur le bureau via X11 :
+
+```bash
+xhost +local:docker        # une fois par session, autorise le conteneur à afficher
+docker compose up --build
+```
+
+Le socket X11 et `DISPLAY` sont partagés par `docker-compose.yml` ; les réglages
+sont conservés dans un volume. (Linux uniquement — nécessite un serveur X11.)
+
 ## Windows `.exe`
 
 Oui, c'est prévu via **PyInstaller**. Le build Windows doit être fait sur Windows
