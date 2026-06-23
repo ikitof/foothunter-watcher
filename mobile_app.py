@@ -13,7 +13,7 @@ from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
-from kivy.graphics import Color, Ellipse, Line, Rectangle, RoundedRectangle
+from kivy.graphics import Color, Rectangle, RoundedRectangle
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -104,59 +104,6 @@ def spacer(height=8):
     return Widget(size_hint_y=None, height=dp(height))
 
 
-class Chart(Widget):
-    """Mini-graphe dessiné sur canvas (zéro dépendance). kind='bars' -> barres
-    horizontales [(label, valeur)] ; kind='scatter' -> points [(x, y, rgba)]."""
-
-    def __init__(self, kind="bars", data=None, vmax=None, height=200, **kwargs):
-        super().__init__(size_hint_y=None, height=dp(height), **kwargs)
-        self.kind = kind
-        self.data = data or []
-        self.vmax = vmax
-        self.bind(pos=self._redraw, size=self._redraw)
-
-    def _redraw(self, *_):
-        self.canvas.clear()
-        if not self.data:
-            return
-        x, y, w, h = self.x, self.y, self.width, self.height
-        with self.canvas:
-            if self.kind == "bars":
-                Color(*CARD)
-                Rectangle(pos=(x, y), size=(w, h))
-                n = len(self.data)
-                vmax = self.vmax or max((v for _, v in self.data), default=1) or 1
-                lblw = w * 0.42
-                gap = dp(3)
-                bh = (h - gap * (n + 1)) / max(1, n)
-                for i, (lbl, v) in enumerate(self.data):
-                    by = y + h - gap - (i + 1) * bh - i * gap
-                    Color(*MUTED)
-                    Rectangle(pos=(x + lblw, by), size=(w - lblw - dp(34), bh))
-                    Color(*ACCENT)
-                    Rectangle(pos=(x + lblw, by),
-                              size=((w - lblw - dp(34)) * min(1.0, (v or 0) / vmax), bh))
-            else:  # scatter
-                Color(*CARD)
-                Rectangle(pos=(x, y), size=(w, h))
-                pad = dp(6)
-                xs = [p[0] for p in self.data]
-                ys = [p[1] for p in self.data]
-                xmn, xmx = min(xs), max(xs)
-                ymn, ymx = min(ys), max(ys)
-                xr = (xmx - xmn) or 1.0
-                yr = (ymx - ymn) or 1.0
-                Color(*MUTED)
-                Line(points=[x + pad, y + pad, x + w - pad, y + pad], width=1)
-                Line(points=[x + pad, y + pad, x + pad, y + h - pad], width=1)
-                r = dp(3)
-                for px, py, col in self.data:
-                    cx = x + pad + (px - xmn) / xr * (w - 2 * pad)
-                    cy = y + pad + (py - ymn) / yr * (h - 2 * pad)
-                    Color(*col)
-                    Ellipse(pos=(cx - r, cy - r), size=(2 * r, 2 * r))
-
-
 def bar_row(text, value, vmax=100, color=ACCENT):
     """Ligne 'libellé | barre proportionnelle | valeur' (barre via size_hint_x, sans
     canvas — fiable et lisible sur mobile)."""
@@ -201,15 +148,14 @@ class FootLiveMobileApp(App):
         self.goal_sound = None
         # Mercato / explorateur de stats
         self.mercato_pool = None      # liste joueurs (api_all_joueurs), chargée à la demande
-        self.mercato_squad = {}       # slot_id -> joueur
-        self.mercato_years = {}       # slot_id -> années de contrat
-        self.mercato_formation = "4-3-3"
+        self.mercato_squad = {}       # poste -> joueur (1 joueur par poste)
+        self.mercato_years = {}       # poste -> années de contrat
         self.mercato_cap = "250"
         self.mercato_pmax = "40"
         self.explore_mode = "Joueurs"
-        self.explore_x = "Salaire"
-        self.explore_y = "Célébrité"
         self.explore_poste = "Tous"
+        self.explore_pmin = "0"
+        self.explore_pmax = "40"
         self.explore_comp = ""
         self.explore_metric = "Buts / match"
 
@@ -779,11 +725,8 @@ class FootLiveMobileApp(App):
         return sp
 
     def _mercato_slots(self):
-        out = []
-        for poste, n in core.FORMATIONS.get(self.mercato_formation, {}).items():
-            for i in range(n):
-                out.append((poste, f"{poste}{i + 1}"))
-        return out
+        # Une équipe Foothunter = exactement 1 joueur par poste (slot_id = poste).
+        return [(poste, poste) for poste in core.TEAM_POSTES]
 
     def _mercato_remove(self, slot_id):
         self.mercato_squad.pop(slot_id, None)
@@ -830,17 +773,17 @@ class FootLiveMobileApp(App):
         self.clear_content()
         self.add_title("Mercato", "Coût = salaire × années, payé d'avance.")
         ctrl = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(44), spacing=dp(6))
-        ctrl.add_widget(self._mspin(self.mercato_formation, list(core.FORMATIONS), "mercato_formation"))
         ctrl.add_widget(self._mspin(self.mercato_cap, [100, 150, 200, 250, 300, 400, 600], "mercato_cap"))
         ctrl.add_widget(self._mspin(self.mercato_pmax, [10, 20, 30, 40, 60, 100], "mercato_pmax"))
         self.content.add_widget(ctrl)
-        self.content.add_widget(label("formation · budget M€ · prix max M€", color=MUTED, size=10, height=20))
+        self.content.add_widget(label("budget M€ · prix max M€ · 1 joueur par poste", color=MUTED, size=10, height=20))
         if self.mercato_pool is None:
             self.ensure_mercato_pool()
             self.content.add_widget(label("Chargement des joueurs…", color=MUTED, height=50))
             return
         total = 0.0
         filled = []
+        signings = []
         for poste, slot_id in self._mercato_slots():
             p = self.mercato_squad.get(slot_id)
             row = Surface(orientation="horizontal", color=CARD, size_hint_y=None, height=dp(46),
@@ -854,6 +797,7 @@ class FootLiveMobileApp(App):
                 cost = core.contract_cost(p.get("salaire"), yr) or 0
                 total += cost
                 filled.append(p)
+                signings.append((poste, cost))
                 row.add_widget(label(p.get("nom") or "?", size=12, height=38))
                 yr_sp = Spinner(text=str(yr), values=["1", "2", "3"], color=FG, background_normal="",
                                 background_color=CARD_ALT, size_hint=(None, None), width=dp(42),
@@ -883,12 +827,14 @@ class FootLiveMobileApp(App):
         self.content.add_widget(label(f"Budget : {total:g} / {cap:g} M€",
                                       color=RED if over else GREEN, bold=True, size=15, height=36))
         self.content.add_widget(label(
-            f"{agg['count']}/11 · célé moy. {agg['avg_celebrite'] or '—'} · âge moy. {agg['avg_age'] or '—'}",
-            color=MUTED, size=11, height=24))
-        self.content.add_widget(label("Force estimée par domaine", color=ACCENT, bold=True, height=32))
-        strength = core.team_domain_strength(filled)
+            f"{agg['count']}/{len(core.TEAM_POSTES)} · célé moy. {agg['avg_celebrite'] or '—'} · "
+            f"âge moy. {agg['avg_age'] or '—'}", color=MUTED, size=11, height=24))
+        self.content.add_widget(label("Budget investi par domaine (M€, au prorata du poste)",
+                                      color=ACCENT, bold=True, height=32))
+        invest = core.team_domain_investment(signings)
+        imax = max(list(invest.values()) + [1.0])
         for d in core.DOMAINS:
-            self.content.add_widget(bar_row(core.DOMAIN_LABELS[d], strength.get(d), 100))
+            self.content.add_widget(bar_row(core.DOMAIN_LABELS[d], invest.get(d), imax))
 
     # ---- Explorateur de stats --------------------------------------------
     def _set_explore_mode(self, mode):
@@ -909,33 +855,43 @@ class FootLiveMobileApp(App):
             self._render_explore_teams()
 
     def _render_explore_players(self):
-        pmetrics = {"Salaire": "salaire", "Célébrité": "celebrite", "Âge": "age"}
-        pcolors = {"GAR": (0.96, 0.83, 0.37, 1), "DC": (0.35, 0.62, 0.88, 1),
-                   "LAT": (0.42, 0.82, 0.82, 1), "MDEF": (0.61, 0.55, 1, 1),
-                   "MOFF": (0.43, 0.87, 0.43, 1), "AIL": (0.94, 0.54, 0.36, 1), "AC": (1, 0.32, 0.32, 1)}
+        # Trouver des joueurs par poste + fourchette de prix (pour préparer le mercato),
+        # classés par célébrité ; « célé/M€ » repère les bonnes affaires (sous-cotés).
         ctrl = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(42), spacing=dp(6))
-        ctrl.add_widget(self._mspin(self.explore_x, list(pmetrics), "explore_x"))
-        ctrl.add_widget(self._mspin(self.explore_y, list(pmetrics), "explore_y"))
         ctrl.add_widget(self._mspin(self.explore_poste, ["Tous"] + list(core.POSTE_DOMAIN_WEIGHTS), "explore_poste"))
+        ctrl.add_widget(self._mspin(self.explore_pmin, [0, 5, 10, 20], "explore_pmin"))
+        ctrl.add_widget(self._mspin(self.explore_pmax, [10, 20, 30, 40, 60, 100], "explore_pmax"))
         self.content.add_widget(ctrl)
-        self.content.add_widget(label(f"X : {self.explore_x}  ·  Y : {self.explore_y}", color=MUTED, size=10, height=20))
+        self.content.add_widget(label("poste · prix min · prix max (M€)", color=MUTED, size=10, height=20))
         if self.mercato_pool is None:
             self.ensure_mercato_pool()
             self.content.add_widget(label("Chargement des joueurs…", color=MUTED, height=50))
             return
-        xk, yk = pmetrics.get(self.explore_x, "salaire"), pmetrics.get(self.explore_y, "celebrite")
-        pts = []
+        try:
+            lo, hi = float(self.explore_pmin), float(self.explore_pmax)
+        except (TypeError, ValueError):
+            lo, hi = 0.0, 1e9
+        rows = []
         for p in self.mercato_pool:
             if self.explore_poste != "Tous" and (p.get("poste") or "").upper() != self.explore_poste:
                 continue
-            xv, yv = p.get(xk), p.get(yk)
-            if isinstance(xv, (int, float)) and isinstance(yv, (int, float)):
-                pts.append((float(xv), float(yv), pcolors.get((p.get("poste") or "").upper(), ACCENT)))
-        if not pts:
-            self.content.add_widget(label("Aucune donnée.", color=MUTED, height=40))
-            return
-        self.content.add_widget(Chart(kind="scatter", data=pts, height=300))
-        self.content.add_widget(label(f"{len(pts)} joueurs (X horizontal, Y vertical)", color=MUTED, size=10, height=24))
+            sal, cel = p.get("salaire"), p.get("celebrite")
+            if not isinstance(sal, (int, float)) or not (lo <= sal <= hi):
+                continue
+            rows.append((p, (cel / sal) if (isinstance(cel, (int, float)) and sal) else 0))
+        rows.sort(key=lambda r: -((r[0].get("celebrite") or 0)))
+        self.content.add_widget(label(f"{len(rows)} joueurs (triés par célébrité)", color=MUTED, size=10, height=22))
+        for p, value in rows[:120]:
+            card = Surface(orientation="vertical", color=CARD, size_hint_y=None, height=dp(50),
+                           padding=(dp(10), dp(4)), spacing=0)
+            top = BoxLayout(orientation="horizontal")
+            top.add_widget(label(f"{p.get('nom')} · {p.get('poste')}", bold=True, size=12, height=24))
+            top.add_widget(label(f"{p.get('salaire')} M€", color=ACCENT, halign="right", size=12, height=24))
+            card.add_widget(top)
+            card.add_widget(label(
+                f"{p.get('nom_equipe')} · célé {p.get('celebrite')} · {value:.1f} célé/M€ · {p.get('age')} ans",
+                color=MUTED, size=10, height=22))
+            self.content.add_widget(card)
 
     def _render_explore_teams(self):
         tmetrics = {"Buts / match": "gf_pm", "Encaissés / match": "ga_pm", "Possession %": "poss",
