@@ -17,10 +17,12 @@ from kivy.graphics import Color, Rectangle, RoundedRectangle
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import Spinner
+from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 
 import foot_scores as core
@@ -36,6 +38,10 @@ if certifi:
 APP_VERSION = "0.1.0"
 APK_ASSET_NAME = "FootLive.apk"
 APK_COMMIT_ASSET_NAME = "android-commit.txt"
+LEAGUE_ABBR = {"Premier League": "PL", "Liga": "Liga", "Bundesliga": "Bund", "Serie A": "SerieA",
+               "Ligue 1": "L1", "Liga Nos": "Por", "Eredivisie": "Ned", "Süper Lig": "Tur",
+               "Jupiler Pro League": "Bel", "Championship": "Champ", "Liga 2": "Liga2",
+               "Bundesliga 2": "Bund2", "Serie B": "SerieB", "Ligue 2": "L2"}
 
 BG = (0.055, 0.067, 0.09, 1)
 CARD = (0.10, 0.115, 0.145, 1)
@@ -154,9 +160,9 @@ class FootLiveMobileApp(App):
         self.mercato_pmax = "40"
         self.explore_mode = "Joueurs"
         self.explore_poste = "Tous"
-        self.explore_pmin = "0"
         self.explore_pmax = "40"
         self.explore_comp = ""
+        self.explore_leagues = list(core.MAJOR_LEAGUES)   # ligues scoutées (multi-sélection)
         self.explore_metric = "Buts / match"
 
     @property
@@ -855,23 +861,42 @@ class FootLiveMobileApp(App):
             self._render_explore_teams()
 
     def _render_explore_players(self):
-        # Trouveur par rôle : stat pertinente de l'équipe (ex. GAR -> Arrêts %) +
-        # « adversité » (célé moyenne des postes adverses affrontés). Aide le mercato.
+        # Trouveur par rôle, multi-ligues : stat pertinente de l'équipe (ex. GAR ->
+        # Arrêts %) + « adversité » (célé des postes adverses affrontés). « + » ajoute
+        # le joueur au mercato.
         if not self.competitions:
             self.content.add_widget(label("Compétitions en chargement…", color=MUTED, height=40))
             return
-        comp = self.explore_comp if self.explore_comp in self.competitions else self.competitions[0]
-        self.explore_comp = comp
         poste = self.explore_poste if self.explore_poste in core.ROLE_RELEVANCE else "GAR"
         self.explore_poste = poste
         ctrl = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(42), spacing=dp(6))
-        ctrl.add_widget(self._mspin(comp, self.competitions, "explore_comp"))
         ctrl.add_widget(self._mspin(poste, list(core.ROLE_RELEVANCE), "explore_poste"))
         ctrl.add_widget(self._mspin(self.explore_pmax, [10, 20, 30, 40, 60, 100], "explore_pmax"))
         self.content.add_widget(ctrl)
+        self.content.add_widget(label("Ligues à scouter (coche) · prix max M€", color=MUTED, size=10, height=20))
+        grid = GridLayout(cols=4, size_hint_y=None, spacing=dp(4))
+        grid.bind(minimum_height=grid.setter("height"))
+        for lg in core.SCOUT_LEAGUES:
+            tb = ToggleButton(text=LEAGUE_ABBR.get(lg, lg),
+                              state="down" if lg in self.explore_leagues else "normal",
+                              size_hint_y=None, height=dp(34), font_size=dp(11),
+                              background_normal="", background_down="",
+                              background_color=ACCENT if lg in self.explore_leagues else CARD, color=FG)
+
+            def _tog(btn, lg=lg):
+                if btn.state == "down" and lg not in self.explore_leagues:
+                    self.explore_leagues.append(lg)
+                elif btn.state == "normal" and lg in self.explore_leagues:
+                    self.explore_leagues.remove(lg)
+                self.render_current()
+            tb.bind(state=_tog)
+            grid.add_widget(tb)
+        self.content.add_widget(grid)
+
+        leagues = [lg for lg in core.SCOUT_LEAGUES if lg in self.explore_leagues] or list(core.MAJOR_LEAGUES)
         stat_key, stat_label, counters = core.ROLE_RELEVANCE[poste]
         self.content.add_widget(label(
-            f"{poste} · {stat_label} · adversité = célé {'/'.join(counters)} adverses · prix max M€",
+            f"{poste} · {stat_label} · adv = célé {'/'.join(counters)} adverses",
             color=MUTED, size=10, height=22))
         if self.mercato_pool is None:
             self.ensure_mercato_pool()
@@ -880,15 +905,16 @@ class FootLiveMobileApp(App):
         cache = getattr(self, "_scout_cache", None)
         if cache is None:
             cache = self._scout_cache = {}
-        ck = (comp, poste)
-        if ck not in cache:
-            self.content.add_widget(label(f"Analyse de {comp}…", color=MUTED, height=40))
+        missing = [lg for lg in leagues if (lg, poste) not in cache]
+        if missing:
+            self.content.add_widget(label(f"Analyse de {len(missing)} ligue(s)…", color=MUTED, height=40))
 
-            def work(cc=comp, pp=poste):
-                try:
-                    cache[(cc, pp)] = core.role_scout_rows(cc, pp, self.mercato_pool)
-                except Exception:
-                    cache[(cc, pp)] = []
+            def work(ls=tuple(missing), pp=poste):
+                for lg in ls:
+                    try:
+                        cache[(lg, pp)] = core.role_scout_rows(lg, pp, self.mercato_pool)
+                    except Exception:
+                        cache[(lg, pp)] = []
                 Clock.schedule_once(lambda _dt: self.render_current(), 0)
             threading.Thread(target=work, daemon=True).start()
             return
@@ -896,22 +922,41 @@ class FootLiveMobileApp(App):
             hi = float(self.explore_pmax)
         except (TypeError, ValueError):
             hi = 1e9
-        rows = [r for r in cache[ck] if r["salaire"] is not None and r["salaire"] <= hi]
+        seen, agg = set(), []
+        for lg in leagues:
+            for r in cache[(lg, poste)]:
+                key = (r["nom"], r["team"])
+                if key not in seen:
+                    seen.add(key)
+                    agg.append(r)
+        rows = [r for r in agg if r["salaire"] is not None and r["salaire"] <= hi]
         rows.sort(key=lambda r: (r.get("stat") is None, -(r.get("stat") or 0)))
         short = stat_label.split()[0]
-        self.content.add_widget(label(f"{len(rows)} {poste} (triés par {stat_label})", color=MUTED, size=10, height=22))
-        for r in rows[:120]:
+        self.content.add_widget(label(f"{len(rows)} {poste} sur {len(leagues)} ligue(s)", color=MUTED, size=10, height=22))
+        for r in rows[:150]:
             val = round(r["celebrite"] / r["salaire"], 1) if (r["celebrite"] is not None and r["salaire"]) else None
-            card = Surface(orientation="vertical", color=CARD, size_hint_y=None, height=dp(50),
+            card = Surface(orientation="vertical", color=CARD, size_hint_y=None, height=dp(66),
                            padding=(dp(10), dp(4)), spacing=0)
             top = BoxLayout(orientation="horizontal")
             top.add_widget(label(f"{r['nom']} · {r['team']}", bold=True, size=12, height=24))
             top.add_widget(label(f"{short} {r['stat'] if r['stat'] is not None else '—'}",
                                  color=ACCENT, halign="right", size=12, height=24))
             card.add_widget(top)
-            card.add_widget(label(
-                f"adversité {r['opp'] if r['opp'] is not None else '—'} · célé {r['celebrite']} · "
-                f"{r['salaire']}M · {val} célé/M€", color=MUTED, size=10, height=22))
+            bottom = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(28))
+            bottom.add_widget(label(
+                f"{LEAGUE_ABBR.get(r.get('competition'), '?')} · adv {r['opp'] if r['opp'] is not None else '—'} · "
+                f"célé {r['celebrite']} · {r['salaire']}M · {val} c/M€", color=MUTED, size=10, height=26))
+            addbtn = Button(text="+ merc", color=FG, background_normal="", background_color=GREEN,
+                            font_size=dp(11), size_hint=(None, None), width=dp(78), height=dp(26))
+
+            def _add(_b, rr=r, pp=poste):
+                self.mercato_squad[pp] = {"nom": rr["nom"], "poste": pp, "nom_equipe": rr["team"],
+                                          "salaire": rr["salaire"], "celebrite": rr["celebrite"], "age": rr["age"]}
+                self.mercato_years.setdefault(pp, 1)
+                _b.text = "ajouté ✓"
+            addbtn.bind(on_release=_add)
+            bottom.add_widget(addbtn)
+            card.add_widget(bottom)
             self.content.add_widget(card)
 
     def _render_explore_teams(self):
