@@ -2123,6 +2123,12 @@ def run_gui():
                             command=lambda: show_mercato_window())
     mercato_btn.pack(side="right", padx=(0, 4))
 
+    explorer_btn = tk.Button(bar2, text="🔎 explorer", bg=CARD, fg=FG, bd=0, relief="flat",
+                             activebackground=ACCENT, activeforeground="#fff",
+                             font=("TkDefaultFont", 8), cursor="hand2",
+                             command=lambda: show_explorer_window())
+    explorer_btn.pack(side="right", padx=(0, 4))
+
     # ---- zone défilante ---------------------------------------------------
     body_wrap = tk.Frame(root, bg=BG)
     body_wrap.pack(fill="both", expand=True)
@@ -3180,6 +3186,160 @@ def run_gui():
                 ps = api_all_joueurs(SEASON)
                 state["mercato_pool"] = ps
                 pool["players"] = ps
+                if win.winfo_exists():
+                    root.after(0, render)
+            threading.Thread(target=load, daemon=True).start()
+
+    def show_explorer_window():
+        """Explorateur de stats personnalisé : nuage de points joueurs (axes au choix
+        parmi salaire/célébrité/âge, filtre par poste) ou classement d'équipes selon
+        une stat choisie. Graphes dessinés sur Canvas (zéro dépendance)."""
+        old = state.get("explorer_win")
+        if old is not None and old.winfo_exists():
+            old.destroy()
+            return
+        win = tk.Toplevel(root)
+        state["explorer_win"] = win
+        win.title("🔎 Explorateur de stats")
+        win.configure(bg=BG)
+        win.geometry("760x680")
+        win.minsize(560, 460)
+        try:
+            win.attributes("-topmost", bool(topmost_var.get()))
+        except tk.TclError:
+            pass
+        win.lift()
+
+        PMETRICS = {"Salaire (M€)": "salaire", "Célébrité": "celebrite", "Âge": "age"}
+        TMETRICS = {"Buts / match": "gf_pm", "Encaissés / match": "ga_pm",
+                    "Possession %": "poss", "Conversion %": "conv", "Arrêts %": "save",
+                    "Clean sheets": "clean", "Occasions / match": "occ_for_pm"}
+        PCOLORS = {"GAR": "#f4d35e", "DC": "#5898d4", "LAT": "#6ad0d0", "MDEF": "#9b8cff",
+                   "MOFF": "#6ddf6d", "AIL": "#f08a5d", "AC": "#ff5252"}
+        real_comps = competitions[1:]
+
+        mode_v = tk.StringVar(value="Joueurs")
+        x_v = tk.StringVar(value="Salaire (M€)")
+        y_v = tk.StringVar(value="Célébrité")
+        poste_v = tk.StringVar(value="Tous")
+        comp_v = tk.StringVar(value=real_comps[0] if real_comps else "")
+        tmetric_v = tk.StringVar(value="Buts / match")
+
+        bar = tk.Frame(win, bg=HDR)
+        bar.pack(fill="x", side="top")
+        ttk.Combobox(bar, textvariable=mode_v, values=["Joueurs", "Équipes"], state="readonly",
+                     width=9).pack(side="left", padx=6, pady=4)
+        controls = tk.Frame(win, bg=HDR)
+        controls.pack(fill="x", side="top")
+
+        chart = tk.Canvas(win, bg=CARD, highlightthickness=0, bd=0)
+        chart.pack(fill="both", expand=True, padx=8, pady=8)
+
+        def _combo(parent, var, values, w=14):
+            c = ttk.Combobox(parent, textvariable=var, values=values, state="readonly", width=w)
+            c.pack(side="left", padx=(0, 8), pady=4)
+            c.bind("<<ComboboxSelected>>", lambda *_: render())
+            return c
+
+        def players_pool():
+            return state.get("mercato_pool") or []
+
+        def draw_scatter(pts, xlab, ylab):
+            chart.delete("all")
+            W = chart.winfo_width() or 720
+            H = chart.winfo_height() or 560
+            L, R, T, B = 54, 16, 16, 40
+            xs = [p[0] for p in pts]
+            ys = [p[1] for p in pts]
+            if not pts:
+                chart.create_text(W / 2, H / 2, text="Aucune donnée", fill=MUTED); return
+            xmin, xmax = min(xs), max(xs)
+            ymin, ymax = min(ys), max(ys)
+            xmax += (xmax == xmin) or 0.0001
+            ymax += (ymax == ymin) or 0.0001
+            def sx(x): return L + (x - xmin) / (xmax - xmin) * (W - L - R)
+            def sy(y): return H - B - (y - ymin) / (ymax - ymin) * (H - T - B)
+            chart.create_line(L, T, L, H - B, fill=MUTED)
+            chart.create_line(L, H - B, W - R, H - B, fill=MUTED)
+            for frac in (0, .25, .5, .75, 1):
+                xv = xmin + frac * (xmax - xmin)
+                yv = ymin + frac * (ymax - ymin)
+                chart.create_text(sx(xv), H - B + 12, text=f"{xv:g}", fill=MUTED, font=("TkDefaultFont", 7))
+                chart.create_text(L - 6, sy(yv), text=f"{yv:g}", fill=MUTED, anchor="e", font=("TkDefaultFont", 7))
+            for x, y, col, name in pts:
+                cx, cy = sx(x), sy(y)
+                chart.create_oval(cx - 3, cy - 3, cx + 3, cy + 3, fill=col, outline="")
+            chart.create_text(W / 2, H - 6, text=xlab, fill=FG, font=("TkDefaultFont", 8))
+            chart.create_text(12, T, text=ylab, fill=FG, anchor="nw", font=("TkDefaultFont", 8))
+
+        def draw_bars(rows, label):
+            chart.delete("all")
+            W = chart.winfo_width() or 720
+            if not rows:
+                chart.create_text(W / 2, 40, text="Chargement / aucune donnée", fill=MUTED); return
+            x0 = 150
+            barw = max(40, W - x0 - 60)
+            vmax = max((v for _, v in rows), default=1) or 1
+            for i, (name, v) in enumerate(rows[:18]):
+                y = 10 + i * 22
+                chart.create_text(8, y + 8, text=name[:20], fill=FG, anchor="w", font=("TkDefaultFont", 8))
+                chart.create_rectangle(x0, y, x0 + barw, y + 14, fill=HDR, outline="")
+                chart.create_rectangle(x0, y, x0 + barw * (v / vmax), y + 14, fill=ACCENT, outline="")
+                chart.create_text(x0 + barw + 4, y + 8, text=f"{v:g}", fill=MUTED, anchor="w",
+                                  font=("TkDefaultFont", 8))
+            chart.configure(scrollregion=(0, 0, W, 20 + 22 * min(18, len(rows))))
+
+        def render(*_):
+            for w in controls.winfo_children():
+                w.destroy()
+            if mode_v.get() == "Joueurs":
+                tk.Label(controls, text="X", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
+                _combo(controls, x_v, list(PMETRICS), 12)
+                tk.Label(controls, text="Y", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+                _combo(controls, y_v, list(PMETRICS), 12)
+                tk.Label(controls, text="Poste", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+                _combo(controls, poste_v, ["Tous"] + list(POSTE_DOMAIN_WEIGHTS), 6)
+                pool = players_pool()
+                if not pool:
+                    chart.delete("all")
+                    chart.create_text((chart.winfo_width() or 720) / 2, 40, text="Chargement des joueurs…", fill=MUTED)
+                    return
+                xk, yk = PMETRICS[x_v.get()], PMETRICS[y_v.get()]
+                pf = poste_v.get()
+                pts = []
+                for p in pool:
+                    if pf != "Tous" and (p.get("poste") or "").upper() != pf:
+                        continue
+                    xv, yv = _num(p.get(xk)), _num(p.get(yk))
+                    if xv is None or yv is None:
+                        continue
+                    pts.append((xv, yv, PCOLORS.get((p.get("poste") or "").upper(), ACCENT), p.get("nom")))
+                draw_scatter(pts, x_v.get(), y_v.get())
+            else:
+                tk.Label(controls, text="Compétition", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
+                _combo(controls, comp_v, real_comps, 16)
+                tk.Label(controls, text="Stat", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(0, 2))
+                _combo(controls, tmetric_v, list(TMETRICS), 16)
+                comp = comp_v.get()
+                ensure_domstats(comp, on_ready=lambda: win.winfo_exists() and render())
+                ds = state["domstats"].get(comp) or {}
+                if not ds:
+                    chart.delete("all")
+                    chart.create_text((chart.winfo_width() or 720) / 2, 40, text="Chargement de la compétition…", fill=MUTED)
+                    return
+                key = TMETRICS[tmetric_v.get()]
+                rows = sorted(((t, s.get(key)) for t, s in ds.items() if s.get(key) is not None),
+                              key=lambda r: -r[1])
+                draw_bars(rows, tmetric_v.get())
+
+        mode_v.trace_add("write", lambda *_: render())
+        chart.bind("<Configure>", lambda *_: render())
+        render()
+
+        if not state.get("mercato_pool"):
+            def load():
+                ps = api_all_joueurs(SEASON)
+                state["mercato_pool"] = ps
                 if win.winfo_exists():
                     root.after(0, render)
             threading.Thread(target=load, daemon=True).start()
