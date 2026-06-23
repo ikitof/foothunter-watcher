@@ -381,22 +381,27 @@ def role_scout_rows(competition, poste, pool):
     pour ce rôle (ex. GAR -> Arrêts %) et l'« adversité » : célébrité moyenne des postes
     adverses pertinents affrontés (ex. finisseurs adverses pour un GAR). L'adversité
     capture le niveau de la ligue ET des adversaires, à partir des données réelles.
-    Renvoie [{nom, team, celebrite, salaire, age, stat, opp}]."""
+    Deux variantes factuelles : `opp` sur tous les matchs, `opp_dec` sur les seuls matchs
+    « décisifs » (encaissés pour un rôle défensif, marqués sinon).
+    Renvoie [{nom, team, celebrite, salaire, age, stat, opp, opp_dec}]."""
     poste = (poste or "").upper()
     if poste not in ROLE_RELEVANCE:
         return []
     stat_key, _label, counters = ROLE_RELEVANCE[poste]
+    defensive = poste in DEFENSIVE_ROLES
     groups, _ = fetch_competition(competition)
     tds = team_domain_stats(groups)
-    opp_map = {}
+    # par équipe : [(adversaire, buts_marqués, buts_encaissés)] sur les matchs joués
+    matches = {}
     for g in groups:
         for m in g["matches"]:
             if m.get("status") != "result" or m.get("site_live"):
                 continue
+            sc = _pair(m.get("mid"))
             a, b = m.get("a"), m.get("b")
-            if a and b:
-                opp_map.setdefault(a, []).append(b)
-                opp_map.setdefault(b, []).append(a)
+            if sc and a and b:
+                matches.setdefault(a, []).append((b, sc[0], sc[1]))
+                matches.setdefault(b, []).append((a, sc[1], sc[0]))
     roster = {}
     for p in pool:
         roster.setdefault(p.get("nom_equipe"), {})[(p.get("poste") or "").upper()] = _num(p.get("celebrite"))
@@ -407,17 +412,22 @@ def role_scout_rows(competition, poste, pool):
         team = p.get("nom_equipe")
         if team not in tds:
             continue
-        qs = []
-        for opp in opp_map.get(team, []):
+        allq, decq = [], []
+        for opp, gf, ga in matches.get(team, []):
             r = roster.get(opp, {})
             cs = [r[c] for c in counters if r.get(c) is not None]
-            if cs:
-                qs.append(sum(cs) / len(cs))
+            if not cs:
+                continue
+            q = sum(cs) / len(cs)
+            allq.append(q)
+            if (ga > 0) if defensive else (gf > 0):
+                decq.append(q)
         rows.append({
             "nom": p.get("nom"), "team": team, "celebrite": _num(p.get("celebrite")),
             "salaire": _num(p.get("salaire")), "age": _num(p.get("age")),
             "stat": tds.get(team, {}).get(stat_key), "competition": competition,
-            "opp": round(sum(qs) / len(qs), 1) if qs else None,
+            "opp": round(sum(allq) / len(allq), 1) if allq else None,
+            "opp_dec": round(sum(decq) / len(decq), 1) if decq else None,
         })
     return rows
 

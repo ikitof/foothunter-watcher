@@ -163,6 +163,7 @@ class FootLiveMobileApp(App):
         self.explore_pmax = "40"
         self.explore_comp = ""
         self.explore_leagues = list(core.MAJOR_LEAGUES)   # ligues scoutées (multi-sélection)
+        self.explore_adv = "Adv: tous"                    # adversité : tous les matchs / décisifs
         self.explore_metric = "Buts / match"
 
     @property
@@ -872,6 +873,7 @@ class FootLiveMobileApp(App):
         ctrl = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(42), spacing=dp(6))
         ctrl.add_widget(self._mspin(poste, list(core.ROLE_RELEVANCE), "explore_poste"))
         ctrl.add_widget(self._mspin(self.explore_pmax, [10, 20, 30, 40, 60, 100], "explore_pmax"))
+        ctrl.add_widget(self._mspin(self.explore_adv, ["Adv: tous", "Adv: décisifs"], "explore_adv"))
         self.content.add_widget(ctrl)
         self.content.add_widget(label("Ligues à scouter (coche) · prix max M€", color=MUTED, size=10, height=20))
         grid = GridLayout(cols=4, size_hint_y=None, spacing=dp(4))
@@ -894,9 +896,11 @@ class FootLiveMobileApp(App):
         self.content.add_widget(grid)
 
         leagues = [lg for lg in core.SCOUT_LEAGUES if lg in self.explore_leagues] or list(core.MAJOR_LEAGUES)
+        adv_key = "opp_dec" if self.explore_adv == "Adv: décisifs" else "opp"
         stat_key, stat_label, counters = core.ROLE_RELEVANCE[poste]
+        advmode = "matchs décisifs" if adv_key == "opp_dec" else "tous matchs"
         self.content.add_widget(label(
-            f"{poste} · {stat_label} · adv = célé {'/'.join(counters)} adverses",
+            f"{poste} · {stat_label} · adv = célé {'/'.join(counters)} adverses ({advmode})",
             color=MUTED, size=10, height=22))
         if self.mercato_pool is None:
             self.ensure_mercato_pool()
@@ -934,7 +938,6 @@ class FootLiveMobileApp(App):
         short = stat_label.split()[0]
         self.content.add_widget(label(f"{len(rows)} {poste} sur {len(leagues)} ligue(s)", color=MUTED, size=10, height=22))
         for r in rows[:150]:
-            val = round(r["celebrite"] / r["salaire"], 1) if (r["celebrite"] is not None and r["salaire"]) else None
             card = Surface(orientation="vertical", color=CARD, size_hint_y=None, height=dp(66),
                            padding=(dp(10), dp(4)), spacing=0)
             top = BoxLayout(orientation="horizontal")
@@ -944,8 +947,8 @@ class FootLiveMobileApp(App):
             card.add_widget(top)
             bottom = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(28))
             bottom.add_widget(label(
-                f"{LEAGUE_ABBR.get(r.get('competition'), '?')} · adv {r['opp'] if r['opp'] is not None else '—'} · "
-                f"célé {r['celebrite']} · {r['salaire']}M · {val} c/M€", color=MUTED, size=10, height=26))
+                f"{LEAGUE_ABBR.get(r.get('competition'), '?')} · adv {r[adv_key] if r.get(adv_key) is not None else '—'} · "
+                f"célé {r['celebrite']} · {r['salaire']}M", color=MUTED, size=10, height=26))
             addbtn = Button(text="+ merc", color=FG, background_normal="", background_color=GREEN,
                             font_size=dp(11), size_hint=(None, None), width=dp(78), height=dp(26))
 

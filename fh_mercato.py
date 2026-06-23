@@ -114,6 +114,9 @@ ROLE_RELEVANCE = {
     "AIL":  ("conv",       "Conversion %",        ["LAT", "DC"]),
     "AC":   ("gf_pm",      "Buts / match",        ["GAR", "DC"]),
 }
+# Rôles « défensifs » : un match est décisif quand l'équipe a ENCAISSÉ ; pour les
+# autres (offensifs), quand l'équipe a MARQUÉ. Sert à l'adversité « matchs décisifs ».
+DEFENSIVE_ROLES = {"GAR", "DC", "LAT", "MDEF"}
 
 def squad_aggregate(players):
     """Résumé d'un effectif : effectif, moyennes célébrité/âge, masse salariale, postes."""

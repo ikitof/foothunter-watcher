@@ -1252,6 +1252,7 @@ def run_gui():
         comp_v = tk.StringVar(value=real_comps[0] if real_comps else "")
         tmetric_v = tk.StringVar(value="Buts / match")
         sortst = {"key": "stat", "rev": True}
+        adv_v = tk.StringVar(value="Adv: tous")
         league_vars = {lg: tk.BooleanVar(value=(lg in MAJOR_LEAGUES)) for lg in SCOUT_LEAGUES}
         LEAGUE_ABBR = {"Premier League": "PL", "Liga": "Liga", "Bundesliga": "Bund",
                        "Serie A": "SerieA", "Ligue 1": "L1", "Liga Nos": "Por",
@@ -1312,6 +1313,8 @@ def run_gui():
             _entry(row1, pmin_v)
             tk.Label(row1, text="à", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left")
             _entry(row1, pmax_v)
+            tk.Label(row1, text="Adv.", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).pack(side="left", padx=(6, 2))
+            _combo(row1, adv_v, ["Adv: tous", "Adv: décisifs"], 12)
             row2 = tk.Frame(controls, bg=HDR)
             row2.pack(fill="x")
             tk.Label(row2, text="Ligues", bg=HDR, fg=MUTED, font=("TkDefaultFont", 8)).grid(row=0, column=0, sticky="w", padx=(6, 4))
@@ -1355,14 +1358,15 @@ def run_gui():
                         seen.add(k)
                         agg.append(r)
             stat_key, stat_label, counters = ROLE_RELEVANCE[poste]
+            adv_key = "opp_dec" if adv_v.get() == "Adv: décisifs" else "opp"
+            adv_lbl = "Adv✓" if adv_key == "opp_dec" else "Adv."
             lo, hi = _f(pmin_v, 0), _f(pmax_v, 1e9)
             rows = [dict(r) for r in agg if r["salaire"] is not None and lo <= r["salaire"] <= hi]
-            for r in rows:
-                r["value"] = round(r["celebrite"] / r["salaire"], 1) \
-                    if (r["celebrite"] is not None and r["salaire"]) else None
             cols = [("#", None), ("Joueur", "nom"), ("Équipe", "team"), ("Ligue", "competition"),
-                    (stat_label, "stat"), ("Adv.", "opp"), ("Célé", "celebrite"), ("Sal", "salaire"), ("C/M€", "value")]
+                    (stat_label, "stat"), (adv_lbl, adv_key), ("Célé", "celebrite"), ("Sal", "salaire")]
             valid = [c[1] for c in cols if c[1]]
+            if sortst["key"] in ("opp", "opp_dec") and sortst["key"] != adv_key:
+                sortst["key"] = adv_key
             if sortst["key"] not in valid:
                 sortst["key"], sortst["rev"] = "stat", True
             k = sortst["key"]
@@ -1372,8 +1376,9 @@ def run_gui():
                 rows.sort(key=lambda r: (r.get(k) is None,
                                          -(r.get(k) or 0) if sortst["rev"] else (r.get(k) or 0)))
             top_dom = max(POSTE_DOMAIN_WEIGHTS[poste].items(), key=lambda kv: kv[1])[0]
+            advmode = "matchs décisifs" if adv_key == "opp_dec" else "tous les matchs"
             hint.config(text=f"{len(rows)} {poste} sur {len(leagues)} ligue(s) · stat clé : {stat_label} "
-                             f"({DOMAIN_LABELS[top_dom]}) · Adv. = célé {'/'.join(counters)} adverses · "
+                             f"({DOMAIN_LABELS[top_dom]}) · Adv. = célé {'/'.join(counters)} adverses ({advmode}) · "
                              "« + » ajoute au mercato")
             grid = tk.Frame(content, bg=BG)
             grid.pack(fill="both", expand=True, padx=6, pady=4)
@@ -1400,10 +1405,9 @@ def run_gui():
                 cell(2, r["team"] or "?", MUTED, True)
                 cell(3, LEAGUE_ABBR.get(r.get("competition"), r.get("competition") or "?"), MUTED, True)
                 cell(4, f"{r['stat']:g}" if r["stat"] is not None else "—", ACCENT)
-                cell(5, f"{r['opp']:g}" if r["opp"] is not None else "—")
+                cell(5, f"{r[adv_key]:g}" if r.get(adv_key) is not None else "—")
                 cell(6, f"{r['celebrite']:g}" if r["celebrite"] is not None else "—")
                 cell(7, f"{r['salaire']:g}" if r["salaire"] is not None else "—")
-                cell(8, f"{r['value']:g}" if r["value"] is not None else "—", GREEN)
 
                 def add_merc(rr=r, pp=poste):
                     state.setdefault("mercato_squad", {})[pp] = {
