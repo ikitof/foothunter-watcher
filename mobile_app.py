@@ -855,42 +855,63 @@ class FootLiveMobileApp(App):
             self._render_explore_teams()
 
     def _render_explore_players(self):
-        # Trouver des joueurs par poste + fourchette de prix (pour préparer le mercato),
-        # classés par célébrité ; « célé/M€ » repère les bonnes affaires (sous-cotés).
+        # Trouveur par rôle : stat pertinente de l'équipe (ex. GAR -> Arrêts %) +
+        # « adversité » (célé moyenne des postes adverses affrontés). Aide le mercato.
+        if not self.competitions:
+            self.content.add_widget(label("Compétitions en chargement…", color=MUTED, height=40))
+            return
+        comp = self.explore_comp if self.explore_comp in self.competitions else self.competitions[0]
+        self.explore_comp = comp
+        poste = self.explore_poste if self.explore_poste in core.ROLE_RELEVANCE else "GAR"
+        self.explore_poste = poste
         ctrl = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(42), spacing=dp(6))
-        ctrl.add_widget(self._mspin(self.explore_poste, ["Tous"] + list(core.POSTE_DOMAIN_WEIGHTS), "explore_poste"))
-        ctrl.add_widget(self._mspin(self.explore_pmin, [0, 5, 10, 20], "explore_pmin"))
+        ctrl.add_widget(self._mspin(comp, self.competitions, "explore_comp"))
+        ctrl.add_widget(self._mspin(poste, list(core.ROLE_RELEVANCE), "explore_poste"))
         ctrl.add_widget(self._mspin(self.explore_pmax, [10, 20, 30, 40, 60, 100], "explore_pmax"))
         self.content.add_widget(ctrl)
-        self.content.add_widget(label("poste · prix min · prix max (M€)", color=MUTED, size=10, height=20))
+        stat_key, stat_label, counters = core.ROLE_RELEVANCE[poste]
+        self.content.add_widget(label(
+            f"{poste} · {stat_label} · adversité = célé {'/'.join(counters)} adverses · prix max M€",
+            color=MUTED, size=10, height=22))
         if self.mercato_pool is None:
             self.ensure_mercato_pool()
             self.content.add_widget(label("Chargement des joueurs…", color=MUTED, height=50))
             return
+        cache = getattr(self, "_scout_cache", None)
+        if cache is None:
+            cache = self._scout_cache = {}
+        ck = (comp, poste)
+        if ck not in cache:
+            self.content.add_widget(label(f"Analyse de {comp}…", color=MUTED, height=40))
+
+            def work(cc=comp, pp=poste):
+                try:
+                    cache[(cc, pp)] = core.role_scout_rows(cc, pp, self.mercato_pool)
+                except Exception:
+                    cache[(cc, pp)] = []
+                Clock.schedule_once(lambda _dt: self.render_current(), 0)
+            threading.Thread(target=work, daemon=True).start()
+            return
         try:
-            lo, hi = float(self.explore_pmin), float(self.explore_pmax)
+            hi = float(self.explore_pmax)
         except (TypeError, ValueError):
-            lo, hi = 0.0, 1e9
-        rows = []
-        for p in self.mercato_pool:
-            if self.explore_poste != "Tous" and (p.get("poste") or "").upper() != self.explore_poste:
-                continue
-            sal, cel = p.get("salaire"), p.get("celebrite")
-            if not isinstance(sal, (int, float)) or not (lo <= sal <= hi):
-                continue
-            rows.append((p, (cel / sal) if (isinstance(cel, (int, float)) and sal) else 0))
-        rows.sort(key=lambda r: -((r[0].get("celebrite") or 0)))
-        self.content.add_widget(label(f"{len(rows)} joueurs (triés par célébrité)", color=MUTED, size=10, height=22))
-        for p, value in rows[:120]:
+            hi = 1e9
+        rows = [r for r in cache[ck] if r["salaire"] is not None and r["salaire"] <= hi]
+        rows.sort(key=lambda r: (r.get("stat") is None, -(r.get("stat") or 0)))
+        short = stat_label.split()[0]
+        self.content.add_widget(label(f"{len(rows)} {poste} (triés par {stat_label})", color=MUTED, size=10, height=22))
+        for r in rows[:120]:
+            val = round(r["celebrite"] / r["salaire"], 1) if (r["celebrite"] is not None and r["salaire"]) else None
             card = Surface(orientation="vertical", color=CARD, size_hint_y=None, height=dp(50),
                            padding=(dp(10), dp(4)), spacing=0)
             top = BoxLayout(orientation="horizontal")
-            top.add_widget(label(f"{p.get('nom')} · {p.get('poste')}", bold=True, size=12, height=24))
-            top.add_widget(label(f"{p.get('salaire')} M€", color=ACCENT, halign="right", size=12, height=24))
+            top.add_widget(label(f"{r['nom']} · {r['team']}", bold=True, size=12, height=24))
+            top.add_widget(label(f"{short} {r['stat'] if r['stat'] is not None else '—'}",
+                                 color=ACCENT, halign="right", size=12, height=24))
             card.add_widget(top)
             card.add_widget(label(
-                f"{p.get('nom_equipe')} · célé {p.get('celebrite')} · {value:.1f} célé/M€ · {p.get('age')} ans",
-                color=MUTED, size=10, height=22))
+                f"adversité {r['opp'] if r['opp'] is not None else '—'} · célé {r['celebrite']} · "
+                f"{r['salaire']}M · {val} célé/M€", color=MUTED, size=10, height=22))
             self.content.add_widget(card)
 
     def _render_explore_teams(self):
