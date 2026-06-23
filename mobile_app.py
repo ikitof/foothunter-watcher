@@ -13,7 +13,7 @@ from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.core.audio import SoundLoader
 from kivy.core.window import Window
-from kivy.graphics import Color, Rectangle, RoundedRectangle
+from kivy.graphics import Color, Ellipse, Line, Rectangle, RoundedRectangle
 from kivy.metrics import dp
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -104,6 +104,82 @@ def spacer(height=8):
     return Widget(size_hint_y=None, height=dp(height))
 
 
+class Chart(Widget):
+    """Mini-graphe dessiné sur canvas (zéro dépendance). kind='bars' -> barres
+    horizontales [(label, valeur)] ; kind='scatter' -> points [(x, y, rgba)]."""
+
+    def __init__(self, kind="bars", data=None, vmax=None, height=200, **kwargs):
+        super().__init__(size_hint_y=None, height=dp(height), **kwargs)
+        self.kind = kind
+        self.data = data or []
+        self.vmax = vmax
+        self.bind(pos=self._redraw, size=self._redraw)
+
+    def _redraw(self, *_):
+        self.canvas.clear()
+        if not self.data:
+            return
+        x, y, w, h = self.x, self.y, self.width, self.height
+        with self.canvas:
+            if self.kind == "bars":
+                Color(*CARD)
+                Rectangle(pos=(x, y), size=(w, h))
+                n = len(self.data)
+                vmax = self.vmax or max((v for _, v in self.data), default=1) or 1
+                lblw = w * 0.42
+                gap = dp(3)
+                bh = (h - gap * (n + 1)) / max(1, n)
+                for i, (lbl, v) in enumerate(self.data):
+                    by = y + h - gap - (i + 1) * bh - i * gap
+                    Color(*MUTED)
+                    Rectangle(pos=(x + lblw, by), size=(w - lblw - dp(34), bh))
+                    Color(*ACCENT)
+                    Rectangle(pos=(x + lblw, by),
+                              size=((w - lblw - dp(34)) * min(1.0, (v or 0) / vmax), bh))
+            else:  # scatter
+                Color(*CARD)
+                Rectangle(pos=(x, y), size=(w, h))
+                pad = dp(6)
+                xs = [p[0] for p in self.data]
+                ys = [p[1] for p in self.data]
+                xmn, xmx = min(xs), max(xs)
+                ymn, ymx = min(ys), max(ys)
+                xr = (xmx - xmn) or 1.0
+                yr = (ymx - ymn) or 1.0
+                Color(*MUTED)
+                Line(points=[x + pad, y + pad, x + w - pad, y + pad], width=1)
+                Line(points=[x + pad, y + pad, x + pad, y + h - pad], width=1)
+                r = dp(3)
+                for px, py, col in self.data:
+                    cx = x + pad + (px - xmn) / xr * (w - 2 * pad)
+                    cy = y + pad + (py - ymn) / yr * (h - 2 * pad)
+                    Color(*col)
+                    Ellipse(pos=(cx - r, cy - r), size=(2 * r, 2 * r))
+
+
+def bar_row(text, value, vmax=100, color=ACCENT):
+    """Ligne 'libellé | barre proportionnelle | valeur' (barre via size_hint_x, sans
+    canvas — fiable et lisible sur mobile)."""
+    frac = max(0.0, min(1.0, (value or 0) / vmax)) if vmax else 0.0
+    row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(26), spacing=dp(4))
+    lab = label(text, color=FG, size=11, height=26)
+    lab.size_hint_x = 0.42
+    row.add_widget(lab)
+    track = BoxLayout(orientation="horizontal")
+    fill = Surface(color=color, radius=dp(3))
+    fill.size_hint_x = max(0.001, frac)
+    track.add_widget(fill)
+    if frac < 1:
+        track.add_widget(Widget(size_hint_x=1 - frac))
+    row.add_widget(track)
+    val = label(f"{value:g}" if value is not None else "—", color=MUTED, size=11,
+                halign="right", height=26)
+    val.size_hint_x = None
+    val.width = dp(42)
+    row.add_widget(val)
+    return row
+
+
 class FootLiveMobileApp(App):
     title = "Foot Live"
 
@@ -123,6 +199,19 @@ class FootLiveMobileApp(App):
         self.last_error = None
         self.match_scores = {}   # clé match -> total de buts, pour détecter un but
         self.goal_sound = None
+        # Mercato / explorateur de stats
+        self.mercato_pool = None      # liste joueurs (api_all_joueurs), chargée à la demande
+        self.mercato_squad = {}       # slot_id -> joueur
+        self.mercato_years = {}       # slot_id -> années de contrat
+        self.mercato_formation = "4-3-3"
+        self.mercato_cap = "250"
+        self.mercato_pmax = "40"
+        self.explore_mode = "Joueurs"
+        self.explore_x = "Salaire"
+        self.explore_y = "Célébrité"
+        self.explore_poste = "Tous"
+        self.explore_comp = ""
+        self.explore_metric = "Buts / match"
 
     @property
     def config_path(self):
@@ -351,10 +440,13 @@ class FootLiveMobileApp(App):
         self.tab_buttons = {}
         for key, text in (
             ("scores", "SCORES"),
-            ("standing", "CLASSEMENT"),
-            ("evolution", "EVOLUTIONS"),
+            ("standing", "CLASS."),
+            ("evolution", "ÉVO."),
+            ("mercato", "MERCATO"),
+            ("explore", "STATS"),
         ):
             button = action(text, lambda _button, name=key: self.select_tab(name), CARD_ALT)
+            button.font_size = dp(11)        # 5 onglets : police réduite pour tenir
             self.tab_buttons[key] = button
             tabs.add_widget(button)
         self._style_tabs()
@@ -429,7 +521,7 @@ class FootLiveMobileApp(App):
     def refresh(self, force=False):
         if self.loading:
             return
-        if self.current_tab == "evolution" and not force:
+        if self.current_tab in ("evolution", "mercato", "explore") and not force:
             return
         self.loading = True
         self._render_status()
@@ -463,6 +555,10 @@ class FootLiveMobileApp(App):
             self.render_scores()
         elif self.current_tab == "standing":
             self.render_standing()
+        elif self.current_tab == "mercato":
+            self.render_mercato()
+        elif self.current_tab == "explore":
+            self.render_explore()
         else:
             self.render_evolution()
 
@@ -658,6 +754,226 @@ class FootLiveMobileApp(App):
                 color=MUTED, size=10, height=24,
             ))
             self.content.add_widget(card)
+
+    # ---- Mercato ----------------------------------------------------------
+    def ensure_mercato_pool(self):
+        if self.mercato_pool is not None:
+            return
+        def work():
+            self.mercato_pool = core.api_all_joueurs(core.SEASON)
+            Clock.schedule_once(lambda _dt: self.render_current(), 0)
+        threading.Thread(target=work, daemon=True).start()
+
+    def _mspin(self, value, values, attr, width=None):
+        sp = Spinner(text=str(value), values=[str(v) for v in values], color=FG,
+                     background_normal="", background_color=CARD, size_hint_y=None,
+                     height=dp(40), font_size=dp(13))
+        if width:
+            sp.size_hint_x = None
+            sp.width = dp(width)
+
+        def change(_s, v):
+            setattr(self, attr, v)
+            self.render_current()
+        sp.bind(text=change)
+        return sp
+
+    def _mercato_slots(self):
+        out = []
+        for poste, n in core.FORMATIONS.get(self.mercato_formation, {}).items():
+            for i in range(n):
+                out.append((poste, f"{poste}{i + 1}"))
+        return out
+
+    def _mercato_remove(self, slot_id):
+        self.mercato_squad.pop(slot_id, None)
+        self.mercato_years.pop(slot_id, None)
+        self.render_current()
+
+    def _mercato_eligible(self, poste):
+        try:
+            hi = float(self.mercato_pmax)
+        except (TypeError, ValueError):
+            hi = 1e9
+        taken = {p.get("id") for p in self.mercato_squad.values() if p}
+        out = [p for p in (self.mercato_pool or [])
+               if (p.get("poste") or "").upper() == poste and p.get("id") not in taken
+               and isinstance(p.get("salaire"), (int, float)) and p.get("salaire") <= hi]
+        out.sort(key=lambda p: -(p.get("celebrite") or 0))
+        return out
+
+    def _mercato_pick(self, poste, slot_id):
+        cands = self._mercato_eligible(poste)
+        body = BoxLayout(orientation="vertical", spacing=dp(4), padding=dp(6))
+        popup = Popup(title=f"Recruter — {poste} (≤ {self.mercato_pmax} M€)", content=body,
+                      size_hint=(0.95, 0.85), background_color=HEADER, separator_color=ACCENT)
+        sv = ScrollView()
+        lst = BoxLayout(orientation="vertical", size_hint_y=None, spacing=dp(2))
+        lst.bind(minimum_height=lst.setter("height"))
+        if not cands:
+            lst.add_widget(label("Aucun joueur dans ce budget.", color=MUTED, height=40))
+        for p in cands[:80]:
+            def assign(_b, pl=p):
+                self.mercato_squad[slot_id] = pl
+                self.mercato_years.setdefault(slot_id, 1)
+                popup.dismiss()
+                self.render_current()
+            lst.add_widget(action(
+                f"{p.get('nom')} ({p.get('salaire')}M) · {p.get('nom_equipe')} · célé {p.get('celebrite')}",
+                assign, CARD))
+        sv.add_widget(lst)
+        body.add_widget(sv)
+        body.add_widget(action("Fermer", lambda *_: popup.dismiss(), CARD_ALT))
+        popup.open()
+
+    def render_mercato(self):
+        self.clear_content()
+        self.add_title("Mercato", "Coût = salaire × années, payé d'avance.")
+        ctrl = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(44), spacing=dp(6))
+        ctrl.add_widget(self._mspin(self.mercato_formation, list(core.FORMATIONS), "mercato_formation"))
+        ctrl.add_widget(self._mspin(self.mercato_cap, [100, 150, 200, 250, 300, 400, 600], "mercato_cap"))
+        ctrl.add_widget(self._mspin(self.mercato_pmax, [10, 20, 30, 40, 60, 100], "mercato_pmax"))
+        self.content.add_widget(ctrl)
+        self.content.add_widget(label("formation · budget M€ · prix max M€", color=MUTED, size=10, height=20))
+        if self.mercato_pool is None:
+            self.ensure_mercato_pool()
+            self.content.add_widget(label("Chargement des joueurs…", color=MUTED, height=50))
+            return
+        total = 0.0
+        filled = []
+        for poste, slot_id in self._mercato_slots():
+            p = self.mercato_squad.get(slot_id)
+            row = Surface(orientation="horizontal", color=CARD, size_hint_y=None, height=dp(46),
+                          padding=(dp(8), dp(4)), spacing=dp(4))
+            pl = label(poste, color=ACCENT, bold=True, size=12, height=38)
+            pl.size_hint_x = None
+            pl.width = dp(48)
+            row.add_widget(pl)
+            if p:
+                yr = self.mercato_years.get(slot_id, 1)
+                cost = core.contract_cost(p.get("salaire"), yr) or 0
+                total += cost
+                filled.append(p)
+                row.add_widget(label(p.get("nom") or "?", size=12, height=38))
+                yr_sp = Spinner(text=str(yr), values=["1", "2", "3"], color=FG, background_normal="",
+                                background_color=CARD_ALT, size_hint=(None, None), width=dp(42),
+                                height=dp(38), font_size=dp(12))
+
+                def _yr(_s, v, s=slot_id):
+                    self.mercato_years[s] = int(v)
+                    self.render_current()
+                yr_sp.bind(text=_yr)
+                row.add_widget(yr_sp)
+                cl = label(f"{cost:g}M", color=MUTED, size=11, halign="right", height=38)
+                cl.size_hint_x = None
+                cl.width = dp(46)
+                row.add_widget(cl)
+                row.add_widget(action("X", lambda *_, s=slot_id: self._mercato_remove(s), RED, 36))
+            else:
+                row.add_widget(label("— vide —", color=MUTED, size=12, height=38))
+                row.add_widget(action("+ recruter",
+                                      lambda *_, ps=poste, s=slot_id: self._mercato_pick(ps, s), GREEN, 108))
+            self.content.add_widget(row)
+        try:
+            cap = float(self.mercato_cap)
+        except (TypeError, ValueError):
+            cap = 0.0
+        agg = core.squad_aggregate(filled)
+        over = cap > 0 and total > cap
+        self.content.add_widget(label(f"Budget : {total:g} / {cap:g} M€",
+                                      color=RED if over else GREEN, bold=True, size=15, height=36))
+        self.content.add_widget(label(
+            f"{agg['count']}/11 · célé moy. {agg['avg_celebrite'] or '—'} · âge moy. {agg['avg_age'] or '—'}",
+            color=MUTED, size=11, height=24))
+        self.content.add_widget(label("Force estimée par domaine", color=ACCENT, bold=True, height=32))
+        strength = core.team_domain_strength(filled)
+        for d in core.DOMAINS:
+            self.content.add_widget(bar_row(core.DOMAIN_LABELS[d], strength.get(d), 100))
+
+    # ---- Explorateur de stats --------------------------------------------
+    def _set_explore_mode(self, mode):
+        self.explore_mode = mode
+        self.render_current()
+
+    def render_explore(self):
+        self.clear_content()
+        self.add_title("Stats", "Explore joueurs et équipes.")
+        toggle = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(42), spacing=dp(6))
+        for m in ("Joueurs", "Équipes"):
+            toggle.add_widget(action(m, lambda _b, mm=m: self._set_explore_mode(mm),
+                                     ACCENT if self.explore_mode == m else CARD_ALT))
+        self.content.add_widget(toggle)
+        if self.explore_mode == "Joueurs":
+            self._render_explore_players()
+        else:
+            self._render_explore_teams()
+
+    def _render_explore_players(self):
+        pmetrics = {"Salaire": "salaire", "Célébrité": "celebrite", "Âge": "age"}
+        pcolors = {"GAR": (0.96, 0.83, 0.37, 1), "DC": (0.35, 0.62, 0.88, 1),
+                   "LAT": (0.42, 0.82, 0.82, 1), "MDEF": (0.61, 0.55, 1, 1),
+                   "MOFF": (0.43, 0.87, 0.43, 1), "AIL": (0.94, 0.54, 0.36, 1), "AC": (1, 0.32, 0.32, 1)}
+        ctrl = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(42), spacing=dp(6))
+        ctrl.add_widget(self._mspin(self.explore_x, list(pmetrics), "explore_x"))
+        ctrl.add_widget(self._mspin(self.explore_y, list(pmetrics), "explore_y"))
+        ctrl.add_widget(self._mspin(self.explore_poste, ["Tous"] + list(core.POSTE_DOMAIN_WEIGHTS), "explore_poste"))
+        self.content.add_widget(ctrl)
+        self.content.add_widget(label(f"X : {self.explore_x}  ·  Y : {self.explore_y}", color=MUTED, size=10, height=20))
+        if self.mercato_pool is None:
+            self.ensure_mercato_pool()
+            self.content.add_widget(label("Chargement des joueurs…", color=MUTED, height=50))
+            return
+        xk, yk = pmetrics.get(self.explore_x, "salaire"), pmetrics.get(self.explore_y, "celebrite")
+        pts = []
+        for p in self.mercato_pool:
+            if self.explore_poste != "Tous" and (p.get("poste") or "").upper() != self.explore_poste:
+                continue
+            xv, yv = p.get(xk), p.get(yk)
+            if isinstance(xv, (int, float)) and isinstance(yv, (int, float)):
+                pts.append((float(xv), float(yv), pcolors.get((p.get("poste") or "").upper(), ACCENT)))
+        if not pts:
+            self.content.add_widget(label("Aucune donnée.", color=MUTED, height=40))
+            return
+        self.content.add_widget(Chart(kind="scatter", data=pts, height=300))
+        self.content.add_widget(label(f"{len(pts)} joueurs (X horizontal, Y vertical)", color=MUTED, size=10, height=24))
+
+    def _render_explore_teams(self):
+        tmetrics = {"Buts / match": "gf_pm", "Encaissés / match": "ga_pm", "Possession %": "poss",
+                    "Conversion %": "conv", "Arrêts %": "save", "Clean sheets": "clean"}
+        if not self.competitions:
+            self.content.add_widget(label("Compétitions en chargement…", color=MUTED, height=40))
+            return
+        comp = self.explore_comp if self.explore_comp in self.competitions else self.competitions[0]
+        self.explore_comp = comp
+        ctrl = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(42), spacing=dp(6))
+        ctrl.add_widget(self._mspin(comp, self.competitions, "explore_comp"))
+        ctrl.add_widget(self._mspin(self.explore_metric, list(tmetrics), "explore_metric"))
+        self.content.add_widget(ctrl)
+        cache = getattr(self, "_explore_team_cache", None)
+        if cache is None:
+            cache = self._explore_team_cache = {}
+        ds = cache.get(comp)
+        if ds is None:
+            self.content.add_widget(label("Chargement de la compétition…", color=MUTED, height=40))
+
+            def work():
+                try:
+                    groups, _ = core.fetch_competition(comp)
+                    cache[comp] = core.team_domain_stats(groups)
+                except Exception:
+                    cache[comp] = {}
+                Clock.schedule_once(lambda _dt: self.render_current(), 0)
+            threading.Thread(target=work, daemon=True).start()
+            return
+        key = tmetrics.get(self.explore_metric, "gf_pm")
+        rows = sorted(((t, s.get(key)) for t, s in ds.items() if s.get(key) is not None),
+                      key=lambda r: -r[1])
+        if not rows:
+            self.content.add_widget(label("Aucune donnée.", color=MUTED, height=40))
+            return
+        vmax = max(v for _, v in rows) or 1
+        for t, v in rows:
+            self.content.add_widget(bar_row(t, v, vmax))
 
     def show_whats_new_once(self):
         build_id = getattr(core, "APP_COMMIT", "") or APP_VERSION
