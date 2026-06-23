@@ -46,6 +46,8 @@ python -m PyInstaller `
     --windowed `
     --name FootLive `
     --icon "foot-live.ico" `
+    --hidden-import "fh_gui" `
+    --hidden-import "fh_mercato" `
     --add-data "foot-live.png;." `
     --add-data "data_joueurs.csv;." `
     --add-data "WHATS_NEW.md;." `
