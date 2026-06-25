@@ -460,9 +460,12 @@ PALMARES_CATEGORIES = [
     ("malchance", "💔 Soir sans réussite",   "Le plus d'occasions… et la défaite"),
     ("nul",       "🎭 Nul spectaculaire",    "Le match nul le plus prolifique"),
     ("folie",     "🎰 Match de folie",       "Le plus d'occasions dans un match"),
-    ("attaque",   "⚔️ Meilleure attaque",    "Le plus de buts par match sur une saison"),
-    ("defense",   "🛡️ Meilleure défense",    "Le moins de buts encaissés par match sur une saison"),
-    ("malin",     "💡 Le club malin",        "Le plus de points par M€ de masse salariale"),
+    ("attaque",      "⚔️ Meilleure attaque", "Le plus de buts par match sur une saison"),
+    ("pire_attaque", "🥶 Pire attaque",      "Le moins de buts par match sur une saison"),
+    ("defense",      "🛡️ Meilleure défense", "Le moins de buts encaissés par match sur une saison"),
+    ("pire_defense", "🪣 Pire défense",      "Le plus de buts encaissés par match sur une saison"),
+    ("malin",        "💡 Le club malin",     "Le plus de points par M€ de masse salariale"),
+    ("flop",         "💸 Plus gros flop",    "La masse salariale la plus chère payée au point"),
 ]
 
 
@@ -564,11 +567,16 @@ def compute_palmares(matches, budgets, top=3, min_team_matches=6):
         if n < min_team_matches:
             continue
         c = f"S{sn} · {comp}"
-        cats['attaque'].append((gf / n, f"{gf / n:.1f} b/m", f"{team} — {gf} buts en {n} matchs", c))
-        cats['defense'].append((-ga / n, f"{ga / n:.1f} enc/m", f"{team} — {ga} encaissés en {n} matchs", c))
+        gpm, gapm = gf / n, ga / n
+        cats['attaque'].append((gpm, f"{gpm:.1f} b/m", f"{team} — {gf} buts en {n} matchs", c))
+        cats['pire_attaque'].append((-gpm, f"{gpm:.1f} b/m", f"{team} — {gf} buts en {n} matchs", c))
+        cats['defense'].append((-gapm, f"{gapm:.1f} enc/m", f"{team} — {ga} encaissés en {n} matchs", c))
+        cats['pire_defense'].append((gapm, f"{gapm:.1f} enc/m", f"{team} — {ga} encaissés en {n} matchs", c))
         bud = (budgets.get(sn) or {}).get(team)
         if bud and bud > 0:
             cats['malin'].append((pts / bud, f"{pts / bud:.2f} pt/M€", f"{team} — {pts} pts pour {bud:.0f}M€", c))
+            cats['flop'].append((bud / max(pts, 1), f"{bud / max(pts, 1):.0f} M€/pt",
+                f"{team} — {bud:.0f}M€ pour {pts} pts", c))
 
     out = {}
     for k in cats:
@@ -2099,7 +2107,10 @@ def selftest_offline():
     assert _rec["attaque"][0]["head"] == "6.0 b/m" and "Gros" in _rec["attaque"][0]["desc"]
     assert _rec["defense"][0]["head"] == "0.0 enc/m"           # Gros / Visiteur : 0 encaissé
     assert _rec["malin"][0]["head"] == "0.30 pt/M€" and "Petit" in _rec["malin"][0]["desc"]
-    print("  ✓ palmarès OK (8 records de match + attaque/défense/club malin par saison)")
+    assert _rec["pire_attaque"][0]["head"] == "0.0 b/m"        # Faible / Hôte : 0 but
+    assert _rec["pire_defense"][0]["head"] == "6.0 enc/m" and "Faible" in _rec["pire_defense"][0]["desc"]
+    assert _rec["flop"][0]["head"] == "200 M€/pt" and "Riche" in _rec["flop"][0]["desc"]
+    print("  ✓ palmarès OK (10 records de match + attaque/défense/malin + anti-records par saison)")
 
 
 def selftest():
