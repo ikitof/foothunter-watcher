@@ -159,6 +159,12 @@ def run_gui():
                              command=lambda: show_explorer_window())
     explorer_btn.pack(side="right", padx=(0, 4))
 
+    palmares_btn = tk.Button(bar2, text="🏆 palmarès", bg=CARD, fg=FG, bd=0, relief="flat",
+                             activebackground=ACCENT, activeforeground="#fff",
+                             font=("TkDefaultFont", 8), cursor="hand2",
+                             command=lambda: show_palmares_window())
+    palmares_btn.pack(side="right", padx=(0, 4))
+
     # ---- zone défilante ---------------------------------------------------
     body_wrap = tk.Frame(root, bg=BG)
     body_wrap.pack(fill="both", expand=True)
@@ -1673,6 +1679,91 @@ def run_gui():
             return                       # rien de chargé encore (avant le 1er rendu)
         prefetch_squads([r["team"] for r in rows])   # salaire/célébrité en arrière-plan
         show_stats_window(title, rows)
+
+    def show_palmares_window():
+        old = state.get("palmares_win")
+        if old is not None and old.winfo_exists():
+            old.lift()
+            return
+        win = tk.Toplevel(root)
+        state["palmares_win"] = win
+        win.title("🏆 Palmarès — records")
+        win.configure(bg=BG)
+        win.geometry("720x680")
+        win.minsize(460, 360)
+        try:
+            win.attributes("-topmost", bool(topmost_var.get()))
+        except tk.TclError:
+            pass
+        win.lift()
+        win.protocol("WM_DELETE_WINDOW", lambda: (state.pop("palmares_win", None), win.destroy()))
+
+        cv = tk.Canvas(win, bg=BG, highlightthickness=0, bd=0)
+        sb = tk.Scrollbar(win, orient="vertical", command=cv.yview)
+        cv.configure(yscrollcommand=sb.set)
+        sb.pack(side="right", fill="y")
+        cv.pack(side="left", fill="both", expand=True)
+        box = tk.Frame(cv, bg=BG)
+        bid = cv.create_window((0, 0), window=box, anchor="nw")
+        box.bind("<Configure>", lambda _e: cv.configure(scrollregion=cv.bbox("all")))
+        cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
+
+        def _wheel(e):
+            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            return "break"
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            win.bind(seq, _wheel)
+
+        def render():
+            if not box.winfo_exists():
+                return
+            for w in box.winfo_children():
+                w.destroy()
+            tk.Label(box, text="🏆 Palmarès", bg=BG, fg=ACCENT, anchor="w",
+                     font=("TkDefaultFont", 13, "bold")).pack(fill="x", padx=12, pady=(10, 0))
+            data = state.get("palmares")
+            if not data:
+                tk.Label(box, text="Calcul des records sur tous les matchs joués…",
+                         bg=BG, fg=MUTED, anchor="w", font=("TkDefaultFont", 9)).pack(fill="x", padx=12, pady=12)
+                return
+            records, nmatch = data
+            tk.Label(box, text=f"Sur {nmatch} matchs joués, toutes saisons confondues — 100% factuel",
+                     bg=BG, fg=MUTED, anchor="w", font=("TkDefaultFont", 8)).pack(fill="x", padx=12, pady=(0, 6))
+            medals = ["🥇", "🥈", "🥉"]
+            for key, title, sub in _fs.PALMARES_CATEGORIES:
+                items = records.get(key) or []
+                if not items:
+                    continue
+                card = tk.Frame(box, bg=CARD)
+                card.pack(fill="x", padx=10, pady=4)
+                tk.Label(card, text=title, bg=CARD, fg=FG, anchor="w",
+                         font=("TkDefaultFont", 10, "bold")).pack(fill="x", padx=10, pady=(6, 0))
+                tk.Label(card, text=sub, bg=CARD, fg=MUTED, anchor="w",
+                         font=("TkDefaultFont", 8)).pack(fill="x", padx=10, pady=(0, 2))
+                for i, it in enumerate(items):
+                    row = tk.Frame(card, bg=CARD)
+                    row.pack(fill="x", padx=10, pady=1)
+                    tk.Label(row, text=medals[i] if i < 3 else f"{i + 1}.", bg=CARD, fg=FG,
+                             width=3, font=("TkDefaultFont", 10)).pack(side="left")
+                    tk.Label(row, text=it["head"], bg=CARD, fg=ACCENT, width=12, anchor="w",
+                             font=("TkDefaultFont", 9, "bold")).pack(side="left")
+                    tk.Label(row, text=it["ctx"], bg=CARD, fg=MUTED, anchor="e",
+                             font=("TkDefaultFont", 7)).pack(side="right")
+                    tk.Label(row, text=it["desc"], bg=CARD, fg=FG, anchor="w",
+                             font=("TkDefaultFont", 9)).pack(side="left", fill="x", expand=True)
+                tk.Frame(card, bg=CARD, height=4).pack()
+
+        render()
+        if not state.get("palmares"):
+            def work():
+                try:
+                    data = _fs.palmares_data(top=3)
+                except Exception:
+                    data = ({}, 0)
+                state["palmares"] = data
+                if win.winfo_exists():
+                    root.after(0, render)
+            threading.Thread(target=work, daemon=True).start()
 
     def show_stats_window(title, rows):
         old = state.get("stats_win")

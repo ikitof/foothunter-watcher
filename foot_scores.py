@@ -443,6 +443,129 @@ def role_scout_multi(competitions, poste, pool):
     return list(seen.values())
 
 
+# ----------------------------------------------------------------------------
+# Palmarès : records marquants sur TOUS les matchs joués (saisons terminées +
+# courante). 100% factuel — uniquement des matchs réellement joués et leurs stats.
+# ----------------------------------------------------------------------------
+# (clé, titre affiché, sous-titre). L'ordre est l'ordre d'affichage.
+PALMARES_CATEGORIES = [
+    ("buts",      "🥅 Festival de buts",   "Le plus de buts dans un match"),
+    ("stomp",     "💥 Démonstration",      "La plus grosse différence de buts"),
+    ("underdog",  "🐜 Exploit du petit",   "Le petit budget gagne malgré le plus gros écart"),
+    ("holdup",    "🦹 Hold-up",            "Victoire avec le moins de possession"),
+    ("sterile",   "😤 Domination stérile", "Le plus de possession… sans gagner"),
+    ("malchance", "🎯 Soir sans réussite", "Le plus d'occasions… et la défaite"),
+    ("nul",       "🎭 Nul spectaculaire",  "Le match nul le plus prolifique"),
+    ("folie",     "🎰 Match de folie",     "Le plus d'occasions dans un match"),
+]
+
+
+def _palmares_norm(matches):
+    """[(saison, match_API)] -> [dict normalisé] en ne gardant que les matchs joués."""
+    out = []
+    for sn, m in matches:
+        sd, se = _num(m.get("Score dom")), _num(m.get("Score ext"))
+        if sd is None or se is None:
+            continue
+        out.append({
+            "sn": sn, "dom": m.get("Equipe dom") or "?", "ext": m.get("Equipe ext") or "?",
+            "sd": int(sd), "se": int(se),
+            "od": _num(m.get("Occas dom")) or 0, "oe": _num(m.get("Occas ext")) or 0,
+            "pd": _num(m.get("Posses dom")) or 0, "pe": _num(m.get("Posses ext")) or 0,
+            "comp": m.get("competition") or "?", "phase": m.get("Phase") or "",
+        })
+    return out
+
+
+def compute_palmares(matches, budgets, top=3):
+    """Records par catégorie sur une liste de matchs joués (logique pure, sans réseau).
+    `matches` : [(saison:int, match_API)] ; `budgets` : {saison: {équipe: masse_salariale}}
+    (sert à la catégorie underdog). Renvoie {clé: [{head, desc, ctx}, ...]} (≤ `top` chacun,
+    déjà triés du meilleur record au moins bon)."""
+    rows = _palmares_norm(matches)
+
+    def line(r):
+        return f"{r['dom']} {r['sd']}-{r['se']} {r['ext']}"
+
+    def ctx(r):
+        c = f"S{r['sn']} · {r['comp']}"
+        return c + (f" · {r['phase']}" if r['phase'] else "")
+
+    def winner(r):  # (gagnant, score_gagnant, perdant, score_perdant) — match décidé
+        return (r['dom'], r['sd'], r['ext'], r['se']) if r['sd'] > r['se'] \
+            else (r['ext'], r['se'], r['dom'], r['sd'])
+
+    cats = {k: [] for k, _t, _s in PALMARES_CATEGORIES}
+    for r in rows:
+        sd, se = r['sd'], r['se']
+        decided = sd != se
+        cats['buts'].append((sd + se, f"{sd + se} buts", line(r), ctx(r)))
+        if decided:
+            d = abs(sd - se)
+            cats['stomp'].append((d, f"+{d}", line(r), ctx(r)))
+            wn, ws, ln, ls = winner(r)
+            # underdog : le moins riche gagne, classé par l'écart de budget
+            b = budgets.get(r['sn']) or {}
+            bw, bl = b.get(wn), b.get(ln)
+            if bw is not None and bl is not None and bw < bl:
+                cats['underdog'].append((bl - bw, f"+{bl - bw:.0f} M€",
+                    f"{wn} ({bw:.0f}M€) bat {ln} ({bl:.0f}M€) {ws}-{ls}", ctx(r)))
+            # hold-up : gagne avec la possession la plus faible (valeur = 100 - poss)
+            wp = r['pd'] if sd > se else r['pe']
+            if wp > 0:
+                cats['holdup'].append((100 - wp, f"{wp:.0f}% balle",
+                    f"{wn} s'impose {ws}-{ls} face à {ln}", ctx(r)))
+            # malchance : le perdant a créé plus d'occasions que le gagnant
+            locc = r['oe'] if sd > se else r['od']
+            wocc = r['od'] if sd > se else r['oe']
+            if locc > wocc:
+                cats['malchance'].append((locc, f"{locc:.0f} occ",
+                    f"{ln} perd {ls}-{ws} malgré {locc:.0f} occasions", ctx(r)))
+        else:
+            cats['nul'].append((sd + se, f"{sd}-{se}", f"{r['dom']} / {r['ext']}", ctx(r)))
+        # domination stérile : plus de possession mais ne gagne pas
+        if r['pd'] != r['pe']:
+            dteam, dpos = (r['dom'], r['pd']) if r['pd'] > r['pe'] else (r['ext'], r['pe'])
+            dwon = (dteam == r['dom'] and sd > se) or (dteam == r['ext'] and se > sd)
+            if not dwon and dpos > 0:
+                cats['sterile'].append((dpos, f"{dpos:.0f}% balle",
+                    f"{dteam} domine mais ne gagne pas — {line(r)}", ctx(r)))
+        tot_occ = r['od'] + r['oe']
+        if tot_occ > 0:
+            cats['folie'].append((tot_occ, f"{tot_occ:.0f} occ", line(r), ctx(r)))
+
+    out = {}
+    for k in cats:
+        best = sorted(cats[k], key=lambda t: t[0], reverse=True)[:top]
+        out[k] = [{"head": h, "desc": d, "ctx": c} for _v, h, d, c in best]
+    return out
+
+
+def palmares_data(top=3):
+    """Récupère tous les matchs joués (saisons terminées + courante) et les budgets par
+    saison, puis calcule les records. RÉSEAU : à appeler hors du thread UI. Renvoie
+    (records, nb_matchs_analysés)."""
+    matches = []
+    for skey, lst in (api_all_matchs() or {}).items():
+        sn = int("".join(c for c in skey if c.isdigit()) or "-1")
+        for m in (lst or []):
+            matches.append((sn, m))
+    try:
+        for m in api_season_matches(SEASON):
+            matches.append((SEASON, m))
+    except Exception:
+        pass
+    budgets = {}
+    for sn in {s for s, _m in matches}:
+        b = {}
+        for p in api_all_joueurs(sn):
+            t, s = p.get("nom_equipe"), _num(p.get("salaire"))
+            if t and s is not None:
+                b[t] = b.get(t, 0.0) + s
+        budgets[sn] = b
+    return compute_palmares(matches, budgets, top=top), len(matches)
+
+
 
 
 def _api_pair_str(x, y, suffix=""):
@@ -1908,6 +2031,30 @@ def selftest_offline():
     assert "Nouveautés" in notes
     assert not any(term in notes for term in ("CSV", "/joueurs", "GitHub", "implémentation"))
     print("  ✓ note de version affichée une seule fois par build")
+
+    # 16) palmarès : records calculés sur des matchs synthétiques (sans réseau).
+    _pm = [
+        (1, {"Equipe dom": "Petit", "Equipe ext": "Riche", "Score dom": 3, "Score ext": 1,
+             "Posses dom": 30, "Posses ext": 70, "Occas dom": 2, "Occas ext": 9,
+             "competition": "Ligue 1", "Phase": "Journée 1"}),
+        (1, {"Equipe dom": "A", "Equipe ext": "B", "Score dom": 4, "Score ext": 4,
+             "Posses dom": 50, "Posses ext": 50, "Occas dom": 5, "Occas ext": 5,
+             "competition": "Liga", "Phase": "Journée 2"}),
+        (1, {"Equipe dom": "Gros", "Equipe ext": "Faible", "Score dom": 6, "Score ext": 0,
+             "Posses dom": 80, "Posses ext": 20, "Occas dom": 10, "Occas ext": 1,
+             "competition": "Serie A", "Phase": "Journée 3"}),
+    ]
+    _pb = {1: {"Petit": 10.0, "Riche": 200.0, "A": 50.0, "B": 50.0, "Gros": 150.0, "Faible": 20.0}}
+    _rec = compute_palmares(_pm, _pb, top=3)
+    assert _rec["buts"][0]["head"] == "8 buts"                 # 4-4 (8) > 6-0 > 3-1
+    assert _rec["stomp"][0]["head"] == "+6"                    # 6-0
+    assert _rec["underdog"][0]["head"] == "+190 M€" and "Petit" in _rec["underdog"][0]["desc"]
+    assert _rec["holdup"][0]["head"] == "30% balle"            # Petit gagne avec 30%
+    assert _rec["sterile"][0]["head"] == "70% balle"           # Riche 70% mais perd
+    assert _rec["malchance"][0]["head"] == "9 occ"             # Riche perd avec 9 occ
+    assert _rec["nul"][0]["head"] == "4-4"
+    assert _rec["folie"][0]["head"] == "11 occ"
+    print("  ✓ palmarès OK (festival, stomp, underdog, hold-up, domination, malchance, nul, folie)")
 
 
 def selftest():
