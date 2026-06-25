@@ -165,6 +165,7 @@ class FootLiveMobileApp(App):
         self.explore_leagues = list(core.MAJOR_LEAGUES)   # ligues scoutées (multi-sélection)
         self.explore_adv = "Adv: tous"                    # adversité : tous les matchs / décisifs
         self.explore_metric = "Buts / match"
+        self.palmares = None                              # records (calculés à la 1re ouverture)
 
     @property
     def config_path(self):
@@ -397,9 +398,10 @@ class FootLiveMobileApp(App):
             ("evolution", "ÉVO."),
             ("mercato", "MERCATO"),
             ("explore", "STATS"),
+            ("palmares", "🏆"),
         ):
             button = action(text, lambda _button, name=key: self.select_tab(name), CARD_ALT)
-            button.font_size = dp(11)        # 5 onglets : police réduite pour tenir
+            button.font_size = dp(10)        # 6 onglets : police réduite pour tenir
             self.tab_buttons[key] = button
             tabs.add_widget(button)
         self._style_tabs()
@@ -512,8 +514,47 @@ class FootLiveMobileApp(App):
             self.render_mercato()
         elif self.current_tab == "explore":
             self.render_explore()
+        elif self.current_tab == "palmares":
+            self.render_palmares()
         else:
             self.render_evolution()
+
+    def render_palmares(self):
+        self.clear_content()
+        self.add_title("Palmarès", "Records sur tous les matchs joués — 100% factuel")
+        if self.palmares is None:
+            self.content.add_widget(label("Calcul des records…", color=MUTED, height=50))
+            if not getattr(self, "_palmares_loading", False):
+                self._palmares_loading = True
+
+                def work():
+                    try:
+                        d = core.palmares_data(top=3)
+                    except Exception:
+                        d = ({}, 0)
+                    self.palmares = d
+                    self._palmares_loading = False
+                    Clock.schedule_once(lambda _dt: self.render_current(), 0)
+                threading.Thread(target=work, daemon=True).start()
+            return
+        records, nmatch = self.palmares
+        self.content.add_widget(label(f"Sur {nmatch} matchs joués, toutes saisons", color=MUTED, size=11, height=22))
+        medals = ["🥇", "🥈", "🥉"]
+        for key, title, sub in core.PALMARES_CATEGORIES:
+            items = records.get(key) or []
+            if not items:
+                continue
+            self.content.add_widget(label(title, color=ACCENT, size=15, bold=True, height=32))
+            self.content.add_widget(label(sub, color=MUTED, size=10, height=18))
+            for i, it in enumerate(items):
+                card = Surface(orientation="vertical", color=CARD, size_hint_y=None, height=dp(50),
+                               padding=(dp(10), dp(4)), spacing=0)
+                top = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(24))
+                top.add_widget(label(f"{medals[i]} {it['head']}", bold=True, color=ACCENT, size=12, height=24))
+                top.add_widget(label(it["ctx"], color=MUTED, halign="right", size=9, height=24))
+                card.add_widget(top)
+                card.add_widget(label(it["desc"], color=FG, size=11, height=22))
+                self.content.add_widget(card)
 
     def add_title(self, text, subtitle=None):
         self.content.add_widget(label(text, color=ACCENT, size=18, bold=True, height=38))
