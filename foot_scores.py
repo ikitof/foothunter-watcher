@@ -447,16 +447,22 @@ def role_scout_multi(competitions, poste, pool):
 # Palmarès : records marquants sur TOUS les matchs joués (saisons terminées +
 # courante). 100% factuel — uniquement des matchs réellement joués et leurs stats.
 # ----------------------------------------------------------------------------
-# (clé, titre affiché, sous-titre). L'ordre est l'ordre d'affichage.
+# (clé, titre affiché, sous-titre). L'ordre est l'ordre d'affichage. Records de MATCH
+# d'abord, puis records d'ÉQUIPE sur une saison (championnats uniquement).
 PALMARES_CATEGORIES = [
-    ("buts",      "🥅 Festival de buts",   "Le plus de buts dans un match"),
-    ("stomp",     "💥 Démonstration",      "La plus grosse différence de buts"),
-    ("underdog",  "🐜 Exploit du petit",   "Le petit budget gagne malgré le plus gros écart"),
-    ("holdup",    "🦹 Hold-up",            "Victoire avec le moins de possession"),
-    ("sterile",   "😤 Domination stérile", "Le plus de possession… sans gagner"),
-    ("malchance", "🎯 Soir sans réussite", "Le plus d'occasions… et la défaite"),
-    ("nul",       "🎭 Nul spectaculaire",  "Le match nul le plus prolifique"),
-    ("folie",     "🎰 Match de folie",     "Le plus d'occasions dans un match"),
+    ("buts",      "🥅 Festival de buts",     "Le plus de buts dans un match"),
+    ("stomp",     "💥 Démonstration",        "La plus grosse différence de buts"),
+    ("away",      "✈️ Exploit à l'extérieur", "La plus large victoire à l'extérieur"),
+    ("underdog",  "🐜 Exploit du petit",     "Le petit budget gagne malgré le plus gros écart"),
+    ("holdup",    "🦹 Hold-up",              "Victoire avec le moins de possession"),
+    ("realisme",  "🎯 Réalisme",             "Victoire en créant le moins d'occasions"),
+    ("sterile",   "😤 Domination stérile",   "Le plus de possession… sans gagner"),
+    ("malchance", "💔 Soir sans réussite",   "Le plus d'occasions… et la défaite"),
+    ("nul",       "🎭 Nul spectaculaire",    "Le match nul le plus prolifique"),
+    ("folie",     "🎰 Match de folie",       "Le plus d'occasions dans un match"),
+    ("attaque",   "⚔️ Meilleure attaque",    "Le plus de buts par match sur une saison"),
+    ("defense",   "🛡️ Meilleure défense",    "Le moins de buts encaissés par match sur une saison"),
+    ("malin",     "💡 Le club malin",        "Le plus de points par M€ de masse salariale"),
 ]
 
 
@@ -477,11 +483,12 @@ def _palmares_norm(matches):
     return out
 
 
-def compute_palmares(matches, budgets, top=3):
+def compute_palmares(matches, budgets, top=3, min_team_matches=6):
     """Records par catégorie sur une liste de matchs joués (logique pure, sans réseau).
     `matches` : [(saison:int, match_API)] ; `budgets` : {saison: {équipe: masse_salariale}}
-    (sert à la catégorie underdog). Renvoie {clé: [{head, desc, ctx}, ...]} (≤ `top` chacun,
-    déjà triés du meilleur record au moins bon)."""
+    (underdog + club malin). Records de match + records d'équipe sur une saison (limités aux
+    championnats — round-robin comparable — avec au moins `min_team_matches` matchs). Renvoie
+    {clé: [{head, desc, ctx}, ...]} (≤ `top` chacun, triés du meilleur record au moins bon)."""
     rows = _palmares_norm(matches)
 
     def line(r):
@@ -501,9 +508,12 @@ def compute_palmares(matches, budgets, top=3):
         decided = sd != se
         cats['buts'].append((sd + se, f"{sd + se} buts", line(r), ctx(r)))
         if decided:
-            d = abs(sd - se)
-            cats['stomp'].append((d, f"+{d}", line(r), ctx(r)))
             wn, ws, ln, ls = winner(r)
+            d = ws - ls
+            cats['stomp'].append((d, f"+{d}", line(r), ctx(r)))
+            # exploit à l'extérieur : l'équipe visiteuse l'emporte
+            if se > sd:
+                cats['away'].append((d, f"+{d}", f"{r['ext']} gagne {se}-{sd} chez {r['dom']}", ctx(r)))
             # underdog : le moins riche gagne, classé par l'écart de budget
             b = budgets.get(r['sn']) or {}
             bw, bl = b.get(wn), b.get(ln)
@@ -515,9 +525,13 @@ def compute_palmares(matches, budgets, top=3):
             if wp > 0:
                 cats['holdup'].append((100 - wp, f"{wp:.0f}% balle",
                     f"{wn} s'impose {ws}-{ls} face à {ln}", ctx(r)))
-            # malchance : le perdant a créé plus d'occasions que le gagnant
-            locc = r['oe'] if sd > se else r['od']
+            # réalisme : gagne en créant le moins d'occasions (valeur = -occ du gagnant)
             wocc = r['od'] if sd > se else r['oe']
+            locc = r['oe'] if sd > se else r['od']
+            if wocc >= 1:
+                cats['realisme'].append((-wocc, f"{wocc:.0f} occ",
+                    f"{wn} gagne {ws}-{ls} avec {wocc:.0f} occasions", ctx(r)))
+            # malchance : le perdant a créé plus d'occasions que le gagnant
             if locc > wocc:
                 cats['malchance'].append((locc, f"{locc:.0f} occ",
                     f"{ln} perd {ls}-{ws} malgré {locc:.0f} occasions", ctx(r)))
@@ -533,6 +547,28 @@ def compute_palmares(matches, budgets, top=3):
         tot_occ = r['od'] + r['oe']
         if tot_occ > 0:
             cats['folie'].append((tot_occ, f"{tot_occ:.0f} occ", line(r), ctx(r)))
+
+    # records d'équipe sur une saison : agrégat (matchs, BP, BC, pts) par (saison, ligue,
+    # équipe), limité aux championnats (round-robin -> comparable entre équipes).
+    agg = {}
+    for r in rows:
+        if r['comp'] not in SCOUT_LEAGUES:
+            continue
+        for team, gf, ga in ((r['dom'], r['sd'], r['se']), (r['ext'], r['se'], r['sd'])):
+            a = agg.setdefault((r['sn'], r['comp'], team), [0, 0, 0, 0])
+            a[0] += 1
+            a[1] += gf
+            a[2] += ga
+            a[3] += 3 if gf > ga else (1 if gf == ga else 0)
+    for (sn, comp, team), (n, gf, ga, pts) in agg.items():
+        if n < min_team_matches:
+            continue
+        c = f"S{sn} · {comp}"
+        cats['attaque'].append((gf / n, f"{gf / n:.1f} b/m", f"{team} — {gf} buts en {n} matchs", c))
+        cats['defense'].append((-ga / n, f"{ga / n:.1f} enc/m", f"{team} — {ga} encaissés en {n} matchs", c))
+        bud = (budgets.get(sn) or {}).get(team)
+        if bud and bud > 0:
+            cats['malin'].append((pts / bud, f"{pts / bud:.2f} pt/M€", f"{team} — {pts} pts pour {bud:.0f}M€", c))
 
     out = {}
     for k in cats:
@@ -2043,18 +2079,27 @@ def selftest_offline():
         (1, {"Equipe dom": "Gros", "Equipe ext": "Faible", "Score dom": 6, "Score ext": 0,
              "Posses dom": 80, "Posses ext": 20, "Occas dom": 10, "Occas ext": 1,
              "competition": "Serie A", "Phase": "Journée 3"}),
+        (1, {"Equipe dom": "Hôte", "Equipe ext": "Visiteur", "Score dom": 0, "Score ext": 2,
+             "Posses dom": 55, "Posses ext": 45, "Occas dom": 4, "Occas ext": 3,
+             "competition": "Bundesliga", "Phase": "Journée 1"}),
     ]
-    _pb = {1: {"Petit": 10.0, "Riche": 200.0, "A": 50.0, "B": 50.0, "Gros": 150.0, "Faible": 20.0}}
-    _rec = compute_palmares(_pm, _pb, top=3)
+    _pb = {1: {"Petit": 10.0, "Riche": 200.0, "A": 50.0, "B": 50.0, "Gros": 150.0,
+               "Faible": 20.0, "Hôte": 80.0, "Visiteur": 120.0}}
+    _rec = compute_palmares(_pm, _pb, top=3, min_team_matches=1)
     assert _rec["buts"][0]["head"] == "8 buts"                 # 4-4 (8) > 6-0 > 3-1
     assert _rec["stomp"][0]["head"] == "+6"                    # 6-0
+    assert _rec["away"][0]["head"] == "+2" and "Visiteur" in _rec["away"][0]["desc"]
     assert _rec["underdog"][0]["head"] == "+190 M€" and "Petit" in _rec["underdog"][0]["desc"]
     assert _rec["holdup"][0]["head"] == "30% balle"            # Petit gagne avec 30%
+    assert _rec["realisme"][0]["head"] == "2 occ"              # Petit gagne avec 2 occasions
     assert _rec["sterile"][0]["head"] == "70% balle"           # Riche 70% mais perd
     assert _rec["malchance"][0]["head"] == "9 occ"             # Riche perd avec 9 occ
     assert _rec["nul"][0]["head"] == "4-4"
     assert _rec["folie"][0]["head"] == "11 occ"
-    print("  ✓ palmarès OK (festival, stomp, underdog, hold-up, domination, malchance, nul, folie)")
+    assert _rec["attaque"][0]["head"] == "6.0 b/m" and "Gros" in _rec["attaque"][0]["desc"]
+    assert _rec["defense"][0]["head"] == "0.0 enc/m"           # Gros / Visiteur : 0 encaissé
+    assert _rec["malin"][0]["head"] == "0.30 pt/M€" and "Petit" in _rec["malin"][0]["desc"]
+    print("  ✓ palmarès OK (8 records de match + attaque/défense/club malin par saison)")
 
 
 def selftest():
