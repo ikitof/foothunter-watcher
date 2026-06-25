@@ -385,7 +385,7 @@ def run_gui():
         cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
 
         def _wheel(e):
-            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            cv.yview_scroll(1 if (e.num == 5 or e.delta < 0) else -1, "units")
             return "break"   # n'entraîne pas le défilement de la fenêtre principale
         for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
             win.bind(seq, _wheel)
@@ -574,7 +574,7 @@ def run_gui():
         cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
 
         def _wheel(e):
-            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            cv.yview_scroll(1 if (e.num == 5 or e.delta < 0) else -1, "units")
             return "break"
         for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
             win.bind(seq, _wheel)
@@ -817,7 +817,7 @@ def run_gui():
         cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
 
         def _wheel(e):
-            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            cv.yview_scroll(1 if (e.num == 5 or e.delta < 0) else -1, "units")
             return "break"
         for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
             win.bind(seq, _wheel)
@@ -1078,7 +1078,7 @@ def run_gui():
         cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
 
         def _wheel(e):
-            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            cv.yview_scroll(1 if (e.num == 5 or e.delta < 0) else -1, "units")
             return "break"
         for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
             win.bind(seq, _wheel)
@@ -1293,7 +1293,7 @@ def run_gui():
         cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
 
         def _wheel(e):
-            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            cv.yview_scroll(1 if (e.num == 5 or e.delta < 0) else -1, "units")
             return "break"
         for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
             win.bind(seq, _wheel)
@@ -1526,7 +1526,7 @@ def run_gui():
         cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
 
         def _wheel(e):
-            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            cv.yview_scroll(1 if (e.num == 5 or e.delta < 0) else -1, "units")
             return "break"
         for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
             win.bind(seq, _wheel)
@@ -1709,7 +1709,7 @@ def run_gui():
         cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
 
         def _wheel(e):
-            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            cv.yview_scroll(1 if (e.num == 5 or e.delta < 0) else -1, "units")
             return "break"
         for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
             win.bind(seq, _wheel)
@@ -1792,7 +1792,7 @@ def run_gui():
         cv.bind("<Configure>", lambda e: cv.itemconfig(bid, width=e.width))
 
         def _wheel(e):
-            cv.yview_scroll(-1 if (e.num == 5 or e.delta < 0) else 1, "units")
+            cv.yview_scroll(1 if (e.num == 5 or e.delta < 0) else -1, "units")
             return "break"
         for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
             win.bind(seq, _wheel)
