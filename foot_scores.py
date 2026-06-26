@@ -1444,32 +1444,67 @@ def fetch_competition(name):
 
 
 def fetch_players():
-    """Récupère et parse la liste globale des joueurs (page /joueurs)."""
-    return parse_players(http_get("/joueurs"))
+    """Liste globale des joueurs de la saison courante via l'API (remplace le scraping de
+    /joueurs). Champs : id, nom, poste, nom_equipe, age, celebrite, salaire."""
+    return api_all_joueurs(SEASON)
 
 
-def fetch_team_squad(team):
-    """Effectif complet d'une équipe, enrichi depuis les fiches joueurs.
+def fetch_team_squad(team, season_number=None):
+    """Effectif d'une équipe via l'API (remplace le scraping /equipes + fiches joueurs).
+    /infos_all_joueurs couvre les 140 équipes (7 joueurs chacune) -> filtrage direct.
+    Renvoie [{nom_equipe, nom, poste, celebrite, salaire, age}]."""
+    sn = season_number if season_number is not None else SEASON
+    return [dict(nom_equipe=p.get("nom_equipe"), nom=p.get("nom"), poste=p.get("poste"),
+                 celebrite=_num(p.get("celebrite")), salaire=_num(p.get("salaire")),
+                 age=_num(p.get("age")))
+            for p in api_all_joueurs(sn) if p.get("nom_equipe") == team]
 
-    Combine /equipes/<team> (liste des joueurs) et chaque fiche /joueurs/<nom>
-    (célébrité, salaire annuel, âge, poste), en parallèle. Disponible pour toutes
-    les équipes, y compris celles absentes de la table globale (ex. Ligue 2).
-    Renvoie une liste de dicts {nom_equipe, nom, poste, celebrite, salaire, age}.
-    """
-    roster = parse_team_roster(http_get("/equipes/" + urllib.parse.quote(team)))
-    if not roster:
-        return []
 
-    def enrich(p):
-        try:   # une fiche en échec (404 après promotion, réseau, format) ne fait
-            info = parse_player_info(http_get("/joueurs/" + urllib.parse.quote(p["nom"])))
-        except Exception:   # ...pas perdre tout l'effectif : ce joueur garde des stats vides
-            info = {"celebrite": None, "salaire": None, "poste": None, "age": None}
-        return dict(nom_equipe=team, nom=p["nom"], poste=info["poste"] or p.get("poste"),
-                    celebrite=info["celebrite"], salaire=info["salaire"], age=info["age"])
-
-    with ThreadPoolExecutor(max_workers=8) as ex:
-        return list(ex.map(enrich, roster))
+def fetch_player_history(season_to=None):
+    """Historique par joueur (célébrité + clubs par saison) reconstruit depuis l'API
+    /infos_all_joueurs sur toutes les saisons (clé = id stable). Remplace l'export CSV
+    websocket de /joueurs. Renvoie {players, histories, clubs, seasons} au format de
+    l'ancien parse_player_history_csv (clés de saison = int) :
+      histories[nom] = {saison: célébrité} · clubs[nom] = {saison: club}
+      players = [{nom, poste, nom_equipe, age, celebrite, salaire}] (dernière saison connue)."""
+    if season_to is None:
+        season_to = SEASON
+    seasons = list(range(season_to + 1))
+    by_id = {}
+    for sn in seasons:
+        for p in api_all_joueurs(sn):
+            pid = p.get("id")
+            if pid is None:
+                continue
+            e = by_id.setdefault(pid, {"nom": None, "poste": None,
+                                       "cel": {}, "club": {}, "age": {}, "sal": {}})
+            e["nom"] = p.get("nom") or e["nom"]
+            e["poste"] = p.get("poste") or e["poste"]
+            c, a, s = _num(p.get("celebrite")), _num(p.get("age")), _num(p.get("salaire"))
+            if c is not None:
+                e["cel"][sn] = c
+            if p.get("nom_equipe"):
+                e["club"][sn] = p["nom_equipe"]
+            if a is not None:
+                e["age"][sn] = a
+            if s is not None:
+                e["sal"][sn] = s
+    players, histories, clubs = [], {}, {}
+    for e in by_id.values():
+        nom = e["nom"]
+        if not nom or not e["cel"]:
+            continue
+        histories[nom] = e["cel"]
+        if e["club"]:
+            clubs[nom] = e["club"]
+        players.append({
+            "nom": nom, "poste": e["poste"],
+            "nom_equipe": e["club"].get(max(e["club"])) if e["club"] else None,
+            "age": e["age"].get(max(e["age"])) if e["age"] else None,
+            "celebrite": e["cel"].get(max(e["cel"])),
+            "salaire": e["sal"].get(max(e["sal"])) if e["sal"] else None,
+        })
+    return {"players": players, "histories": histories, "clubs": clubs, "seasons": seasons}
 
 
 # ----------------------------------------------------------------------------
@@ -2154,9 +2189,10 @@ def selftest():
     print(f"  {len(comps)} compétitions : {', '.join(comps[:6])} …")
     assert comps, "aucune compétition trouvée"
 
-    print("→ Téléchargement de l'export joueurs via /joueurs…")
-    exported = parse_player_history_csv(download_players_csv())
+    print("→ Historique joueurs reconstruit via l'API (fetch_player_history)…")
+    exported = fetch_player_history()
     assert len(exported["players"]) > 500 and len(exported["seasons"]) >= 2
+    assert exported["histories"] and exported["clubs"], "historique/clubs vides"
     print(f"  ✓ {len(exported['players'])} joueurs, saisons {exported['seasons']}")
 
     print("→ Joueurs via l'API /infos_all_joueurs…")

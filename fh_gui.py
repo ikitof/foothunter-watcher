@@ -711,7 +711,9 @@ def run_gui():
 
             def load_clubs():
                 try:
-                    clubs = parse_player_clubs(http_get("/joueurs/" + urllib.parse.quote(nom)))
+                    parsed = fetch_player_history()
+                    state["player_clubs"].update(parsed["clubs"])
+                    clubs = parsed["clubs"].get(nom, {})
                 except Exception:
                     clubs = {}
                 state["player_clubs"][nom] = clubs
@@ -733,14 +735,12 @@ def run_gui():
         state["evolution_source"] = source
 
     def load_player_data():
-        """Charge immédiatement le CSV local, puis demande la version du site."""
-        parsed = load_bundled_player_data()
-        if parsed:
-            apply_player_data(parsed, "CSV local")
+        """Charge l'historique des joueurs (célébrité/clubs par saison) depuis l'API."""
         start_evolution_load(force=True)
 
     def start_evolution_load(force=False):
-        """Actualise en arrière-plan l'export CSV produit par la page `/joueurs`."""
+        """Reconstruit en arrière-plan l'historique de célébrité depuis l'API
+        (/infos_all_joueurs sur toutes les saisons)."""
         if state["evolution_loading"]:
             return
         if state["celebrity_histories"] and not force:
@@ -750,8 +750,8 @@ def run_gui():
 
         def work():
             try:
-                parsed = save_player_data(download_players_csv())
-                apply_player_data(parsed, "CSV /joueurs actualisé")
+                parsed = fetch_player_history()
+                apply_player_data(parsed, "API /infos_all_joueurs")
             except Exception as exc:
                 state["evolution_error"] = str(exc)[:120]
             finally:

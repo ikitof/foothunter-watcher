@@ -173,7 +173,7 @@ class FootLiveMobileApp(App):
 
     @property
     def player_cache_path(self):
-        return os.path.join(self.user_data_dir, core.PLAYER_DATA_NAME)
+        return os.path.join(self.user_data_dir, "player_history.json")
 
     def load_config(self):
         try:
@@ -425,23 +425,26 @@ class FootLiveMobileApp(App):
         threading.Thread(target=self.check_update, daemon=True).start()
 
     def load_local_player_data(self):
-        for path in (self.player_cache_path, core.resource_path(core.PLAYER_DATA_NAME)):
-            try:
-                with open(path, "rb") as stream:
-                    self.player_data = core.parse_player_history_csv(stream.read())
-                return
-            except Exception:
-                pass
+        # Cache JSON de l'historique (clés de saison restaurées en int après json.load).
+        try:
+            with open(self.player_cache_path, encoding="utf-8") as stream:
+                d = json.load(stream)
+            d["histories"] = {n: {int(s): v for s, v in h.items()}
+                              for n, h in (d.get("histories") or {}).items()}
+            d["clubs"] = {n: {int(s): v for s, v in c.items()}
+                          for n, c in (d.get("clubs") or {}).items()}
+            self.player_data = d
+        except Exception:
+            pass
 
     def refresh_player_data(self):
         def work():
             try:
-                data = core.download_players_csv()
-                parsed = core.parse_player_history_csv(data)
+                parsed = core.fetch_player_history()   # API /infos_all_joueurs (toutes saisons)
                 os.makedirs(self.user_data_dir, exist_ok=True)
                 temporary = self.player_cache_path + ".tmp"
-                with open(temporary, "wb") as stream:
-                    stream.write(data)
+                with open(temporary, "w", encoding="utf-8") as stream:
+                    json.dump(parsed, stream)
                 os.replace(temporary, self.player_cache_path)
                 self.player_data = parsed
                 Clock.schedule_once(lambda _dt: self.render_current(), 0)
