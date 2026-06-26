@@ -226,35 +226,57 @@ def download_update_exe(commit, url, expected_size=0):
 
 
 def launch_self_update(new_exe_path):
-    """Remplace l'exe courant après fermeture, puis relance l'application."""
+    """Remplace l'exe courant après fermeture, puis relance l'application. Renvoie True
+    si le script de mise à jour a bien démarré (sinon l'appelant NE doit pas fermer l'app).
+
+    Robustesse (le .cmd tourne après la mort du process courant) :
+    - Les chemins passent par des VARIABLES D'ENVIRONNEMENT (FL_SRC/FL_DST/FL_PID), jamais
+      écrits dans le .cmd : un nom d'utilisateur accentué (C:\\Users\\Hélène\\…) ne peut plus
+      corrompre le batch (cmd.exe lit un .cmd en codepage OEM, pas UTF-8).
+    - Le déplacement est réessayé (l'exe peut rester verrouillé une ou deux secondes après
+      la fermeture : scan antivirus à la fermeture), puis bascule sur `copy`.
+    - Si tout échoue, on relance QUAND MÊME le nouvel exe depuis %TEMP% : l'utilisateur
+      n'est jamais laissé sans application (plus de « crash » perçu).
+    - Journalisé dans %TEMP%\\FootLive-update.log pour diagnostic à distance.
+    """
     if not is_windows_frozen():
-        return
+        return False
     current_exe = os.path.abspath(sys.executable)
     pid = os.getpid()
     script = os.path.join(tempfile.gettempdir(), f"FootLive-update-{pid}.cmd")
-    batch = f"""@echo off
-setlocal
-set "SRC={new_exe_path}"
-set "DST={current_exe}"
-set "PID={pid}"
-
-:wait
-tasklist /FI "PID eq %PID%" | find "%PID%" >nul
-if not errorlevel 1 (
-    timeout /t 1 /nobreak >nul
-    goto wait
-)
-
-move /Y "%SRC%" "%DST%" >nul
-if errorlevel 1 exit /b 1
-start "" "%DST%"
-del "%~f0" >nul 2>nul
-"""
-    with open(script, "w", encoding="utf-8") as f:
-        f.write(batch)
-    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    subprocess.Popen(["cmd.exe", "/c", script], close_fds=True,
-                     creationflags=creationflags)
+    # Batch 100% ASCII (les chemins viennent de l'environnement) -> aucun souci d'encodage.
+    batch = (
+        "@echo off\r\n"
+        "setlocal enabledelayedexpansion\r\n"
+        'set "LOG=%TEMP%\\FootLive-update.log"\r\n'
+        'echo [%DATE% %TIME%] maj pid=%FL_PID% src=%FL_SRC% dst=%FL_DST%> "%LOG%"\r\n'
+        ":wait\r\n"
+        'tasklist /FI "PID eq %FL_PID%" | find "%FL_PID%" >nul\r\n'
+        "if not errorlevel 1 ( timeout /t 1 /nobreak >nul & goto wait )\r\n"
+        "set /a tries=0\r\n"
+        ":try\r\n"
+        'move /Y "%FL_SRC%" "%FL_DST%" >>"%LOG%" 2>&1\r\n'
+        'if not errorlevel 1 ( echo move ok>>"%LOG%" & start "" "%FL_DST%" & goto done )\r\n'
+        "set /a tries+=1\r\n"
+        "if !tries! lss 30 ( timeout /t 1 /nobreak >nul & goto try )\r\n"
+        'echo move KO apres !tries! essais, tentative copy>>"%LOG%"\r\n'
+        'copy /Y "%FL_SRC%" "%FL_DST%" >>"%LOG%" 2>&1\r\n'
+        'if not errorlevel 1 ( echo copy ok>>"%LOG%" & start "" "%FL_DST%" & goto done )\r\n'
+        'echo move+copy KO, lancement du nouvel exe depuis temp>>"%LOG%"\r\n'
+        'start "" "%FL_SRC%"\r\n'
+        ":done\r\n"
+        'del "%~f0" >nul 2>nul\r\n'
+    )
+    try:
+        with open(script, "w", encoding="ascii") as f:
+            f.write(batch)
+        env = dict(os.environ, FL_SRC=new_exe_path, FL_DST=current_exe, FL_PID=str(pid))
+        creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        subprocess.Popen(["cmd.exe", "/c", script], close_fds=True,
+                         creationflags=creationflags, env=env)
+        return True
+    except Exception:
+        return False
 
 SCORE_RE = re.compile(r"^\s*(\d+)\s*-\s*(\d+)\s*$")
 DATE_RE = re.compile(r"^\s*\d{1,2}/\d{1,2}/\d{2,4}\s*$")

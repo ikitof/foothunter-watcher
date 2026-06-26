@@ -2197,11 +2197,13 @@ def run_gui():
                     parent=root,
                 )
                 if ok:
-                    state["stop"] = True
-                    state["wake"].set()
                     save_config()
-                    launch_self_update(exe_path)
-                    root.destroy()
+                    if launch_self_update(exe_path):
+                        state["stop"] = True
+                        state["wake"].set()
+                        root.destroy()
+                    else:
+                        status_var.set("échec du lancement de la mise à jour — réessayez")
                 else:
                     status_var.set(f"mise à jour prête ({latest[:7]})")
 
