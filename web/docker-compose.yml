@@ -1,0 +1,19 @@
+# Front web autonome. Lancer depuis ce dossier :  docker compose up -d --build
+# (contexte de build = racine du repo pour embarquer foot_scores.py / fh_mercato.py)
+services:
+  analyzer:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+    image: foothunter-analyzer
+    container_name: foothunter-analyzer
+    ports:
+      - "8000:8000"            # le reverse-proxy (Caddy/nginx) expose 443 -> 8000
+    volumes:
+      - analyzer-data:/data    # mercatos sauvegardés (sqlite), persistants
+    environment:
+      - FH_WEB_ORIGINS=https://analyzer.wiriath.com
+    restart: unless-stopped
+
+volumes:
+  analyzer-data:
