@@ -15,24 +15,26 @@ Front web hébergé (https://analyzer.wiriath.com) reprenant les fonctionnalité
 navigateur ──https──> analyzer.wiriath.com (SPA + /api) ──> foot_scores ──> API du jeu
 ```
 
-## Lancer
+## Lancer (recommandé : tout-en-un avec TLS)
+`docker compose` démarre **deux** conteneurs : `analyzer` (le front, port interne 8000) et
+`caddy` (reverse-proxy HTTPS auto via Let's Encrypt, ports 80/443).
+```bash
+cd web && docker compose up -d --build
+```
+Pré-requis : DNS `analyzer.wiriath.com` → IP publique de la machine, et ports **80 + 443**
+routés depuis le routeur vers la machine (Caddy gère le certificat tout seul, cf. `Caddyfile`).
+
+### Dev local (sans TLS)
 ```bash
 # depuis la racine du repo
 docker build -f web/Dockerfile -t foothunter-analyzer .
 docker run -d -p 8000:8000 -v analyzer-data:/data --name analyzer foothunter-analyzer
-# ou : cd web && docker compose up -d --build
 ```
-La SPA est sur `http://localhost:8000/`, l'API documentée sur `/api/docs`.
+La SPA est alors sur `http://localhost:8000/`, l'API documentée sur `/api/docs`.
 
-## Reverse-proxy TLS (analyzer.wiriath.com)
-Le conteneur sert du HTTP sur 8000 ; mettre un reverse-proxy devant pour le HTTPS.
-Exemple **Caddy** (HTTPS auto via Let's Encrypt) :
-```
-analyzer.wiriath.com {
-    reverse_proxy localhost:8000
-}
-```
-(ouvrir 443 sur le routeur → la machine ; ne PAS exposer 8000 directement.)
+### Caddy installé sur l'hôte (au lieu du conteneur)
+Si tu préfères un Caddy système, remplace dans `Caddyfile` `analyzer:8000` par `localhost:8000`
+(et expose le port 8000 du conteneur analyzer). Ne JAMAIS exposer 8000 directement à Internet.
 
 ## Variables d'environnement
 | Var | Défaut | Rôle |
@@ -46,7 +48,15 @@ analyzer.wiriath.com {
   stocké côté serveur (sqlite) sous ce code. On le recharge en saisissant le code, ou via
   l'URL `https://analyzer.wiriath.com/?m=CODE` (bouton « copier le lien »).
 
+## Fonctionnalités (parité avec l'app desktop/mobile)
+Live (tous les matchs, occasion = ⚡ + surbrillance ambre sur l'équipe qui peut marquer),
+résultats + calendrier + classement par compétition, **stats d'équipe** (buts/encaissés/
+possession/conversion/arrêts/clean/occasions), **explorer** de joueurs par rôle (multi-ligues,
+adversité tous/décisifs), **évolution de célébrité** par saison + historique de clubs,
+**mercato** (7 postes, bilan + investissement par domaine, sauvegarde par code), **palmarès**.
+
 ## Endpoints
 `GET /api/state` · `GET /api/live` · `GET /api/competition/{nom}` · `GET /api/teams/{nom}` ·
-`GET /api/scout?poste=&leagues=&adv=&pmax=` · `GET /api/players` · `GET /api/palmares` ·
-`POST /api/mercato/evaluate` · `POST /api/mercato/save` · `GET /api/mercato/{code}`
+`GET /api/scout?poste=&leagues=&adv=&pmax=` · `GET /api/players` · `GET /api/evolution` ·
+`GET /api/palmares` · `POST /api/mercato/evaluate` · `POST /api/mercato/save` ·
+`GET /api/mercato/{code}`

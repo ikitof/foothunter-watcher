@@ -128,7 +128,7 @@ def competition(name: str):
 def teams(name: str):
     groups, _ = core.fetch_competition(name)
     tds = core.team_domain_stats(groups)
-    return {"name": name, "teams": [dict(team=t, **s) for t, s in tds.items()]}
+    return {"name": name, "teams": list(tds.values())}  # chaque dict contient déjà "team"
 
 
 @app.get("/api/scout")
@@ -150,6 +150,50 @@ def scout(poste: str, leagues: str = "", adv: str = "tous", pmax: float = 1e12):
 def players():
     return {"season": core.SEASON, "players": player_pool(),
             "postes": list(merc.TEAM_POSTES)}
+
+
+_evo = {"data": None, "ts": 0.0}
+_evo_lock = threading.Lock()
+
+
+def evolution_cached():
+    """Historique de célébrité + clubs par joueur, reconstruit depuis /infos_all_joueurs
+    sur toutes les saisons (clé = id stable). Web-only : ne touche pas aux scrapers de l'app."""
+    with _evo_lock:
+        now = time.time()
+        if _evo["data"] is None or now - _evo["ts"] > 1800:
+            seasons = list(range(core.SEASON + 1))
+            by_id = {}
+            for sn in seasons:
+                for p in core.api_all_joueurs(sn):
+                    pid = p.get("id")
+                    if pid is None:
+                        continue
+                    e = by_id.setdefault(pid, {"id": pid, "nom": None, "poste": None,
+                                               "celebrite": {}, "clubs": {}})
+                    e["nom"] = p.get("nom") or e["nom"]
+                    e["poste"] = p.get("poste") or e["poste"]
+                    if p.get("celebrite") is not None:
+                        e["celebrite"][sn] = p["celebrite"]
+                    if p.get("nom_equipe"):
+                        e["clubs"][sn] = p["nom_equipe"]
+            players = []
+            for e in by_id.values():
+                if not e["nom"] or not e["celebrite"]:
+                    continue
+                ls = max(e["clubs"]) if e["clubs"] else None
+                e["club"] = e["clubs"].get(ls) if ls is not None else None
+                e["peak"] = max(e["celebrite"].values())
+                players.append(e)
+            players.sort(key=lambda e: -e["peak"])
+            _evo["data"] = {"seasons": seasons, "players": players}
+            _evo["ts"] = now
+        return _evo["data"]
+
+
+@app.get("/api/evolution")
+def evolution():
+    return evolution_cached()
 
 
 @app.get("/api/palmares")

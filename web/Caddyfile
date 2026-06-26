@@ -1,0 +1,13 @@
+# Reverse-proxy TLS pour le front Analyzer. Caddy obtient/renouvelle le certificat
+# Let's Encrypt automatiquement (HTTP-01) — il faut que le port 443 (et 80 pour le
+# challenge) soit routé depuis Internet vers cette machine, et que le DNS
+# analyzer.wiriath.com pointe sur l'IP publique.
+#
+# Avec docker compose (web/docker-compose.yml) : "analyzer" est le nom du service.
+# Si Caddy tourne directement sur l'hôte (pas en conteneur), remplacer "analyzer:8000"
+# par "localhost:8000".
+
+analyzer.wiriath.com {
+    encode zstd gzip
+    reverse_proxy analyzer:8000
+}

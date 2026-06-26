@@ -13,46 +13,36 @@
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--fg);
     font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-  a{color:var(--accent)}
   header{position:sticky;top:0;z-index:10;background:var(--hdr);
     border-bottom:1px solid var(--line);padding:8px 14px}
   .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .brand{font-weight:700;font-size:16px;letter-spacing:.3px}
-  .badge{background:var(--card2);color:var(--muted);border-radius:20px;
-    padding:2px 10px;font-size:12px}
+  .badge{background:var(--card2);color:var(--muted);border-radius:20px;padding:2px 10px;font-size:12px}
   nav{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
-  nav button{background:var(--card);color:var(--fg);border:0;border-radius:8px;
-    padding:7px 12px;cursor:pointer;font-size:13px}
+  nav button{background:var(--card);color:var(--fg);border:0;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px}
   nav button.on{background:var(--accent);color:#fff;font-weight:600}
   main{max-width:1000px;margin:0 auto;padding:14px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
-    padding:12px;margin-bottom:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
   h2{font-size:15px;margin:0 0 8px}
   h3{font-size:13px;color:var(--accent);margin:14px 0 6px}
   .muted{color:var(--muted)}
-  select,input{background:var(--card2);color:var(--fg);border:1px solid var(--line);
-    border-radius:8px;padding:6px 8px;font-size:13px}
-  button.act{background:var(--accent);color:#fff;border:0;border-radius:8px;
-    padding:6px 12px;cursor:pointer;font-size:13px}
-  button.ghost{background:var(--card2);color:var(--fg);border:1px solid var(--line);
-    border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px}
+  select,input{background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13px}
+  button.act{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px}
+  button.ghost{background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px}
   button.mini{background:transparent;color:var(--green);border:0;cursor:pointer;font-size:12px;font-weight:600}
   table{width:100%;border-collapse:collapse;font-size:13px}
   th,td{text-align:left;padding:5px 7px;border-bottom:1px solid var(--line)}
-  th{color:var(--muted);font-weight:600;cursor:pointer;font-size:12px}
+  th{color:var(--muted);font-weight:600;font-size:12px}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
   .match{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--line)}
-  .match .t{flex:1}
-  .match .t.away{text-align:right}
+  .match .t{flex:1}.match .t.away{text-align:right}
   .sc{font-variant-numeric:tabular-nums;font-weight:700;min-width:54px;text-align:center}
   .sc.live{color:var(--live)}
-  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--live);
-    margin-left:5px;animation:pulse 1s infinite}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--live);margin-left:5px;animation:pulse 1s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-  .imminent{color:var(--flash);font-size:11px;margin-left:4px}
+  .imminent{color:var(--flash);font-size:11px;margin:0 4px}
   .pills{display:flex;flex-wrap:wrap;gap:6px}
-  .pill{background:var(--card2);border:1px solid var(--line);border-radius:16px;
-    padding:3px 10px;font-size:12px;cursor:pointer;user-select:none}
+  .pill{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:3px 10px;font-size:12px;cursor:pointer;user-select:none}
   .pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   .bar{height:10px;background:var(--card2);border-radius:6px;overflow:hidden}
   .bar>i{display:block;height:100%;background:var(--accent)}
@@ -64,6 +54,8 @@
   .scroll{overflow-x:auto}
   .err{color:var(--live);font-size:12px}
   code.codebox{background:var(--card2);padding:3px 8px;border-radius:6px;font-size:14px;letter-spacing:1px}
+  .match.hot{background:rgba(240,192,64,.09);border-radius:6px}
+  .t.hot{color:var(--flash);font-weight:600}
 </style>
 </head>
 <body>
@@ -84,14 +76,14 @@
     <!-- LIVE -->
     <section v-if="tab==='live'">
       <div class="card">
-        <h2>En direct <span class="muted" style="font-weight:400">· rafraîchi toutes les 10 s</span></h2>
-        <div v-if="!live.length" class="muted">Aucun match en direct pour l'instant.</div>
+        <h2 style="margin:0">En direct <span class="muted" style="font-weight:400">· rafraîchi toutes les 10 s · <span style="color:var(--flash)">⚡</span> = occasion, but possible</span></h2>
+        <div v-if="!live.length" class="muted" style="margin-top:8px">Aucun match en direct pour l'instant.</div>
         <div v-for="(ms,comp) in liveByComp" :key="comp">
           <h3>{{comp}}</h3>
-          <div class="match" v-for="(m,i) in ms" :key="i">
-            <span class="t">{{m.nom_equipe_dom}}<span v-if="m.occas_dom" class="imminent">⚡ but imminent</span></span>
+          <div class="match" v-for="(m,i) in ms" :key="i" :class="{hot:m.occas_dom||m.occas_ext}">
+            <span class="t" :class="{hot:m.occas_dom}"><span v-if="m.occas_dom" class="imminent">⚡</span>{{m.nom_equipe_dom}}</span>
             <span class="sc live">{{m.score_dom}} - {{m.score_ext}}<span class="dot"></span></span>
-            <span class="t away"><span v-if="m.occas_ext" class="imminent">but imminent ⚡</span>{{m.nom_equipe_ext}}</span>
+            <span class="t away" :class="{hot:m.occas_ext}">{{m.nom_equipe_ext}}<span v-if="m.occas_ext" class="imminent">⚡</span></span>
           </div>
         </div>
       </div>
@@ -100,11 +92,8 @@
     <!-- COMPÉTITIONS -->
     <section v-if="tab==='comp'">
       <div class="card">
-        <div class="row">
-          <h2 style="margin:0">Compétition</h2>
-          <select v-model="comp" @change="loadComp">
-            <option v-for="c in competitions" :key="c" :value="c">{{c}}</option>
-          </select>
+        <div class="row"><h2 style="margin:0">Compétition</h2>
+          <select v-model="comp" @change="loadComp"><option v-for="c in competitions" :key="c" :value="c">{{c}}</option></select>
           <span class="muted" v-if="compData">{{compData.groups.length}} journées/tours</span>
         </div>
       </div>
@@ -115,7 +104,7 @@
             <h3>{{g.label||'—'}}</h3>
             <div class="match" v-for="(m,i) in g.matches" :key="i">
               <span class="t">{{m.a}}</span>
-              <span class="sc" :class="{live:m.site_live}">{{ midText(m) }}</span>
+              <span class="sc" :class="{live:m.site_live}">{{m.mid||'—'}}</span>
               <span class="t away">{{m.b}}</span>
             </div>
           </div>
@@ -135,6 +124,22 @@
       </div>
     </section>
 
+    <!-- ÉQUIPES -->
+    <section v-if="tab==='teams'">
+      <div class="card">
+        <div class="row"><h2 style="margin:0">Stats des équipes</h2>
+          <select v-model="teamComp" @change="loadTeams"><option v-for="c in competitions" :key="c" :value="c">{{c}}</option></select>
+          <select v-model="teamMetric"><option v-for="m in metrics" :key="m[0]" :value="m[0]">{{m[1]}}</option></select>
+        </div>
+      </div>
+      <div class="card" v-if="teamData">
+        <div v-for="t in sortedTeams" :key="t.team" style="margin:7px 0">
+          <div class="row" style="justify-content:space-between"><span>{{t.team}} <span class="muted" style="font-size:11px">({{t.played}}j)</span></span><span class="muted">{{fmt(t[teamMetric])}}</span></div>
+          <div class="bar"><i :style="{width:teamBarW(t)+'%'}"></i></div>
+        </div>
+      </div>
+    </section>
+
     <!-- EXPLORER -->
     <section v-if="tab==='explorer'">
       <div class="card">
@@ -142,9 +147,7 @@
         <div class="row">
           <label>Poste <select v-model="sc.poste" @change="loadScout"><option v-for="p in postes" :key="p">{{p}}</option></select></label>
           <label>Prix max <input type="number" v-model.number="sc.pmax" style="width:80px" @change="loadScout"> M€</label>
-          <label>Adversité
-            <select v-model="sc.adv" @change="loadScout"><option value="tous">tous matchs</option><option value="decisifs">matchs décisifs</option></select>
-          </label>
+          <label>Adversité <select v-model="sc.adv" @change="loadScout"><option value="tous">tous matchs</option><option value="decisifs">matchs décisifs</option></select></label>
         </div>
         <div class="pills" style="margin-top:8px">
           <span v-for="lg in leagues" :key="lg" class="pill" :class="{on:sc.leagues.includes(lg)}" @click="toggleLeague(lg)">{{lg}}</span>
@@ -163,6 +166,26 @@
             <td><button class="mini" @click="addToMercato(r)">+ merc</button></td>
           </tr>
         </table></div>
+      </div>
+    </section>
+
+    <!-- ÉVOLUTIONS -->
+    <section v-if="tab==='evolution'">
+      <div class="card">
+        <div class="row"><h2 style="margin:0">Évolution de célébrité</h2>
+          <input v-model="evoSearch" placeholder="chercher un joueur…" style="flex:1;min-width:160px">
+          <span class="muted" v-if="evoData">{{evoData.seasons.length}} saisons · vert = hausse, rouge = baisse</span>
+        </div>
+      </div>
+      <div class="card" v-if="evoData">
+        <div class="scroll"><table>
+          <tr><th>Joueur</th><th>Poste</th><th>Club</th><th class="num" v-for="s in evoData.seasons" :key="s">S{{s}}</th></tr>
+          <tr v-for="p in evoRows" :key="p.id">
+            <td>{{p.nom}}</td><td class="muted">{{p.poste}}</td><td class="muted">{{p.club}}</td>
+            <td class="num" v-for="s in evoData.seasons" :key="s" :style="celCell(p,s)">{{p.celebrite[s]!=null?Math.round(p.celebrite[s]):'·'}}</td>
+          </tr>
+        </table></div>
+        <div class="muted" v-if="evoRows.length>=80" style="margin-top:6px">80 joueurs affichés — affine la recherche.</div>
       </div>
     </section>
 
@@ -198,10 +221,10 @@
             {{evalData.aggregate.count}}/7 · célé moy. {{evalData.aggregate.avg_celebrite||'—'}} ·
             âge moy. {{evalData.aggregate.avg_age||'—'}} · masse sal. {{evalData.aggregate.total_salaire}} M€
           </div>
-          <h3>Investissement par domaine (M€)</h3>
+          <h3 style="margin-top:0">Investissement par domaine (M€)</h3>
           <div v-for="d in evalData.domains" :key="d" style="margin:5px 0">
             <div class="row" style="justify-content:space-between"><span>{{evalData.domain_labels[d]}}</span><span class="muted">{{evalData.investment[d]}}</span></div>
-            <div class="bar"><i :style="{width:barW(evalData.investment[d])+'%'}"></i></div>
+            <div class="bar"><i :style="{width:invBarW(evalData.investment[d])+'%'}"></i></div>
           </div>
         </div>
       </div>
@@ -217,7 +240,7 @@
         <div class="muted" style="font-size:12px;margin-bottom:6px">{{cat[2]}}</div>
         <div class="match" v-for="(it,i) in (palmares.records[cat[0]]||[])" :key="i">
           <span class="medal">{{['🥇','🥈','🥉','4.','5.'][i]}}</span>
-          <span style="color:var(--accent);font-weight:600;min-width:90px">{{it.head}}</span>
+          <span style="color:var(--accent);font-weight:600;min-width:96px">{{it.head}}</span>
           <span class="t">{{it.desc}}</span>
           <span class="muted" style="font-size:11px">{{it.ctx}}</span>
         </div>
@@ -235,13 +258,18 @@ const MAJORS = ["Premier League","Liga","Bundesliga","Serie A","Ligue 1"];
 
 createApp({
   data(){return{
-    tabs:[{id:'live',label:'🔴 Live'},{id:'comp',label:'Compétitions'},
-      {id:'explorer',label:'Explorer'},{id:'mercato',label:'Mercato'},{id:'palmares',label:'🏆 Palmarès'}],
+    tabs:[{id:'live',label:'🔴 Live'},{id:'comp',label:'Compétitions'},{id:'teams',label:'Équipes'},
+      {id:'explorer',label:'Explorer'},{id:'evolution',label:'Évolutions'},{id:'mercato',label:'Mercato'},
+      {id:'palmares',label:'🏆 Palmarès'}],
     tab:'live', season:null, competitions:[], error:'',
     live:[], liveTimer:null,
     comp:'', compData:null,
     leagues:[], postes:['GAR','DC','LAT','MDEF','MOFF','AIL','AC'],
+    teamComp:'', teamMetric:'gf_pm', teamData:null,
+    metrics:[['gf_pm','Buts / match'],['ga_pm','Encaissés / match'],['poss','Possession %'],
+      ['conv','Conversion %'],['save','Arrêts %'],['clean','Clean sheets'],['occ_for_pm','Occasions / match']],
     sc:{poste:'GAR', pmax:200, adv:'tous', leagues:[...MAJORS]}, scoutData:null,
+    evoData:null, evoSearch:'',
     pool:[], squad:{}, years:{}, evalData:null,
     saveCode:'', loadCode:'', loadErr:'',
     palmares:null,
@@ -251,25 +279,32 @@ createApp({
     liveCount(){return this.live.length;},
     poolByPoste(){const o={};for(const p of this.pool){(o[p.poste]=o[p.poste]||[]).push(p)}
       for(const k in o)o[k].sort((a,b)=>(b.celebrite||0)-(a.celebrite||0));return o;},
+    sortedTeams(){if(!this.teamData)return[];const m=this.teamMetric;
+      return[...this.teamData.teams].filter(t=>t[m]!=null).sort((a,b)=>(b[m])-(a[m]));},
+    evoRows(){if(!this.evoData)return[];const q=this.evoSearch.toLowerCase().trim();
+      let a=this.evoData.players;if(q)a=a.filter(p=>(p.nom||'').toLowerCase().includes(q));return a.slice(0,80);},
   },
   methods:{
     fmt(v){return v==null?'—':(Math.round(v*10)/10);},
-    midText(m){return m.mid||'—';},
-    barW(v){const max=Math.max(...this.evalData.domains.map(d=>this.evalData.investment[d]||0),1);return 100*(v||0)/max;},
+    invBarW(v){const max=Math.max(...this.evalData.domains.map(d=>this.evalData.investment[d]||0),1);return 100*(v||0)/max;},
+    teamBarW(t){const m=this.teamMetric,max=Math.max(...this.teamData.teams.map(x=>x[m]||0),0.0001);return 100*(t[m]||0)/max;},
+    celCell(p,s){const v=p.celebrite[s];if(v==null)return{};const prev=p.celebrite[s-1];
+      if(prev==null)return{};return{color:v>prev?'var(--green)':(v<prev?'var(--live)':'')};},
     go(t){this.tab=t;
       if(t==='comp'&&!this.compData)this.loadComp();
+      if(t==='teams'&&!this.teamData)this.loadTeams();
       if(t==='explorer'&&!this.scoutData)this.loadScout();
+      if(t==='evolution'&&!this.evoData)this.loadEvo();
       if(t==='mercato'&&!this.pool.length)this.loadPool();
       if(t==='palmares'&&!this.palmares)this.loadPalmares();
     },
     async boot(){
       try{const s=await api('/state');this.season=s.season;this.competitions=s.competitions;
-        this.comp=this.competitions[0]||'';
+        this.comp=this.competitions[0]||'';this.teamComp=this.comp;
         this.leagues=["Premier League","Liga","Bundesliga","Serie A","Ligue 1","Liga Nos",
           "Eredivisie","Süper Lig","Jupiler Pro League","Championship","Liga 2","Bundesliga 2","Serie B","Ligue 2"];
       }catch(e){this.error='API injoignable';}
       this.refreshLive(); this.liveTimer=setInterval(this.refreshLive,10000);
-      // restauration mercato : ?m=code sinon localStorage
       const code=new URLSearchParams(location.search).get('m');
       if(code){this.loadCode=code;this.loadMercato();}
       else{try{const s=JSON.parse(localStorage.getItem('fh_mercato')||'null');
@@ -277,10 +312,13 @@ createApp({
     },
     async refreshLive(){try{this.live=(await api('/live')).matches||[];}catch(e){}},
     async loadComp(){this.compData=null;try{this.compData=await api('/competition/'+encodeURIComponent(this.comp));}catch(e){this.error='compétition KO';}},
+    async loadTeams(){if(!this.teamComp)this.teamComp=this.comp||this.competitions[0]||'';this.teamData=null;
+      try{this.teamData=await api('/teams/'+encodeURIComponent(this.teamComp));}catch(e){this.error='stats équipes KO';}},
     toggleLeague(lg){const i=this.sc.leagues.indexOf(lg);i<0?this.sc.leagues.push(lg):this.sc.leagues.splice(i,1);this.loadScout();},
     async loadScout(){if(!this.sc.leagues.length)return;
       const q=new URLSearchParams({poste:this.sc.poste,leagues:this.sc.leagues.join(','),adv:this.sc.adv,pmax:this.sc.pmax});
       try{this.scoutData=await api('/scout?'+q);}catch(e){this.error='scout KO';}},
+    async loadEvo(){try{this.evoData=await api('/evolution');}catch(e){this.error='évolutions KO';}},
     async loadPool(){try{const d=await api('/players');this.pool=d.players;this.evalMercato();}catch(e){}},
     pickPlayer(pos,id){
       if(!id){delete this.squad[pos];delete this.years[pos];}
@@ -288,16 +326,13 @@ createApp({
       this.squad={...this.squad};this.persist();this.evalMercato();},
     setYears(pos,y){this.years[pos]=+y;this.persist();this.evalMercato();},
     addToMercato(r){
-      // r vient du scout (pas d'id) -> on cherche le joueur correspondant dans le pool
-      if(!this.pool.length){this.loadPool();}
-      const merc={id:r.nom+'@'+r.team,nom:r.nom,poste:this.sc.poste,nom_equipe:r.team,
+      this.squad[this.sc.poste]={id:r.nom+'@'+r.team,nom:r.nom,poste:this.sc.poste,nom_equipe:r.team,
         salaire:r.salaire,celebrite:r.celebrite,age:r.age};
-      this.squad[this.sc.poste]=merc;if(!this.years[this.sc.poste])this.years[this.sc.poste]=1;
+      if(!this.years[this.sc.poste])this.years[this.sc.poste]=1;
       this.squad={...this.squad};this.persist();this.tab='mercato';
-      if(!this.pool.length)this.loadPool();else this.evalMercato();},
-    async evalMercato(){
-      try{this.evalData=await api('/mercato/evaluate',{method:'POST',
-        headers:{'Content-Type':'application/json'},body:JSON.stringify({squad:this.squad,years:this.years})});}catch(e){}},
+      this.pool.length?this.evalMercato():this.loadPool();},
+    async evalMercato(){try{this.evalData=await api('/mercato/evaluate',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({squad:this.squad,years:this.years})});}catch(e){}},
     persist(){try{localStorage.setItem('fh_mercato',JSON.stringify({squad:this.squad,years:this.years}));}catch(e){}},
     async saveMercato(){try{const d=await api('/mercato/save',{method:'POST',
       headers:{'Content-Type':'application/json'},body:JSON.stringify({squad:this.squad,years:this.years})});
@@ -305,7 +340,7 @@ createApp({
     copyLink(){const url=location.origin+'/?m='+this.saveCode;navigator.clipboard&&navigator.clipboard.writeText(url);},
     async loadMercato(){this.loadErr='';const code=(this.loadCode||'').trim();if(!code)return;
       try{const d=await api('/mercato/'+encodeURIComponent(code));this.squad=d.squad||{};this.years=d.years||{};
-        this.persist();this.tab='mercato';if(!this.pool.length)this.loadPool();else this.evalMercato();}
+        this.persist();this.tab='mercato';this.pool.length?this.evalMercato():this.loadPool();}
       catch(e){this.loadErr='code introuvable';}},
     async loadPalmares(){try{this.palmares=await api('/palmares');}catch(e){this.error='palmarès KO';}},
   },

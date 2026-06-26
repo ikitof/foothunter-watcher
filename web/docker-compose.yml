@@ -1,5 +1,9 @@
-# Front web autonome. Lancer depuis ce dossier :  docker compose up -d --build
+# Front web autonome + reverse-proxy TLS. Lancer depuis ce dossier :
+#   docker compose up -d --build
 # (contexte de build = racine du repo pour embarquer foot_scores.py / fh_mercato.py)
+#
+# Pré-requis hébergement : DNS analyzer.wiriath.com -> IP publique de la machine,
+# et ports 80 + 443 routés depuis le routeur vers cette machine (Caddy gère le TLS).
 services:
   analyzer:
     build:
@@ -7,13 +11,29 @@ services:
       dockerfile: web/Dockerfile
     image: foothunter-analyzer
     container_name: foothunter-analyzer
-    ports:
-      - "8000:8000"            # le reverse-proxy (Caddy/nginx) expose 443 -> 8000
+    expose:
+      - "8000"                 # interne ; exposé au public uniquement via Caddy
     volumes:
       - analyzer-data:/data    # mercatos sauvegardés (sqlite), persistants
     environment:
       - FH_WEB_ORIGINS=https://analyzer.wiriath.com
     restart: unless-stopped
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: foothunter-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data       # certificats Let's Encrypt (persistants !)
+      - caddy-config:/config
+    depends_on:
+      - analyzer
+    restart: unless-stopped
+
 volumes:
   analyzer-data:
+  caddy-data:
+  caddy-config:
