@@ -23,20 +23,12 @@ import re
 import csv
 import json
 import time
-import base64
-import hashlib
-import socket
-import struct
-import uuid
-import zlib
 import threading
 import tempfile
 import subprocess
 import urllib.request
 import urllib.parse
 from datetime import date
-from html import unescape
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from fh_mercato import *  # noqa: F401,F403  (modèle mercato/simulation)
 from fh_mercato import _num
@@ -65,11 +57,6 @@ ALL_KEY = "★ Toutes (live)"          # entrée spéciale du sélecteur de comp
 LIVE_GRACE = 200                      # secondes pendant lesquelles un match reste "LIVE" après un changement
 HTTP_TIMEOUT = 25
 USER_AGENT = "FootScores/1.0 (desktop widget)"
-
-# Le site marque un match en cours avec un point rouge (bg-red-500) et un score
-# rouge gras (text-red-600). C'est LE signal fiable d'un match "en direct"
-# (les barres de possession utilisent bg-red-200 / bg-blue-500, à ne pas confondre).
-LIVE_CLASS_MARKERS = ("text-red-600", "bg-red-500")
 
 SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
 GITHUB_REPO = os.environ.get("FOOT_LIVE_GITHUB_REPO", "ikitof/foothunter-watcher")
@@ -278,16 +265,6 @@ def launch_self_update(new_exe_path):
     except Exception:
         return False
 
-SCORE_RE = re.compile(r"^\s*(\d+)\s*-\s*(\d+)\s*$")
-DATE_RE = re.compile(r"^\s*\d{1,2}/\d{1,2}/\d{2,4}\s*$")
-POSS_RE = re.compile(r"^\s*\d+%\s*-\s*\d+%\s*$")
-CELEB_RE = re.compile(r"[Cc]élébrité\s*:\s*([\d.,]+)")
-SALARY_RE = re.compile(r"Salaire\s+annuel\s*:\s*([\d.,]+)")
-AGE_RE = re.compile(r"Âge\s*:\s*(\d+)")
-POSTE_RE = re.compile(r"Poste\s*:\s*([A-Za-z]+)")
-CLUB_RE = re.compile(r"Saison\s+(\d+)\s*:\s*(.+)")   # historique des clubs sur la fiche
-CELEB_CHART_RE = re.compile(r"data:image/png;base64,([A-Za-z0-9+/=]+)")
-
 # Postes affichés sur les pages d'équipe (sert à apparier joueur ↔ poste).
 PLAYER_POSTES = ("GAR", "DC", "LAT", "MDEF", "MOFF", "AIL", "AC")
 
@@ -312,10 +289,9 @@ def http_get(path):
 
 
 # ----------------------------------------------------------------------------
-# Client API JSON Foothunter (/api/...) — source des résultats, du live, de
-# l'historique, de la liste des compétitions et de la saison courante. Le HTML
-# (parse_elements/parse_matches) ne sert plus qu'aux données absentes de l'API :
-# calendrier des matchs à venir + dates, et l'export joueurs/effectifs.
+# Client API JSON Foothunter (/api/...) — SOURCE UNIQUE des données : résultats, live,
+# calendrier, historique de célébrité, effectifs, liste des compétitions et saison
+# courante. Plus aucun scraping HTML (le HTML n'est plus parsé du tout).
 # ----------------------------------------------------------------------------
 _api_cache = {}          # path -> (timestamp, valeur) ; TTL court pour mutualiser un cycle
 _api_locks = {}          # path -> Lock (single-flight : un seul téléchargement par chemin)
@@ -656,8 +632,8 @@ def _api_pair_str(x, y, suffix=""):
 
 
 def _api_match_to_dict(o):
-    """Objet match JOUÉ de l'API (/matchs_par_saison, /all_matchs) -> dict interne au
-    format de parse_matches. mid/poss/occ sont des chaînes parsables par _pair, ou None."""
+    """Objet match JOUÉ de l'API (/matchs_par_saison, /all_matchs) -> dict interne
+    (a/b/mid/status/poss/occ/site_live). mid/poss/occ : chaînes parsables par _pair, ou None."""
     return dict(
         a=o.get("Equipe dom"), b=o.get("Equipe ext"),
         mid=_api_pair_str(o.get("Score dom"), o.get("Score ext")),
@@ -746,658 +722,11 @@ def refresh_current_season():
     return SEASON
 
 
-def _read_exact(reader, size):
-    data = bytearray()
-    while len(data) < size:
-        chunk = reader.read(size - len(data))
-        if not chunk:
-            raise ConnectionError("websocket fermé")
-        data.extend(chunk)
-    return bytes(data)
-
-
-def _websocket_send(sock, opcode, payload):
-    """Envoie une frame WebSocket client (donc masquée), sans dépendance externe."""
-    payload = payload.encode("utf-8") if isinstance(payload, str) else payload
-    first = 0x80 | opcode
-    size = len(payload)
-    if size < 126:
-        header = bytes((first, 0x80 | size))
-    elif size < 65536:
-        header = bytes((first, 0x80 | 126)) + struct.pack(">H", size)
-    else:
-        header = bytes((first, 0x80 | 127)) + struct.pack(">Q", size)
-    mask = os.urandom(4)
-    masked = bytes(value ^ mask[i % 4] for i, value in enumerate(payload))
-    sock.sendall(header + mask + masked)
-
-
-def _websocket_receive(reader):
-    """Lit un message WebSocket complet et renvoie (opcode, payload)."""
-    first, second = _read_exact(reader, 2)
-    opcode, final = first & 0x0F, bool(first & 0x80)
-    masked, size = bool(second & 0x80), second & 0x7F
-    if size == 126:
-        size = struct.unpack(">H", _read_exact(reader, 2))[0]
-    elif size == 127:
-        size = struct.unpack(">Q", _read_exact(reader, 8))[0]
-    mask = _read_exact(reader, 4) if masked else b""
-    payload = _read_exact(reader, size)
-    if masked:
-        payload = bytes(value ^ mask[i % 4] for i, value in enumerate(payload))
-    if final or opcode in (0x8, 0x9, 0xA):
-        return opcode, payload
-
-    chunks = [payload]
-    while True:
-        next_opcode, chunk = _websocket_receive(reader)
-        if next_opcode != 0:
-            raise ValueError("fragment WebSocket inattendu")
-        chunks.append(chunk)
-        # _websocket_receive ne renvoie un fragment de continuation qu'à sa fin.
-        return opcode, b"".join(chunks)
-
-
-def download_players_csv():
-    """Déclenche le bouton d'export de `/joueurs` via le protocole NiceGUI.
-
-    NiceGUI n'expose pas une URL CSV : le bouton envoie le contenu comme pièce
-    jointe binaire Socket.IO. Cette implémentation minimale reste 100 % stdlib.
-    """
-    html = http_get("/joueurs")
-    client_match = re.search(r"query:\s*\{[^}]*'client_id':\s*'([^']+)'", html)
-    elements = parse_elements(html)
-    if not client_match or not elements:
-        raise ValueError("identifiant NiceGUI absent")
-
-    button_id = listener_id = None
-    for eid, element in elements.items():
-        props = element.get("props") or {}
-        label = props.get("label") or ""
-        if element.get("tag") != "q-btn" or "Télécharger stats des joueurs" not in label:
-            continue
-        event = next((e for e in element.get("events") or [] if e.get("type") == "click"), None)
-        if event:
-            button_id, listener_id = int(eid), event.get("listener_id")
-            break
-    if button_id is None or not listener_id:
-        raise ValueError("bouton d'export joueurs absent")
-
-    parsed = urllib.parse.urlparse(BASE_URL)
-    host = parsed.hostname
-    port = parsed.port or (443 if parsed.scheme == "https" else 80)
-    query = urllib.parse.urlencode({
-        "client_id": client_match.group(1),
-        "next_message_id": 0,
-        "implicit_handshake": "true",
-        "document_id": str(uuid.uuid4()),
-        "tab_id": str(uuid.uuid4()),
-        "old_tab_id": "null",
-        "EIO": 4,
-        "transport": "websocket",
-    })
-    endpoint = (parsed.path.rstrip("/") + "/_nicegui_ws/socket.io/?" + query)
-    key = base64.b64encode(os.urandom(16)).decode("ascii")
-    host_header = host if port in (80, 443) else f"{host}:{port}"
-    request = (
-        f"GET {endpoint} HTTP/1.1\r\n"
-        f"Host: {host_header}\r\n"
-        f"Origin: {parsed.scheme}://{host_header}\r\n"
-        "Upgrade: websocket\r\n"
-        "Connection: Upgrade\r\n"
-        f"Sec-WebSocket-Key: {key}\r\n"
-        "Sec-WebSocket-Version: 13\r\n\r\n"
-    ).encode("ascii")
-
-    sock = socket.create_connection((host, port), timeout=HTTP_TIMEOUT)
-    if parsed.scheme == "https":
-        import ssl
-        sock = ssl.create_default_context().wrap_socket(sock, server_hostname=host)
-    reader = None
-    try:
-        sock.sendall(request)
-        reader = sock.makefile("rb")
-        status = reader.readline().decode("ascii", "replace").strip()
-        headers = {}
-        while True:
-            line = reader.readline()
-            if line in (b"\r\n", b"\n", b""):
-                break
-            name, value = line.decode("ascii", "replace").split(":", 1)
-            headers[name.lower()] = value.strip()
-        expected = base64.b64encode(hashlib.sha1(
-            (key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode("ascii")
-        ).digest()).decode("ascii")
-        if " 101 " not in f" {status} " or headers.get("sec-websocket-accept") != expected:
-            raise ConnectionError(f"connexion websocket refusée ({status})")
-
-        _websocket_send(sock, 0x1, "40")
-        connected = False
-        deadline = time.time() + HTTP_TIMEOUT
-        while time.time() < deadline:
-            opcode, payload = _websocket_receive(reader)
-            if opcode == 0x9:
-                _websocket_send(sock, 0xA, payload)
-                continue
-            if opcode != 0x1:
-                continue
-            message = payload.decode("utf-8", "replace")
-            if message == "2":
-                _websocket_send(sock, 0x1, "3")
-            elif message.startswith("40"):
-                connected = True
-                break
-        if not connected:
-            raise TimeoutError("connexion Socket.IO incomplète")
-
-        packet = "42" + json.dumps(["event", {
-            "id": button_id,
-            "client_id": client_match.group(1),
-            "listener_id": listener_id,
-            "args": [],
-        }], separators=(",", ":"))
-        _websocket_send(sock, 0x1, packet)
-        expecting_download = False
-        while time.time() < deadline:
-            opcode, payload = _websocket_receive(reader)
-            if opcode == 0x9:
-                _websocket_send(sock, 0xA, payload)
-            elif opcode == 0x1:
-                message = payload.decode("utf-8", "replace")
-                if message == "2":
-                    _websocket_send(sock, 0x1, "3")
-                elif message.startswith("451-") and '"download"' in message:
-                    expecting_download = True
-            elif opcode == 0x2 and expecting_download:
-                return payload
-        raise TimeoutError("export CSV non reçu")
-    finally:
-        if reader is not None:
-            reader.close()
-        sock.close()
-
-
-def parse_elements(html):
-    """Extrait l'arbre d'éléments JSON que NiceGUI passe à parseElements(String.raw`...`)."""
-    m = re.search(r"parseElements\(String\.raw`(.*?)`\)", html, re.S)
-    if not m:
-        return None
-    return json.loads(m.group(1))
-
-
-def _first_text(d, eid):
-    el = d.get(str(eid))
-    if not el:
-        return None
-    if el.get("text"):
-        return el["text"]
-    for c in el.get("children") or []:
-        t = _first_text(d, c)
-        if t:
-            return t
-    return None
-
-
-def _all_texts(d, eid, acc=None):
-    if acc is None:
-        acc = []
-    el = d.get(str(eid))
-    if not el:
-        return acc
-    if el.get("text"):
-        acc.append(el["text"])
-    for c in el.get("children") or []:
-        _all_texts(d, c, acc)
-    return acc
-
-
-def _subtree_has_class(d, eid, markers):
-    """True si un élément du sous-arbre (enfants + slots) porte une classe de `markers`."""
-    el = d.get(str(eid))
-    if not el:
-        return False
-    if any(c in markers for c in el.get("class") or []):
-        return True
-    for c in el.get("children") or []:
-        if _subtree_has_class(d, c, markers):
-            return True
-    for s in (el.get("slots") or {}).values():
-        for sid in s.get("ids", []):
-            if _subtree_has_class(d, sid, markers):
-                return True
-    return False
-
-
-def parse_matches(d):
-    """
-    Renvoie une liste de groupes : [{'label': 'Journée 4', 'matches': [match, ...]}, ...]
-    où match = {a, b, mid, status, poss, occ, site_live}.
-      - status = 'result'    -> mid est un score "x - y"
-      - status = 'scheduled' -> mid est une date "jj/mm/aaaa"
-      - site_live            -> True si le site marque le match "en direct"
-    """
-    groups = []
-
-    def walk(eid, group):
-        el = d.get(str(eid))
-        if not el:
-            return
-        tag = el.get("tag")
-        props = el.get("props") or {}
-        slots = el.get("slots") or {}
-
-        # Un MATCH : expansion possédant un slot 'header' (l'entête avec équipes + score)
-        if tag == "nicegui-expansion" and "header" in slots:
-            hid = slots["header"]["ids"][0]
-            grid = d.get(str(hid)) or {}
-            cells = grid.get("children") or []
-            team_a = _first_text(d, cells[0]) if len(cells) > 0 else None
-            mid = _first_text(d, cells[1]) if len(cells) > 1 else None
-            team_b = _first_text(d, cells[2]) if len(cells) > 2 else None
-            # Le site signale "en direct" via un marqueur rouge dans l'entête.
-            site_live = _subtree_has_class(d, hid, LIVE_CLASS_MARKERS)
-            poss = occ = None
-            for c in el.get("children") or []:
-                for t in _all_texts(d, c):
-                    if POSS_RE.match(t):
-                        poss = t.strip()
-                    elif SCORE_RE.match(t):
-                        occ = t.strip()
-            mid = (mid or "").strip()
-            if DATE_RE.match(mid):
-                status = "scheduled"
-            elif SCORE_RE.match(mid):
-                status = "result"
-            else:
-                status = "?"
-            group["matches"].append(
-                dict(a=team_a, b=team_b, mid=mid, status=status,
-                     poss=poss, occ=occ, site_live=site_live)
-            )
-            return
-
-        # Un GROUPE (journée / tour de coupe) : expansion avec un label
-        if tag == "nicegui-expansion" and props.get("label"):
-            grp = {"label": props["label"], "matches": []}
-            groups.append(grp)
-            for c in el.get("children") or []:
-                walk(c, grp)
-            return
-
-        for c in el.get("children") or []:
-            walk(c, group)
-
-    roots = [k for k, v in d.items() if v.get("tag") == "q-page"]
-    if not roots:
-        roots = list(d.keys())[:1]
-    sink = {"label": "?", "matches": []}
-    for r in roots:
-        walk(r, sink)
-    return [g for g in groups if g["matches"]]
-
-
-def parse_standings(d):
-    """Renvoie les lignes du classement (liste de dicts) ou None."""
-    for v in d.values():
-        if v.get("tag") == "nicegui-table":
-            return (v.get("props") or {}).get("rows")
-    return None
-
-
-def parse_players(html):
-    """Joueurs depuis la page /joueurs.
-
-    Renvoie la liste des lignes du tableau (dicts avec nom, poste, nom_equipe,
-    age, celebrite, salaire). Liste vide si la page n'a pas le tableau attendu.
-    """
-    d = parse_elements(html)
-    if not d:
-        return []
-    for v in d.values():
-        if v.get("tag") == "nicegui-table":
-            props = v.get("props") or {}
-            fields = {(c.get("field") or c.get("name")) for c in (props.get("columns") or [])}
-            if "salaire" in fields or "celebrite" in fields:
-                return props.get("rows") or []
-    return []
-
-
-def parse_player_history_csv(data):
-    """Parse l'export `/joueurs` et renvoie joueurs, célébrités, clubs et saisons.
-
-    Les colonnes saisonnières sont détectées dynamiquement pour accepter les
-    futurs `nom_equipe_N` et `celebrite_N` sans modification du programme.
-    """
-    if isinstance(data, bytes):
-        data = data.decode("utf-8-sig")
-    reader = csv.DictReader(io.StringIO(data))
-    fields = reader.fieldnames or []
-    celeb_seasons = {
-        int(match.group(1)): field
-        for field in fields
-        if (match := re.fullmatch(r"celebrite_(\d+)", field))
-    }
-    team_seasons = {
-        int(match.group(1)): field
-        for field in fields
-        if (match := re.fullmatch(r"nom_equipe_(\d+)", field))
-    }
-    if "nom" not in fields or len(celeb_seasons) < 2:
-        raise ValueError("colonnes historiques joueurs absentes")
-
-    players, histories, clubs = [], {}, {}
-    for row in reader:
-        name = (row.get("nom") or "").strip()
-        if not name:
-            continue
-        history = {}
-        for season, field in celeb_seasons.items():
-            try:
-                raw = (row.get(field) or "").strip().replace(",", ".")
-                if raw:
-                    history[season] = float(raw)
-            except ValueError:
-                pass
-        club_history = {
-            season: (row.get(field) or "").strip()
-            for season, field in team_seasons.items()
-            if (row.get(field) or "").strip()
-        }
-        if history:
-            histories[name] = history
-        if club_history:
-            clubs[name] = club_history
-
-        latest = max(history) if history else None
-        latest_club_season = max(club_history) if club_history else None
-
-        def number(field):
-            try:
-                raw = (row.get(field) or "").strip().replace(",", ".")
-                return float(raw) if raw else None
-            except ValueError:
-                return None
-
-        players.append({
-            "nom": name,
-            "poste": (row.get("poste") or "").strip() or None,
-            "nom_equipe": club_history.get(latest_club_season) if latest_club_season is not None else None,
-            "age": number("age_actuel"),
-            "salaire": number("salaire_actuel"),
-            "celebrite": history.get(latest) if latest is not None else None,
-        })
-    if not players or not histories:
-        raise ValueError("export joueurs vide")
-    return {
-        "players": players,
-        "histories": histories,
-        "clubs": clubs,
-        "seasons": sorted(celeb_seasons),
-    }
-
-
-def player_data_cache_path():
-    return os.path.join(_config_dir(), PLAYER_DATA_NAME)
-
-
-def save_player_data(data):
-    """Valide puis écrit atomiquement le dernier export joueurs."""
-    parsed = parse_player_history_csv(data)
-    path = player_data_cache_path()
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    fd, temporary = tempfile.mkstemp(prefix="data_joueurs-", suffix=".csv",
-                                     dir=os.path.dirname(path))
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(data if isinstance(data, bytes) else data.encode("utf-8"))
-        os.replace(temporary, path)
-    except Exception:
-        try:
-            os.remove(temporary)
-        except OSError:
-            pass
-        raise
-    return parsed
-
-
-def load_bundled_player_data():
-    """Charge le cache actualisé, puis le CSV embarqué si aucun cache n'existe."""
-    paths = [player_data_cache_path(), resource_path(PLAYER_DATA_NAME)]
-    seen = set()
-    for path in paths:
-        if path in seen:
-            continue
-        seen.add(path)
-        try:
-            with open(path, "rb") as f:
-                return parse_player_history_csv(f.read())
-        except (OSError, UnicodeError, ValueError):
-            pass
-    return None
-
-
-def parse_team_roster(html):
-    """Effectif d'une équipe depuis /equipes/<nom> : liste de {nom, poste}.
-
-    Sur la page, chaque joueur est un lien `/joueurs/<nom>` immédiatement suivi
-    de son poste (GAR, DC, …) ; on apparie dans l'ordre du document.
-    """
-    d = parse_elements(html)
-    if not d:
-        return []
-    roots = [k for k, v in d.items() if v.get("tag") == "q-page"] or list(d.keys())[:1]
-    seq = []
-
-    def walk(eid):
-        v = d.get(str(eid))
-        if not v:
-            return
-        if v.get("tag") == "nicegui-link":
-            href = (v.get("props") or {}).get("href", "")
-            if href.startswith("/joueurs/") and href != "/joueurs":
-                seq.append(("player", urllib.parse.unquote(href[len("/joueurs/"):])))
-        elif v.get("text"):
-            seq.append(("text", v["text"]))
-        for c in v.get("children") or []:
-            walk(c)
-        for s in (v.get("slots") or {}).values():
-            for sid in s.get("ids", []):
-                walk(sid)
-
-    for r in roots:
-        walk(r)
-
-    roster, pending = [], None
-    for kind, val in seq:
-        if kind == "player":
-            if pending:
-                roster.append({"nom": pending, "poste": None})
-            pending = val
-        elif kind == "text" and pending and val in PLAYER_POSTES:
-            roster.append({"nom": pending, "poste": val})
-            pending = None
-    if pending:
-        roster.append({"nom": pending, "poste": None})
-    return roster
-
-
-def parse_player_info(html):
-    """Infos d'un joueur depuis la fiche /joueurs/<nom>.
-
-    Renvoie {celebrite, salaire, poste, age} (None pour ce qui manque). La
-    célébrité est un nœud texte ; le salaire annuel (M€), le poste et l'âge sont
-    dans des blocs markdown (innerHTML échappé) — on les dé-échappe puis on retire
-    les balises avant de chercher les valeurs.
-    """
-    d = parse_elements(html)
-    info = {"celebrite": None, "salaire": None, "poste": None, "age": None}
-    if not d:
-        return info
-    parts = []
-    for v in d.values():
-        if v.get("text"):
-            parts.append(v["text"])
-        inner = (v.get("props") or {}).get("innerHTML")
-        if inner:
-            parts.append(re.sub(r"<[^>]+>", " ", unescape(inner)))
-    blob = "\n".join(parts)
-    for key, rx, cast in (("celebrite", CELEB_RE, float), ("salaire", SALARY_RE, float),
-                          ("age", AGE_RE, int), ("poste", POSTE_RE, str)):
-        m = rx.search(blob)
-        if not m:
-            continue
-        raw = m.group(1)
-        try:
-            info[key] = cast(raw.replace(",", ".") if cast is float else raw)
-        except (ValueError, TypeError):
-            pass   # valeur inattendue : on laisse None plutôt que de planter
-    return info
-
-
-def parse_player_clubs(html):
-    """Historique des clubs depuis la fiche /joueurs/<nom> : {n_saison: club}."""
-    d = parse_elements(html)
-    clubs = {}
-    if not d:
-        return clubs
-    for v in d.values():
-        parts = []
-        if v.get("text"):
-            parts.append(v["text"])
-        inner = (v.get("props") or {}).get("innerHTML")
-        if inner:
-            parts.append(re.sub(r"<[^>]+>", " ", unescape(inner)))
-        for t in parts:
-            m = CLUB_RE.search(t)
-            if m:
-                clubs[int(m.group(1))] = m.group(2).strip()
-    return clubs
-
-
-def _png_rows(png):
-    """Décode un PNG RGB/RGBA 8 bits en lignes de pixels, sans dépendance externe."""
-    if not png.startswith(b"\x89PNG\r\n\x1a\n"):
-        raise ValueError("image PNG invalide")
-    pos, compressed = 8, bytearray()
-    width = height = color_type = None
-    while pos + 12 <= len(png):
-        size = struct.unpack(">I", png[pos:pos + 4])[0]
-        kind = png[pos + 4:pos + 8]
-        data = png[pos + 8:pos + 8 + size]
-        pos += size + 12
-        if kind == b"IHDR":
-            width, height, depth, color_type, _, _, interlace = struct.unpack(
-                ">IIBBBBB", data
-            )
-            if depth != 8 or color_type not in (2, 6) or interlace:
-                raise ValueError("format PNG non pris en charge")
-        elif kind == b"IDAT":
-            compressed.extend(data)
-        elif kind == b"IEND":
-            break
-    if not width or not height:
-        raise ValueError("dimensions PNG absentes")
-
-    channels = 3 if color_type == 2 else 4
-    stride = width * channels
-    raw = zlib.decompress(bytes(compressed))
-    rows, previous, offset = [], bytearray(stride), 0
-
-    def paeth(a, b, c):
-        p = a + b - c
-        pa, pb, pc = abs(p - a), abs(p - b), abs(p - c)
-        return a if pa <= pb and pa <= pc else (b if pb <= pc else c)
-
-    for _ in range(height):
-        filter_type = raw[offset]
-        offset += 1
-        row = bytearray(raw[offset:offset + stride])
-        offset += stride
-        for i in range(stride):
-            left = row[i - channels] if i >= channels else 0
-            up = previous[i]
-            upper_left = previous[i - channels] if i >= channels else 0
-            if filter_type == 1:
-                row[i] = (row[i] + left) & 255
-            elif filter_type == 2:
-                row[i] = (row[i] + up) & 255
-            elif filter_type == 3:
-                row[i] = (row[i] + (left + up) // 2) & 255
-            elif filter_type == 4:
-                row[i] = (row[i] + paeth(left, up, upper_left)) & 255
-            elif filter_type != 0:
-                raise ValueError("filtre PNG non pris en charge")
-        rows.append(row)
-        previous = row
-    return width, height, channels, rows
-
-
-def parse_celebrity_history(html, current=None):
-    """Extrait l'historique de célébrité depuis le graphique PNG d'une fiche.
-
-    Le site ne publie pas les valeurs du graphique sous forme structurée. On
-    retrouve donc les points bleus et leurs coordonnées. La valeur la plus
-    récente est ancrée sur `current` (valeur exacte de /joueurs) ; les valeurs
-    passées sont des estimations assez précises pour comparer les évolutions.
-    Renvoie {n_saison: valeur}.
-    """
-    match = CELEB_CHART_RE.search(html)
-    seasons = sorted(parse_player_clubs(html))
-    if not match or len(seasons) < 2:
-        return {}
-    try:
-        width, height, channels, rows = _png_rows(base64.b64decode(match.group(1)))
-    except Exception:
-        return {}
-
-    def dark(x, y):
-        px = rows[y][x * channels:x * channels + 3]
-        return len(px) == 3 and max(px) < 55
-
-    # Les quatre bords noirs de l'axe sont les lignes sombres les plus longues.
-    left = max(range(max(1, width // 25), max(2, width // 4)),
-               key=lambda x: sum(dark(x, y) for y in range(height // 20, height - height // 10)))
-    right = max(range(width * 3 // 4, width - max(1, width // 100)),
-                key=lambda x: sum(dark(x, y) for y in range(height // 20, height - height // 10)))
-    top = max(range(height // 25, height // 3),
-              key=lambda y: sum(dark(x, y) for x in range(left, right + 1)))
-    bottom = max(range(height // 2, height - height // 12),
-                 key=lambda y: sum(dark(x, y) for x in range(left, right + 1)))
-    if right <= left or bottom <= top:
-        return {}
-
-    # Matplotlib ajoute une marge horizontale de 5 % autour des points.
-    span = len(seasons) - 1
-    domain = span * 1.1
-    points_y = []
-    for i in range(len(seasons)):
-        expected_x = left + ((i + span * 0.05) / domain) * (right - left)
-        ys = []
-        for y in range(max(0, top - 3), min(height, bottom + 4)):
-            for x in range(max(0, round(expected_x) - 8), min(width, round(expected_x) + 9)):
-                r, g, b = rows[y][x * channels:x * channels + 3]
-                if r > 70 and g - r > 20 and b - r > 25 and b - g > 10:
-                    ys.append(y)
-        if not ys:
-            return {}
-        ys.sort()
-        mid = len(ys) // 2
-        points_y.append((ys[mid] if len(ys) % 2 else (ys[mid - 1] + ys[mid]) / 2))
-
-    scale = 100 / (bottom - top)
-    anchor = float(current) if current is not None else (bottom - points_y[-1]) * scale
-    latest_y = points_y[-1]
-    return {
-        season: round(max(0, min(100, anchor + (latest_y - y) * scale)), 1)
-        for season, y in zip(seasons, points_y)
-    }
-
-
 def fetch_competition(name):
     """Récupère une compétition. Résultats + live + calendrier 100% via l'API (plus de
     scraping HTML). Le calendrier (/calendrier_par_compet) ne donne ni date ni score :
-    les matchs à venir s'affichent sans score. Renvoie (groups, standings) au même format
-    que parse_matches/parse_standings pour rester compatible partout."""
+    les matchs à venir s'affichent sans score. Renvoie (groups, standings) au format interne
+    (groups = [{label, matches:[...]}]) pour rester compatible partout."""
     groups_by_phase = {}
     order = []
 
@@ -1463,8 +792,8 @@ def fetch_team_squad(team, season_number=None):
 def fetch_player_history(season_to=None):
     """Historique par joueur (célébrité + clubs par saison) reconstruit depuis l'API
     /infos_all_joueurs sur toutes les saisons (clé = id stable). Remplace l'export CSV
-    websocket de /joueurs. Renvoie {players, histories, clubs, seasons} au format de
-    l'ancien parse_player_history_csv (clés de saison = int) :
+    websocket de /joueurs. Renvoie {players, histories, clubs, seasons} (clés de saison
+    = int) :
       histories[nom] = {saison: célébrité} · clubs[nom] = {saison: club}
       players = [{nom, poste, nom_equipe, age, celebrite, salaire}] (dernière saison connue)."""
     if season_to is None:
@@ -1908,20 +1237,7 @@ class LiveTracker:
 # ----------------------------------------------------------------------------
 def selftest_offline():
     """Tests déterministes (sans réseau) de la détection 'live'."""
-    # 1) _subtree_has_class repère le marqueur du site, même imbriqué, et NE confond
-    #    pas avec les barres de possession (bg-red-200).
-    sample = {
-        "1": {"tag": "nicegui-expansion", "slots": {"header": {"ids": ["2"]}},
-              "children": ["5"]},
-        "2": {"tag": "div", "children": ["3", "4"]},
-        "3": {"tag": "div", "class": ["w-2", "h-2", "rounded-full", "bg-red-500"]},
-        "4": {"tag": "div", "text": "0 - 0", "class": ["text-sm", "font-bold", "text-red-600"]},
-        "5": {"tag": "div", "text": "50% - 50%", "class": ["w-48", "h-3", "bg-red-200"]},
-    }
-    assert _subtree_has_class(sample, "2", LIVE_CLASS_MARKERS) is True
-    assert _subtree_has_class(sample, "5", LIVE_CLASS_MARKERS) is False  # possession ≠ live
-
-    # 2) un match 0-0 marqué live par le site est 'live' SANS aucun changement de score,
+    # 1) un match 0-0 marqué live par le site est 'live' SANS aucun changement de score,
     #    et un match terminé (non marqué) ne l'est pas.
     tr = LiveTracker()
     groups = [{"label": "Journée 1", "matches": [
@@ -2000,37 +1316,7 @@ def selftest_offline():
     assert _median([]) is None
     print("  ✓ squad_stats OK (moyenne + médiane salaire/célébrité/âge, pair/impair)")
 
-    # 7) parse_team_roster (joueur suivi de son poste) et parse_player_info.
-    def _wrap(obj):
-        return "x parseElements(String.raw`" + json.dumps(obj) + "`) y"
-    roster_dom = {
-        "0": {"tag": "q-page", "children": ["1", "2", "3", "4", "5"]},
-        "1": {"tag": "nicegui-link", "props": {"href": "/joueurs"}, "text": "Joueurs"},
-        "2": {"tag": "nicegui-link", "props": {"href": "/joueurs/Max%20Wei"}},
-        "3": {"tag": "div", "text": "GAR"},
-        "4": {"tag": "nicegui-link", "props": {"href": "/joueurs/Jo%20Do"}},
-        "5": {"tag": "div", "text": "DC"},
-    }
-    r = parse_team_roster(_wrap(roster_dom))
-    assert [(x["nom"], x["poste"]) for x in r] == [("Max Wei", "GAR"), ("Jo Do", "DC")], r
-    # célébrité dans un nœud texte ; salaire/âge/poste dans un bloc markdown échappé.
-    player_dom = {
-        "0": {"tag": "div", "text": "Célébrité : 47.4"},
-        "1": {"tag": "nicegui-markdown",
-              "props": {"innerHTML": "&lt;p&gt;&lt;strong&gt;Salaire annuel :&lt;/strong&gt; 6.22 M€&lt;/p&gt;"}},
-        "2": {"tag": "nicegui-markdown",
-              "props": {"innerHTML": "&lt;p&gt;Poste : GAR&lt;/p&gt;&lt;p&gt;Âge : 30&lt;/p&gt;"}},
-    }
-    info = parse_player_info(_wrap(player_dom))
-    assert info == {"celebrite": 47.4, "salaire": 6.22, "poste": "GAR", "age": 30}, info
-    assert parse_player_info(_wrap({"0": {"tag": "div", "text": "rien"}})) == \
-        {"celebrite": None, "salaire": None, "poste": None, "age": None}
-    # robustesse : décimale à virgule acceptée, valeur aberrante ignorée sans planter
-    assert parse_player_info(_wrap({"0": {"tag": "div", "text": "Salaire annuel : 6,22"}}))["salaire"] == 6.22
-    assert parse_player_info(_wrap({"0": {"tag": "div", "text": "Célébrité : ."}}))["celebrite"] is None
-    print("  ✓ parse_team_roster / parse_player_info OK (+ robustesse valeurs)")
-
-    # 8) team_domain_stats : taux de finition / d'arrêt, clean sheets, occasions.
+    # 7) team_domain_stats : taux de finition / d'arrêt, clean sheets, occasions.
     gd = [
         {"label": "J1", "matches": [dict(a="A", b="B", mid="2 - 1", status="result",
             occ="4 - 2", poss="60% - 40%", site_live=False)]},
@@ -2065,22 +1351,14 @@ def selftest_offline():
         {"nom": "z", "team": "B", "player": {"poste": "AC", "nom": "z"}, "stats": {"save": 40.0}}]
     print("  ✓ league_players OK")
 
-    # 11) parse_player_clubs : historique des clubs (et pas le menu "Saison n°0").
-    clubs_dom = {
-        "0": {"tag": "nicegui-markdown", "props": {"innerHTML": "&lt;p&gt;Saison n°0&lt;/p&gt;"}},
-        "1": {"tag": "nicegui-markdown", "props": {"innerHTML": "&lt;p&gt;Saison 0 : Real Betis&lt;/p&gt;"}},
-        "2": {"tag": "div", "text": "Saison 1 : US Lecce"},
-    }
-    assert parse_player_clubs(_wrap(clubs_dom)) == {0: "Real Betis", 1: "US Lecce"}
-
-    # 12) season_domstats_from_csv : agrège un CSV de saison par équipe.
+    # 11) season_domstats_from_csv : agrège un CSV de saison par équipe.
     csv_text = ("competition,Phase,Equipe dom,Equipe ext,Score dom,Score ext,"
                 "Occas dom,Occas ext,Posses dom,Posses ext\n"
                 "L,J1,A,B,2,1,4,2,60,40\n"
                 "L,J2,B,A,0,0,1,3,45,55\n")
     sd = season_domstats_from_csv(csv_text)
     assert sd["A"]["save"] == 66.7 and sd["A"]["conv"] == 28.6 and sd["A"]["clean"] == 1
-    print("  ✓ parse_player_clubs / season_domstats_from_csv OK")
+    print("  ✓ season_domstats_from_csv OK")
 
     # 13) évolutions de célébrité : filtre poste + résumé par rôle.
     evo_players = [
@@ -2100,22 +1378,7 @@ def selftest_offline():
     assert roles["GAR"]["rise"]["nom"] == "C"
     print("  ✓ celebrity_evolution_rows / role_evolution_summary OK")
 
-    # 14) export joueurs : saisons détectées dynamiquement + données exactes.
-    player_csv = (
-        "nom,poste,age_actuel,salaire_actuel,nom_equipe_0,nom_equipe_1,"
-        "nom_equipe_3,celebrite_0,celebrite_1,celebrite_3\n"
-        "A,MOFF,24,12.5,X,Y,Z,70.0,75.5,71.2\n"
-        "B,GAR,30,,Q,Q,,40,42,\n"
-    )
-    parsed = parse_player_history_csv(player_csv)
-    assert parsed["seasons"] == [0, 1, 3]
-    assert parsed["histories"]["A"] == {0: 70.0, 1: 75.5, 3: 71.2}
-    assert parsed["clubs"]["A"] == {0: "X", 1: "Y", 3: "Z"}
-    assert parsed["players"][0]["nom_equipe"] == "Z"
-    assert parsed["players"][1]["salaire"] is None
-    print("  ✓ parse_player_history_csv OK (saisons dynamiques, valeurs manquantes)")
-
-    # 14b) modèle mercato / simulation (coût contrat, prolongation, force par domaine).
+    # 14) modèle mercato / simulation (coût contrat, prolongation, force par domaine).
     assert contract_cost(2.0, 3) == 6.0 and contract_cost(2.0, 1) == 2.0
     assert extension_cost(4.0, 5.0) == 5.5      # célébrité montée -> +10%
     assert extension_cost(5.0, 4.0) == 5.0      # célébrité baissée -> ancien salaire

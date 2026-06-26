@@ -11,6 +11,7 @@ import threading
 import time
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import foot_scores as _fs
 from foot_scores import *  # noqa: F401,F403 - réexporte toute la logique du cœur
