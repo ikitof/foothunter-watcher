@@ -374,6 +374,19 @@ def api_joueur_saison(nom_joueur, season_number=None):
         return {}
 
 
+def api_calendrier(season_number=None):
+    """Calendrier (matchs PROGRAMMÉS) via /api/calendrier_par_compet ->
+    {compétition: {phase: [{nom_equipe_dom, nom_equipe_ext}, ...]}}. {} si injoignable.
+    Ni date ni score (non exposés par l'API) : sert aux affiches à venir pas encore jouées."""
+    if season_number is None:
+        season_number = SEASON
+    try:
+        d = _api_get_json(f"{API_BASE}/calendrier_par_compet?season_number={int(season_number)}", ttl=600)
+        return d.get("resultats") or {}
+    except Exception:
+        return {}
+
+
 
 
 def role_scout_rows(competition, poste, pool):
@@ -1359,9 +1372,10 @@ def parse_celebrity_history(html, current=None):
 
 
 def fetch_competition(name):
-    """Récupère une compétition. Résultats + live via l'API ; calendrier (matchs à
-    venir + dates) via le HTML, que l'API ne fournit pas. Renvoie (groups, standings)
-    au même format que parse_matches/parse_standings pour rester compatible partout."""
+    """Récupère une compétition. Résultats + live + calendrier 100% via l'API (plus de
+    scraping HTML). Le calendrier (/calendrier_par_compet) ne donne ni date ni score :
+    les matchs à venir s'affichent sans score. Renvoie (groups, standings) au même format
+    que parse_matches/parse_standings pour rester compatible partout."""
     groups_by_phase = {}
     order = []
 
@@ -1376,11 +1390,9 @@ def fetch_competition(name):
     live = _live_index(name)
 
     # 1) Résultats joués (API), avec le score frais + « but imminent » si en direct.
-    api_had_results = False
     for o in api_season_matches(SEASON):
         if o.get("competition") != name:
             continue
-        api_had_results = True
         m = _api_match_to_dict(o)
         lo = live.pop((o.get("Equipe dom"), o.get("Equipe ext")), None)
         if lo is not None:
@@ -1391,23 +1403,18 @@ def fetch_competition(name):
     for lo in live.values():
         bucket("En direct").append(_live_match_to_dict(lo))
 
-    # 3) Calendrier (matchs à venir + dates) depuis le HTML — absent de l'API. Repli
-    #    résilient : si l'API n'a renvoyé AUCUN résultat, on prend aussi les résultats
-    #    HTML pour ne pas afficher une page vide. Dédoublonnage sur (a, b) déjà présents.
-    try:
-        d = parse_elements(http_get(SAISON_PATH + "/" + urllib.parse.quote(name)))
-        if d:
-            seen = {(m.get("a"), m.get("b")) for ms in groups_by_phase.values() for m in ms}
-            for g in parse_matches(d):
-                for m in g["matches"]:
-                    if (m.get("a"), m.get("b")) in seen:
-                        continue
-                    if m.get("status") == "scheduled" or (
-                            not api_had_results and m.get("status") == "result"):
-                        bucket(g["label"]).append(m)
-                        seen.add((m.get("a"), m.get("b")))
-    except Exception:
-        pass
+    # 3) Calendrier (matchs programmés) via l'API /calendrier_par_compet — sans date ni
+    #    score. On n'ajoute que les rencontres absentes des résultats/live : ce sont les
+    #    matchs pas encore joués. Dédoublonnage sur (a, b).
+    seen = {(m.get("a"), m.get("b")) for ms in groups_by_phase.values() for m in ms}
+    for phase, fixtures in (api_calendrier(SEASON).get(name) or {}).items():
+        for fx in fixtures:
+            a, b = fx.get("nom_equipe_dom"), fx.get("nom_equipe_ext")
+            if not a or not b or (a, b) in seen:
+                continue
+            bucket(phase).append(dict(a=a, b=b, mid=None, status="scheduled",
+                                      poss=None, occ=None, site_live=False))
+            seen.add((a, b))
 
     groups = [{"label": ph, "matches": groups_by_phase[ph]}
               for ph in order if groups_by_phase[ph]]
@@ -2157,10 +2164,12 @@ def selftest():
             tag += f"  🔴 {gl} live" if gl else ""
             print(f"   {g['label']} ({len(g['matches'])}){tag}")
         print(f"  → {n_live} match(s) EN DIRECT selon le site (marqueur rouge)")
-        # simulate a score change to prove live-detection works
-        g = groups[cur]
-        if g["matches"]:
-            m = g["matches"][0]
+        # simulate a score change to prove live-detection works (sur un match DÉJÀ JOUÉ :
+        # depuis la bascule calendrier API, les matchs programmés ont mid=None).
+        played = [mm for gg in groups for mm in gg["matches"]
+                  if mm["status"] == "result" and mm["mid"]]
+        if played:
+            m = played[0]
             old = m["mid"]
             m["mid"] = "9 - 9"
             m["status"] = "result"
