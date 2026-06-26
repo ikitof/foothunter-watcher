@@ -115,12 +115,14 @@ def live():
 
 @app.get("/api/competition/{name}")
 def competition(name: str):
-    groups, standings = core.fetch_competition(name)
+    groups, _ = core.fetch_competition(name)
+    # leaderboard() = classement brut (team/played/points/gf/ga/gd...) attendu par la SPA,
+    # calculé depuis les résultats — y compris partiel pour la saison en cours.
     return {
         "name": name,
         "groups": [{"label": g["label"], "matches": [_match(m) for m in g["matches"]]}
                    for g in groups],
-        "standings": standings,
+        "standings": core.leaderboard(groups),
     }
 
 
