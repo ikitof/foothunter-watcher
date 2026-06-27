@@ -95,8 +95,21 @@
     <!-- LIVE -->
     <section v-if="tab==='live'">
       <div class="card">
-        <h2 style="margin:0">En direct <span class="note">· rafraîchi toutes les 10 s · <span style="color:var(--flash)">⚡</span> = occasion, but possible</span></h2>
-        <div v-if="!live.length" class="muted" style="margin-top:8px">Aucun match en direct pour l'instant.</div>
+        <div class="row" style="justify-content:space-between">
+          <h2 style="margin:0">En direct <span class="note">· rafraîchi toutes les 10 s · <span style="color:var(--flash)">⚡</span> = occasion</span></h2>
+          <button class="ghost" @click="liveFilterOpen=!liveFilterOpen">Compétitions : {{liveSel===null?'toutes':liveSel.length}} ▾</button>
+        </div>
+        <div v-if="liveFilterOpen" style="margin-top:8px">
+          <div class="row" style="margin-bottom:6px">
+            <button class="ghost" @click="allLive">Toutes</button>
+            <button class="ghost" @click="noneLive">Aucune</button>
+            <span class="note">Choisis les compétitions à suivre en direct.</span>
+          </div>
+          <div class="pills">
+            <span v-for="c in competitions" :key="c" class="pill" :class="{on:liveOn(c)}" @click="toggleLive(c)">{{c}}</span>
+          </div>
+        </div>
+        <div v-if="!liveCount" class="muted" style="margin-top:8px">{{ live.length ? 'Aucun match en direct dans les compétitions choisies.' : 'Aucun match en direct actuellement.' }}</div>
         <div v-for="(ms,comp) in liveByComp" :key="comp">
           <h3 class="lk" @click="openComp(comp)">{{comp}} ↗</h3>
           <div class="match" v-for="(m,i) in ms" :key="i" :class="{hot:m.occas_dom||m.occas_ext}">
@@ -379,7 +392,7 @@ createApp({
       {id:'explorer',label:'Explorer'},{id:'evolution',label:'Évolutions'},{id:'mercato',label:'Mercato'},
       {id:'palmares',label:'🏆 Palmarès'}],
     tab:'live', season:null, competitions:[], error:'',
-    live:[], liveTimer:null, liveStale:false,
+    live:[], liveTimer:null, liveStale:false, liveSel:null, liveFilterOpen:false,
     comp:'', compData:null, stSort:{key:'',dir:-1},
     leagues:[], scoutLeagues:[], majors:[], postes:['GAR','DC','LAT','MDEF','MOFF','AIL','AC'],
     teamComp:'', teamMetric:'gf_pm', teamData:null,
@@ -394,8 +407,9 @@ createApp({
     gameBase:'', detail:null,
   }},
   computed:{
-    liveByComp(){const o={};for(const m of this.live){const k=m.competition||'Autres';(o[k]=o[k]||[]).push(m)}return o;},
-    liveCount(){return this.live.length;},
+    liveByComp(){const o={};for(const m of this.live){const k=m.competition||'Autres';
+      if(this.liveSel!==null&&!this.liveSel.includes(k))continue;(o[k]=o[k]||[]).push(m)}return o;},
+    liveCount(){let n=0;const o=this.liveByComp;for(const k in o)n+=o[k].length;return n;},
     poolByPoste(){const o={};for(const p of this.pool){(o[p.poste]=o[p.poste]||[]).push(p)}
       for(const k in o)o[k].sort((a,b)=>(b.celebrite||0)-(a.celebrite||0));return o;},
     sortedTeams(){if(!this.teamData)return[];const m=this.teamMetric;
@@ -447,6 +461,8 @@ createApp({
         this.leagues=this.scoutLeagues.slice();
         this.sc.leagues=(this.majors.length?this.majors:this.scoutLeagues).slice();
         this.comp=this.competitions[0]||'';this.teamComp=this.comp;this.error='';
+        try{const ls=JSON.parse(localStorage.getItem('fh_liveSel'));
+          this.liveSel=Array.isArray(ls)?ls.filter(c=>this.competitions.includes(c)):null;}catch(e){}
       }catch(e){this.error='API injoignable';}
       this.refreshLive(); this.liveTimer=setInterval(this.refreshLive,10000);
       const q=new URLSearchParams(location.search);
@@ -505,6 +521,15 @@ createApp({
     openComp(c){if(!c)return;if(!this.competitions.includes(c))this.competitions.push(c);
       this.detail=null;this.setUrl({});this.comp=c;this.tab='comp';this.loadComp();},
     closeDetail(){this.detail=null;this.setUrl({});},
+    liveOn(c){return this.liveSel===null||this.liveSel.includes(c);},
+    toggleLive(c){
+      if(this.liveSel===null)this.liveSel=this.competitions.filter(x=>x!==c);
+      else{const i=this.liveSel.indexOf(c);i<0?this.liveSel.push(c):this.liveSel.splice(i,1);}
+      if(this.liveSel&&this.liveSel.length===this.competitions.length)this.liveSel=null;
+      this.persistLive();},
+    allLive(){this.liveSel=null;this.persistLive();},
+    noneLive(){this.liveSel=[];this.persistLive();},
+    persistLive(){try{localStorage.setItem('fh_liveSel',JSON.stringify(this.liveSel));}catch(e){}},
   },
   watch:{ detail(v){document.body.style.overflow=v?'hidden':'';} },
   mounted(){this.boot();
