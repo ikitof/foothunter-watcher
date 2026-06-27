@@ -279,11 +279,11 @@
             {{evalData.aggregate.count}}/7 · célé moy. {{evalData.aggregate.avg_celebrite||'—'}} ·
             âge moy. {{evalData.aggregate.avg_age||'—'}} · masse sal. {{evalData.aggregate.total_salaire}} M€
           </div>
-          <h3 style="margin-top:0">Investissement par domaine (M€)</h3>
-          <div class="note" style="margin-bottom:6px">Où va le budget (réparti selon la contribution de chaque poste aux domaines, manuel) — pas une mesure de force.</div>
+          <h3 style="margin-top:0">Masse salariale par domaine (M€/an)</h3>
+          <div class="note" style="margin-bottom:6px">Salaire <b>annuel</b> réparti selon la contribution de chaque poste aux domaines (manuel) — indépendant de la durée du contrat ; montre où va le budget, pas une mesure de force.</div>
           <div v-for="d in evalData.domains" :key="d" style="margin:5px 0">
             <div class="row" style="justify-content:space-between"><span>{{evalData.domain_labels[d]}}</span><span class="muted">{{evalData.investment[d]}}</span></div>
-            <div class="bar"><i :style="{width:invBarW(evalData.investment[d])+'%'}"></i></div>
+            <div class="bar"><i :style="{width:pctOf(evalData.investment[d],evalData.investment)+'%'}"></i></div>
           </div>
         </div>
       </div>
@@ -353,6 +353,14 @@
               <td class="num">{{fmt(p.celebrite)}}</td><td class="num">{{fmt(p.salaire)}}</td><td class="num">{{p.age||'—'}}</td>
             </tr>
           </table></div>
+          <template v-if="detail.investment">
+            <h3>Masse salariale par domaine (M€/an)</h3>
+            <div class="note" style="margin-bottom:6px">Où va le budget de l'équipe : salaire annuel réparti par domaine selon la contribution des postes (manuel).</div>
+            <div v-for="d in detail.domains" :key="d" style="margin:4px 0">
+              <div class="row" style="justify-content:space-between"><span>{{detail.domain_labels[d]}}</span><span class="muted">{{detail.investment[d]}}</span></div>
+              <div class="bar"><i :style="{width:pctOf(detail.investment[d],detail.investment)+'%'}"></i></div>
+            </div>
+          </template>
           <a class="ext" :href="gameBase+'/equipes/'+encodeURIComponent(detail.team)" target="_blank" rel="noopener">Voir sur Foothunter ↗</a>
         </template>
       </template>
@@ -411,7 +419,7 @@ createApp({
     fmt(v){return v==null?'—':(Math.round(v*10)/10);},
     isLeague(c){return this.scoutLeagues.includes(c);},
     slotKey(p){return (p.nom||'')+'@'+(p.nom_equipe||'');},
-    invBarW(v){const max=Math.max(...this.evalData.domains.map(d=>this.evalData.investment[d]||0),1);return 100*(v||0)/max;},
+    pctOf(val,obj){const m=Math.max(...Object.values(obj||{}).map(x=>x||0),1);return 100*(val||0)/m;},
     teamBarW(t){const m=this.teamMetric,max=Math.max(...this.teamData.teams.map(x=>x[m]||0),0.0001);return 100*(t[m]||0)/max;},
     celCell(p,s){const v=p.celebrite[s];if(v==null)return{};const prev=p.celebrite[s-1];
       if(prev==null)return{};return{color:v>prev?'var(--green)':(v<prev?'var(--live)':'')};},

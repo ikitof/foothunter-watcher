@@ -147,7 +147,10 @@ def team(name: str):
     squad = sorted((p for p in player_pool() if p.get("nom_equipe") == name),
                    key=lambda p: merc.TEAM_POSTES.index(p["poste"])
                    if p.get("poste") in merc.TEAM_POSTES else 99)
-    return {"team": name, "squad": squad, "aggregate": merc.squad_aggregate(squad)}
+    salaries = [(p.get("poste"), p.get("salaire")) for p in squad]
+    return {"team": name, "squad": squad, "aggregate": merc.squad_aggregate(squad),
+            "investment": merc.team_domain_investment(salaries),
+            "domains": merc.DOMAINS, "domain_labels": merc.DOMAIN_LABELS}
 
 
 @app.get("/api/scout")
@@ -281,15 +284,16 @@ def palmares():
 def mercato_evaluate(body: dict = Body(...)):
     squad = body.get("squad") or {}        # {poste: player}
     years = body.get("years") or {}        # {poste: 1|2|3}
-    signings, total = [], 0.0
+    total, salaries = 0.0, []
     for poste, p in squad.items():
-        cost = merc.contract_cost((p or {}).get("salaire"), years.get(poste, 1))
-        signings.append((poste, cost))
+        sal = (p or {}).get("salaire")
+        cost = merc.contract_cost(sal, years.get(poste, 1))   # cash payé d'avance = salaire×années
         if cost:
             total += cost
+        salaries.append((poste, sal))      # répartition par domaine = salaire ANNUEL (pas ×années)
     return {
         "aggregate": merc.squad_aggregate([p for p in squad.values() if p]),
-        "investment": merc.team_domain_investment(signings),
+        "investment": merc.team_domain_investment(salaries),
         "domains": merc.DOMAINS, "domain_labels": merc.DOMAIN_LABELS,
         "total_cost": round(total, 2),
     }
