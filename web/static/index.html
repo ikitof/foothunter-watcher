@@ -182,20 +182,29 @@
     <!-- ÉVOLUTIONS -->
     <section v-if="tab==='evolution'">
       <div class="card">
-        <div class="row"><h2 style="margin:0">Évolution de célébrité</h2>
-          <input v-model="evoSearch" placeholder="chercher un joueur…" style="flex:1;min-width:160px">
-          <span class="muted" v-if="evoData">{{evoData.seasons.length}} saisons · vert = hausse, rouge = baisse</span>
+        <h2 style="margin:0 0 8px">Évolution de célébrité</h2>
+        <div class="row">
+          <input v-model="evoSearch" placeholder="joueur…" style="width:150px">
+          <select v-model="evoLeague"><option value="Toutes">Toutes ligues</option><option v-for="l in (evoData?evoData.leagues:[])" :key="l" :value="l">{{l}}</option></select>
+          <label>≤ <input type="number" v-model="evoPmax" placeholder="prix" style="width:70px"> M€</label>
+          <select v-model="evoSort">
+            <option value="var">Plus grosses variations</option>
+            <option value="cel">Célébrité</option>
+            <option value="nom">Nom</option>
+          </select>
+          <span class="muted" style="font-size:12px">Δ = variation de célé · vert ↑ / rouge ↓</span>
         </div>
       </div>
       <div class="card" v-if="evoData">
         <div class="scroll"><table>
-          <tr><th>Joueur</th><th>Poste</th><th>Club</th><th class="num" v-for="s in evoData.seasons" :key="s">S{{s}}</th></tr>
+          <tr><th>Joueur</th><th>Poste</th><th>Club</th><th class="num">Δ</th><th class="num" v-for="s in evoData.seasons" :key="s">S{{s}}</th></tr>
           <tr v-for="p in evoRows" :key="p.id">
             <td class="lk" @click="openPlayer(p.nom)">{{p.nom}}</td><td class="muted">{{p.poste}}</td><td class="lk" @click="openTeam(p.club)">{{p.club}}</td>
+            <td class="num" :style="{color:p.var>0?'var(--green)':(p.var<0?'var(--live)':'var(--muted)')}">{{p.var>0?'+':''}}{{p.var}}</td>
             <td class="num" v-for="s in evoData.seasons" :key="s" :style="celCell(p,s)">{{p.celebrite[s]!=null?Math.round(p.celebrite[s]):'·'}}</td>
           </tr>
         </table></div>
-        <div class="muted" v-if="evoRows.length>=80" style="margin-top:6px">80 joueurs affichés — affine la recherche.</div>
+        <div class="muted" v-if="evoRows.length>=80" style="margin-top:6px">80 joueurs affichés — affine les filtres.</div>
       </div>
     </section>
 
@@ -327,7 +336,7 @@ createApp({
     metrics:[['gf_pm','Buts / match'],['ga_pm','Encaissés / match'],['poss','Possession %'],
       ['conv','Conversion %'],['save','Arrêts %'],['clean','Clean sheets'],['occ_for_pm','Occasions / match']],
     sc:{poste:'GAR', pmax:200, adv:'tous', leagues:[...MAJORS]}, scoutData:null,
-    evoData:null, evoSearch:'',
+    evoData:null, evoSearch:'', evoLeague:'Toutes', evoPmax:'', evoSort:'var',
     pool:[], squad:{}, years:{}, evalData:null,
     saveCode:'', loadCode:'', loadErr:'',
     palmares:null,
@@ -340,8 +349,17 @@ createApp({
       for(const k in o)o[k].sort((a,b)=>(b.celebrite||0)-(a.celebrite||0));return o;},
     sortedTeams(){if(!this.teamData)return[];const m=this.teamMetric;
       return[...this.teamData.teams].filter(t=>t[m]!=null).sort((a,b)=>(b[m])-(a[m]));},
-    evoRows(){if(!this.evoData)return[];const q=this.evoSearch.toLowerCase().trim();
-      let a=this.evoData.players;if(q)a=a.filter(p=>(p.nom||'').toLowerCase().includes(q));return a.slice(0,80);},
+    evoRows(){if(!this.evoData)return[];let a=this.evoData.players;
+      const q=this.evoSearch.toLowerCase().trim();
+      if(q)a=a.filter(p=>(p.nom||'').toLowerCase().includes(q));
+      if(this.evoLeague!=='Toutes')a=a.filter(p=>p.league===this.evoLeague);
+      const hi=parseFloat(this.evoPmax);
+      if(!isNaN(hi))a=a.filter(p=>p.salaire_cur!=null&&p.salaire_cur<=hi);
+      a=[...a];
+      if(this.evoSort==='var')a.sort((x,y)=>Math.abs(y.var||0)-Math.abs(x.var||0));
+      else if(this.evoSort==='cel')a.sort((x,y)=>(y.peak||0)-(x.peak||0));
+      else a.sort((x,y)=>(x.nom||'').localeCompare(y.nom||''));
+      return a.slice(0,80);},
   },
   methods:{
     fmt(v){return v==null?'—':(Math.round(v*10)/10);},

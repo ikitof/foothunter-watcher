@@ -168,13 +168,30 @@ _evo = {"data": None, "ts": 0.0}
 _evo_lock = threading.Lock()
 
 
+def _club_league_map():
+    """club -> championnat (SCOUT_LEAGUES) pour la saison courante, via le calendrier."""
+    m = {}
+    for comp, phases in (core.api_calendrier(core.SEASON) or {}).items():
+        if comp not in merc.SCOUT_LEAGUES:   # championnats seulement (pas les coupes)
+            continue
+        for fixtures in phases.values():
+            for fx in fixtures:
+                for k in ("nom_equipe_dom", "nom_equipe_ext"):
+                    t = fx.get(k)
+                    if t:
+                        m.setdefault(t, comp)
+    return m
+
+
 def evolution_cached():
-    """Historique de célébrité + clubs par joueur, reconstruit depuis /infos_all_joueurs
-    sur toutes les saisons (clé = id stable). Web-only : ne touche pas aux scrapers de l'app."""
+    """Historique par joueur (célébrité + clubs par saison) reconstruit depuis
+    /infos_all_joueurs (clé = id stable), enrichi du salaire/ligue actuels et de la
+    variation de célébrité (dernière saison connue - première). Web-only."""
     with _evo_lock:
         now = time.time()
         if _evo["data"] is None or now - _evo["ts"] > 1800:
             seasons = list(range(core.SEASON + 1))
+            leagues = _club_league_map()
             by_id = {}
             for sn in seasons:
                 for p in core.api_all_joueurs(sn):
@@ -182,23 +199,32 @@ def evolution_cached():
                     if pid is None:
                         continue
                     e = by_id.setdefault(pid, {"id": pid, "nom": None, "poste": None,
-                                               "celebrite": {}, "clubs": {}})
+                                               "celebrite": {}, "clubs": {}, "salaire": {}})
                     e["nom"] = p.get("nom") or e["nom"]
                     e["poste"] = p.get("poste") or e["poste"]
                     if p.get("celebrite") is not None:
                         e["celebrite"][sn] = p["celebrite"]
                     if p.get("nom_equipe"):
                         e["clubs"][sn] = p["nom_equipe"]
+                    if p.get("salaire") is not None:
+                        e["salaire"][sn] = p["salaire"]
             players = []
             for e in by_id.values():
-                if not e["nom"] or not e["celebrite"]:
+                cel = e["celebrite"]
+                if not e["nom"] or not cel:
                     continue
                 ls = max(e["clubs"]) if e["clubs"] else None
                 e["club"] = e["clubs"].get(ls) if ls is not None else None
-                e["peak"] = max(e["celebrite"].values())
+                e["league"] = leagues.get(e["club"])
+                lsal = max(e["salaire"]) if e["salaire"] else None
+                e["salaire_cur"] = e["salaire"].get(lsal) if lsal is not None else None
+                lo, hi = min(cel), max(cel)
+                e["var"] = round(cel[hi] - cel[lo], 1)        # tendance globale (signée)
+                e["peak"] = max(cel.values())
                 players.append(e)
             players.sort(key=lambda e: -e["peak"])
-            _evo["data"] = {"seasons": seasons, "players": players}
+            _evo["data"] = {"seasons": seasons, "players": players,
+                            "leagues": sorted({v for v in leagues.values() if v})}
             _evo["ts"] = now
         return _evo["data"]
 
