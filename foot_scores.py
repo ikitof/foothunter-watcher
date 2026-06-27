@@ -455,9 +455,12 @@ def role_scout_multi(competitions, poste, pool):
 
 
 # ----------------------------------------------------------------------------
-# Palmarès : records marquants sur TOUS les matchs joués (saisons terminées +
-# courante). 100% factuel — uniquement des matchs réellement joués et leurs stats.
+# Palmarès : records marquants sur les matchs joués (saisons terminées + courante).
+# 100% factuel — uniquement des matchs réellement joués et leurs stats.
+# Les saisons 0 et 1 se jouaient en ligues AMATEUR -> exclues du palmarès (records
+# faussés). On ne compte donc que les saisons >= PALMARES_MIN_SEASON.
 # ----------------------------------------------------------------------------
+PALMARES_MIN_SEASON = 2
 # (clé, titre affiché, sous-titre). L'ordre est l'ordre d'affichage. Records de MATCH
 # d'abord, puis records d'ÉQUIPE sur une saison (championnats uniquement).
 PALMARES_CATEGORIES = [
@@ -596,20 +599,23 @@ def compute_palmares(matches, budgets, top=3, min_team_matches=6):
     return out
 
 
-def palmares_data(top=3):
-    """Récupère tous les matchs joués (saisons terminées + courante) et les budgets par
-    saison, puis calcule les records. RÉSEAU : à appeler hors du thread UI. Renvoie
-    (records, nb_matchs_analysés)."""
+def palmares_data(top=3, min_season=PALMARES_MIN_SEASON):
+    """Récupère les matchs joués (saisons terminées + courante) et les budgets par saison,
+    puis calcule les records. Exclut les saisons < min_season (0-1 = ligues amateur, records
+    faussés). RÉSEAU : à appeler hors du thread UI. Renvoie (records, nb_matchs_analysés)."""
     matches = []
     for skey, lst in (api_all_matchs() or {}).items():
         sn = int("".join(c for c in skey if c.isdigit()) or "-1")
+        if sn < min_season:
+            continue
         for m in (lst or []):
             matches.append((sn, m))
-    try:
-        for m in api_season_matches(SEASON):
-            matches.append((SEASON, m))
-    except Exception:
-        pass
+    if SEASON >= min_season:
+        try:
+            for m in api_season_matches(SEASON):
+                matches.append((SEASON, m))
+        except Exception:
+            pass
     budgets = {}
     for sn in {s for s, _m in matches}:
         b = {}

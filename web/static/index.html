@@ -292,7 +292,7 @@
     <!-- PALMARÈS -->
     <section v-if="tab==='palmares'">
       <div class="card">
-        <h2>Palmarès <span class="note" v-if="palmares">· {{palmares.n_matches}} matchs joués, 100% factuel</span></h2>
+        <h2>Palmarès <span class="note" v-if="palmares">· {{palmares.n_matches}} matchs joués · saisons amateurs (0-1) exclues · 100% factuel</span></h2>
       </div>
       <div v-if="!palmares" class="card muted">{{error||'Chargement…'}}</div>
       <div class="card" v-for="cat in (palmares?palmares.categories:[])" :key="cat[0]" v-show="(palmares.records[cat[0]]||[]).length">
