@@ -95,21 +95,16 @@
     <!-- LIVE -->
     <section v-if="tab==='live'">
       <div class="card">
-        <div class="row" style="justify-content:space-between">
-          <h2 style="margin:0">En direct <span class="note">· rafraîchi toutes les 10 s · <span style="color:var(--flash)">⚡</span> = occasion</span></h2>
-          <button class="ghost" @click="liveFilterOpen=!liveFilterOpen">Compétitions : {{liveSel===null?'toutes':liveSel.length}} ▾</button>
-        </div>
-        <div v-if="liveFilterOpen" style="margin-top:8px">
-          <div class="row" style="margin-bottom:6px">
-            <button class="ghost" @click="allLive">Toutes</button>
-            <button class="ghost" @click="noneLive">Aucune</button>
-            <span class="note">Choisis les compétitions à suivre en direct.</span>
-          </div>
-          <div class="pills">
+        <h2 style="margin:0 0 8px">En direct <span class="note">· rafraîchi toutes les 10 s · <span style="color:var(--flash)">⚡</span> = occasion, but possible</span></h2>
+        <div class="row" style="align-items:flex-start;margin-bottom:8px">
+          <span class="note" style="margin-top:7px;white-space:nowrap">Ligues suivies :</span>
+          <div class="pills" style="flex:1">
             <span v-for="c in competitions" :key="c" class="pill" :class="{on:liveOn(c)}" @click="toggleLive(c)">{{c}}</span>
           </div>
+          <button class="ghost" @click="allLive">Toutes</button>
+          <button class="ghost" @click="noneLive">Aucune</button>
         </div>
-        <div v-if="!liveCount" class="muted" style="margin-top:8px">{{ live.length ? 'Aucun match en direct dans les compétitions choisies.' : 'Aucun match en direct actuellement.' }}</div>
+        <div v-if="!liveCount" class="muted" style="margin-top:8px">{{ live.length ? 'Aucun match en direct dans les ligues choisies.' : 'Aucun match en direct actuellement.' }}</div>
         <div v-for="(ms,comp) in liveByComp" :key="comp">
           <h3 class="lk" @click="openComp(comp)">{{comp}} ↗</h3>
           <div class="match" v-for="(m,i) in ms" :key="i" :class="{hot:m.occas_dom||m.occas_ext}">
@@ -392,7 +387,7 @@ createApp({
       {id:'explorer',label:'Explorer'},{id:'evolution',label:'Évolutions'},{id:'mercato',label:'Mercato'},
       {id:'palmares',label:'🏆 Palmarès'}],
     tab:'live', season:null, competitions:[], error:'',
-    live:[], liveTimer:null, liveStale:false, liveSel:null, liveFilterOpen:false,
+    live:[], liveTimer:null, liveStale:false, liveSel:null,
     comp:'', compData:null, stSort:{key:'',dir:-1},
     leagues:[], scoutLeagues:[], majors:[], postes:['GAR','DC','LAT','MDEF','MOFF','AIL','AC'],
     teamComp:'', teamMetric:'gf_pm', teamData:null,
