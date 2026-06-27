@@ -56,6 +56,16 @@
   code.codebox{background:var(--card2);padding:3px 8px;border-radius:6px;font-size:14px;letter-spacing:1px}
   .match.hot{background:rgba(240,192,64,.09);border-radius:6px}
   .t.hot{color:var(--flash);font-weight:600}
+  .lk{color:var(--accent);cursor:pointer}.lk:hover{text-decoration:underline}
+  .clk{cursor:pointer}.clk:hover{text-decoration:underline}
+  .ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;
+    align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+  .modal{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    max-width:480px;width:100%;padding:16px}
+  .modal h2{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .x{background:transparent;border:0;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
+  .ext{display:inline-block;margin-top:12px;color:var(--accent);font-size:13px;text-decoration:none}
+  .ext:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -79,11 +89,11 @@
         <h2 style="margin:0">En direct <span class="muted" style="font-weight:400">· rafraîchi toutes les 10 s · <span style="color:var(--flash)">⚡</span> = occasion, but possible</span></h2>
         <div v-if="!live.length" class="muted" style="margin-top:8px">Aucun match en direct pour l'instant.</div>
         <div v-for="(ms,comp) in liveByComp" :key="comp">
-          <h3>{{comp}}</h3>
+          <h3 class="lk" @click="openComp(comp)">{{comp}}</h3>
           <div class="match" v-for="(m,i) in ms" :key="i" :class="{hot:m.occas_dom||m.occas_ext}">
-            <span class="t" :class="{hot:m.occas_dom}"><span v-if="m.occas_dom" class="imminent">⚡</span>{{m.nom_equipe_dom}}</span>
+            <span class="t" :class="{hot:m.occas_dom}"><span v-if="m.occas_dom" class="imminent">⚡</span><span class="clk" @click="openTeam(m.nom_equipe_dom)">{{m.nom_equipe_dom}}</span></span>
             <span class="sc live">{{m.score_dom}} - {{m.score_ext}}<span class="dot"></span></span>
-            <span class="t away" :class="{hot:m.occas_ext}">{{m.nom_equipe_ext}}<span v-if="m.occas_ext" class="imminent">⚡</span></span>
+            <span class="t away" :class="{hot:m.occas_ext}"><span class="clk" @click="openTeam(m.nom_equipe_ext)">{{m.nom_equipe_ext}}</span><span v-if="m.occas_ext" class="imminent">⚡</span></span>
           </div>
         </div>
       </div>
@@ -103,9 +113,9 @@
           <div v-for="g in compData.groups" :key="g.label">
             <h3>{{g.label||'—'}}</h3>
             <div class="match" v-for="(m,i) in g.matches" :key="i">
-              <span class="t">{{m.a}}</span>
+              <span class="t clk" @click="openTeam(m.a)">{{m.a}}</span>
               <span class="sc" :class="{live:m.site_live}">{{m.mid||'—'}}</span>
-              <span class="t away">{{m.b}}</span>
+              <span class="t away clk" @click="openTeam(m.b)">{{m.b}}</span>
             </div>
           </div>
         </div>
@@ -115,7 +125,7 @@
             <tr><th>#</th><th>Équipe</th><th class="num">J</th><th class="num">Pts</th>
               <th class="num">BP</th><th class="num">BC</th><th class="num">Diff</th></tr>
             <tr v-for="(s,i) in compData.standings" :key="s.team">
-              <td class="muted">{{i+1}}</td><td>{{s.team}}</td>
+              <td class="muted">{{i+1}}</td><td class="lk" @click="openTeam(s.team)">{{s.team}}</td>
               <td class="num">{{s.played}}</td><td class="num">{{s.points}}</td>
               <td class="num">{{s.gf}}</td><td class="num">{{s.ga}}</td><td class="num">{{s.gd}}</td>
             </tr>
@@ -134,7 +144,7 @@
       </div>
       <div class="card" v-if="teamData">
         <div v-for="t in sortedTeams" :key="t.team" style="margin:7px 0">
-          <div class="row" style="justify-content:space-between"><span>{{t.team}} <span class="muted" style="font-size:11px">({{t.played}}j)</span></span><span class="muted">{{fmt(t[teamMetric])}}</span></div>
+          <div class="row" style="justify-content:space-between"><span><span class="lk" @click="openTeam(t.team)">{{t.team}}</span> <span class="muted" style="font-size:11px">({{t.played}}j)</span></span><span class="muted">{{fmt(t[teamMetric])}}</span></div>
           <div class="bar"><i :style="{width:teamBarW(t)+'%'}"></i></div>
         </div>
       </div>
@@ -159,7 +169,7 @@
           <tr><th>Joueur</th><th>Équipe</th><th>Ligue</th><th class="num">{{scoutData.stat_label}}</th>
             <th class="num">Adv.</th><th class="num">Célé</th><th class="num">M€</th><th></th></tr>
           <tr v-for="r in scoutData.rows" :key="r.nom+r.team">
-            <td>{{r.nom}}</td><td class="muted">{{r.team}}</td><td class="muted">{{r.competition}}</td>
+            <td class="lk" @click="openPlayer(r.nom)">{{r.nom}}</td><td class="lk" @click="openTeam(r.team)">{{r.team}}</td><td class="lk" @click="openComp(r.competition)">{{r.competition}}</td>
             <td class="num" style="color:var(--accent)">{{fmt(r.stat)}}</td>
             <td class="num">{{fmt(r[scoutData.adv_key])}}</td>
             <td class="num">{{fmt(r.celebrite)}}</td><td class="num">{{fmt(r.salaire)}}</td>
@@ -181,7 +191,7 @@
         <div class="scroll"><table>
           <tr><th>Joueur</th><th>Poste</th><th>Club</th><th class="num" v-for="s in evoData.seasons" :key="s">S{{s}}</th></tr>
           <tr v-for="p in evoRows" :key="p.id">
-            <td>{{p.nom}}</td><td class="muted">{{p.poste}}</td><td class="muted">{{p.club}}</td>
+            <td class="lk" @click="openPlayer(p.nom)">{{p.nom}}</td><td class="muted">{{p.poste}}</td><td class="lk" @click="openTeam(p.club)">{{p.club}}</td>
             <td class="num" v-for="s in evoData.seasons" :key="s" :style="celCell(p,s)">{{p.celebrite[s]!=null?Math.round(p.celebrite[s]):'·'}}</td>
           </tr>
         </table></div>
@@ -248,6 +258,54 @@
     </section>
 
   </main>
+
+  <!-- MODAL détail joueur / équipe -->
+  <div class="ovl" v-if="detail" @click.self="closeDetail">
+    <div class="modal">
+      <!-- JOUEUR -->
+      <template v-if="detail.type==='player'">
+        <h2><span>{{detail.nom}}</span><button class="x" @click="closeDetail">✕</button></h2>
+        <div v-if="detail.loading" class="muted">chargement…</div>
+        <div v-else-if="detail.error" class="err">joueur introuvable</div>
+        <template v-else>
+          <div class="muted">{{detail.poste}} · <span class="lk" @click="openTeam(detail.club)">{{detail.club}}</span></div>
+          <div style="margin:8px 0">Célébrité <b style="color:var(--accent)">{{fmt(detail.celebrite)}}</b>
+            · Salaire {{fmt(detail.salaire)}} M€ · Âge {{detail.age||'—'}}</div>
+          <h3 style="margin-top:6px">Célébrité par saison</h3>
+          <div class="scroll"><table>
+            <tr><th class="num" v-for="s in detail.seasons" :key="s">S{{s}}</th></tr>
+            <tr><td class="num" v-for="s in detail.seasons" :key="s">{{detail.history[s]!=null?Math.round(detail.history[s]):'·'}}</td></tr>
+          </table></div>
+          <h3>Clubs par saison</h3>
+          <div class="muted" style="font-size:12px">
+            <span v-for="s in detail.seasons" :key="s">S{{s}} : {{detail.clubs[s]||'—'}}<span v-if="s!==detail.seasons[detail.seasons.length-1]"> · </span></span>
+          </div>
+          <a class="ext" :href="gameBase+'/joueurs/'+encodeURIComponent(detail.nom)" target="_blank" rel="noopener">Voir sur Foothunter ↗</a>
+        </template>
+      </template>
+      <!-- ÉQUIPE -->
+      <template v-else>
+        <h2><span>{{detail.team}}</span><button class="x" @click="closeDetail">✕</button></h2>
+        <div v-if="detail.loading" class="muted">chargement…</div>
+        <div v-else-if="detail.error" class="err">équipe introuvable</div>
+        <template v-else>
+          <div class="muted" v-if="detail.aggregate">{{detail.aggregate.count}} joueurs · célé moy.
+            {{detail.aggregate.avg_celebrite||'—'}} · âge moy. {{detail.aggregate.avg_age||'—'}}
+            · masse salariale {{detail.aggregate.total_salaire}} M€</div>
+          <h3 style="margin-top:6px">Effectif</h3>
+          <div class="scroll"><table>
+            <tr><th>Poste</th><th>Joueur</th><th class="num">Célé</th><th class="num">M€</th><th class="num">Âge</th></tr>
+            <tr v-for="p in detail.squad" :key="p.id">
+              <td style="color:var(--accent);font-weight:600">{{p.poste}}</td>
+              <td class="lk" @click="openPlayer(p.nom)">{{p.nom}}</td>
+              <td class="num">{{fmt(p.celebrite)}}</td><td class="num">{{fmt(p.salaire)}}</td><td class="num">{{p.age||'—'}}</td>
+            </tr>
+          </table></div>
+          <a class="ext" :href="gameBase+'/equipes/'+encodeURIComponent(detail.team)" target="_blank" rel="noopener">Voir sur Foothunter ↗</a>
+        </template>
+      </template>
+    </div>
+  </div>
 </div>
 
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
@@ -273,6 +331,7 @@ createApp({
     pool:[], squad:{}, years:{}, evalData:null,
     saveCode:'', loadCode:'', loadErr:'',
     palmares:null,
+    gameBase:'', detail:null,
   }},
   computed:{
     liveByComp(){const o={};for(const m of this.live){(o[m.competition]=o[m.competition]||[]).push(m)}return o;},
@@ -300,6 +359,7 @@ createApp({
     },
     async boot(){
       try{const s=await api('/state');this.season=s.season;this.competitions=s.competitions;
+        this.gameBase=s.game_base||'';
         this.comp=this.competitions[0]||'';this.teamComp=this.comp;
         this.leagues=["Premier League","Liga","Bundesliga","Serie A","Ligue 1","Liga Nos",
           "Eredivisie","Süper Lig","Jupiler Pro League","Championship","Liga 2","Bundesliga 2","Serie B","Ligue 2"];
@@ -343,6 +403,14 @@ createApp({
         this.persist();this.tab='mercato';this.pool.length?this.evalMercato():this.loadPool();}
       catch(e){this.loadErr='code introuvable';}},
     async loadPalmares(){try{this.palmares=await api('/palmares');}catch(e){this.error='palmarès KO';}},
+    async openPlayer(nom){if(!nom)return;this.detail={type:'player',nom,loading:true};
+      try{const d=await api('/player/'+encodeURIComponent(nom));this.detail={type:'player',loading:false,...d};}
+      catch(e){this.detail={type:'player',nom,loading:false,error:true};}},
+    async openTeam(team){if(!team)return;this.detail={type:'team',team,loading:true};
+      try{const d=await api('/team/'+encodeURIComponent(team));this.detail={type:'team',loading:false,...d};}
+      catch(e){this.detail={type:'team',team,loading:false,error:true};}},
+    openComp(c){if(!c||!this.competitions.includes(c))return;this.detail=null;this.comp=c;this.tab='comp';this.loadComp();},
+    closeDetail(){this.detail=null;},
   },
   mounted(){this.boot();},
 }).mount('#app');

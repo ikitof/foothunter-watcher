@@ -104,7 +104,8 @@ def state():
         core.refresh_current_season()
     except Exception:
         pass
-    return {"season": core.SEASON, "competitions": core.fetch_competitions(core.SEASON)}
+    return {"season": core.SEASON, "competitions": core.fetch_competitions(core.SEASON),
+            "game_base": core.BASE_URL}
 
 
 @app.get("/api/live")
@@ -131,6 +132,15 @@ def teams(name: str):
     groups, _ = core.fetch_competition(name)
     tds = core.team_domain_stats(groups)
     return {"name": name, "teams": list(tds.values())}  # chaque dict contient déjà "team"
+
+
+@app.get("/api/team/{name}")
+def team(name: str):
+    """Détail d'une équipe : effectif (7 joueurs, ordre des postes) + agrégats."""
+    squad = sorted((p for p in player_pool() if p.get("nom_equipe") == name),
+                   key=lambda p: merc.TEAM_POSTES.index(p["poste"])
+                   if p.get("poste") in merc.TEAM_POSTES else 99)
+    return {"team": name, "squad": squad, "aggregate": merc.squad_aggregate(squad)}
 
 
 @app.get("/api/scout")
@@ -196,6 +206,30 @@ def evolution_cached():
 @app.get("/api/evolution")
 def evolution():
     return evolution_cached()
+
+
+@app.get("/api/player/{nom}")
+def player(nom: str):
+    """Détail d'un joueur : poste, club + célé/salaire/âge actuels, et l'historique
+    (célébrité + clubs par saison)."""
+    data = evolution_cached()
+    cur = next((p for p in player_pool() if p.get("nom") == nom), None)
+    hist = next((p for p in data["players"] if p.get("nom") == nom), None)
+    if not cur and not hist:
+        raise HTTPException(404, "joueur introuvable")
+    cel = (hist or {}).get("celebrite") or {}
+    last = max(cel) if cel else None
+    return {
+        "nom": nom,
+        "poste": (cur or hist or {}).get("poste"),
+        "club": (cur or {}).get("nom_equipe") or (hist or {}).get("club"),
+        "celebrite": (cur or {}).get("celebrite") if cur else (cel.get(last) if last is not None else None),
+        "salaire": (cur or {}).get("salaire"),
+        "age": (cur or {}).get("age"),
+        "history": cel,
+        "clubs": (hist or {}).get("clubs") or {},
+        "seasons": data["seasons"],
+    }
 
 
 @app.get("/api/palmares")
