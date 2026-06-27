@@ -7,7 +7,7 @@
 <style>
   :root{
     --bg:#0e1117; --card:#171b23; --card2:#1d222c; --hdr:#11151c;
-    --fg:#e6ebf2; --muted:#8a93a3; --accent:#5a9ee0; --green:#46c08a;
+    --fg:#e6ebf2; --muted:#9aa4b4; --accent:#5a9ee0; --green:#46c08a;
     --live:#e2574c; --flash:#f0c040; --line:#262c38;
   }
   *{box-sizing:border-box}
@@ -16,40 +16,43 @@
   header{position:sticky;top:0;z-index:10;background:var(--hdr);
     border-bottom:1px solid var(--line);padding:8px 14px}
   .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-  .brand{font-weight:700;font-size:16px;letter-spacing:.3px}
+  .brand{font-weight:700;font-size:16px;letter-spacing:.3px;cursor:pointer}
   .badge{background:var(--card2);color:var(--muted);border-radius:20px;padding:2px 10px;font-size:12px}
   nav{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
-  nav button{background:var(--card);color:var(--fg);border:0;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px}
+  nav button{background:var(--card);color:var(--fg);border:0;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:13px}
   nav button.on{background:var(--accent);color:#fff;font-weight:600}
   main{max-width:1000px;margin:0 auto;padding:14px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
   h2{font-size:15px;margin:0 0 8px}
   h3{font-size:13px;color:var(--accent);margin:14px 0 6px}
   .muted{color:var(--muted)}
-  select,input{background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13px}
-  button.act{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px}
-  button.ghost{background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px}
-  button.mini{background:transparent;color:var(--green);border:0;cursor:pointer;font-size:12px;font-weight:600}
+  .note{color:var(--muted);font-size:11.5px;line-height:1.5}
+  select,input{background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px}
+  button.act{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px}
+  button.ghost{background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:7px 11px;cursor:pointer;font-size:12px}
+  button.mini{background:transparent;color:var(--green);border:0;cursor:pointer;font-size:12px;font-weight:600;padding:6px 4px;min-height:32px}
   table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{text-align:left;padding:5px 7px;border-bottom:1px solid var(--line)}
+  th,td{text-align:left;padding:6px 7px;border-bottom:1px solid var(--line)}
   th{color:var(--muted);font-weight:600;font-size:12px}
+  th.s{cursor:pointer;user-select:none}th.s:hover{color:var(--fg)}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
   .match{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--line)}
   .match .t{flex:1}.match .t.away{text-align:right}
   .sc{font-variant-numeric:tabular-nums;font-weight:700;min-width:54px;text-align:center}
   .sc.live{color:var(--live)}
+  .sc.sched{color:var(--muted);font-weight:400}
   .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--live);margin-left:5px;animation:pulse 1s infinite}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
   .imminent{color:var(--flash);font-size:11px;margin:0 4px}
   .pills{display:flex;flex-wrap:wrap;gap:6px}
-  .pill{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:3px 10px;font-size:12px;cursor:pointer;user-select:none}
+  .pill{background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:6px 11px;font-size:12px;cursor:pointer;user-select:none;min-height:32px}
   .pill.on{background:var(--accent);color:#fff;border-color:var(--accent)}
   .bar{height:10px;background:var(--card2);border-radius:6px;overflow:hidden}
   .bar>i{display:block;height:100%;background:var(--accent)}
-  .slot{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+  .slot{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
   .slot .pos{width:48px;font-weight:700;color:var(--accent)}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media(max-width:680px){.grid2{grid-template-columns:1fr}}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr} nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}}
   .medal{width:24px;display:inline-block}
   .scroll{overflow-x:auto}
   .err{color:var(--live);font-size:12px}
@@ -57,13 +60,19 @@
   .match.hot{background:rgba(240,192,64,.09);border-radius:6px}
   .t.hot{color:var(--flash);font-weight:600}
   .lk{color:var(--accent);cursor:pointer}.lk:hover{text-decoration:underline}
-  .clk{cursor:pointer}.clk:hover{text-decoration:underline}
+  .clk{cursor:pointer;text-decoration:underline dotted;text-decoration-color:var(--line);text-underline-offset:3px}
+  .clk:hover{text-decoration:underline;text-decoration-color:var(--accent)}
+  .form{display:inline-flex;gap:2px}
+  .fp{display:inline-block;width:15px;height:15px;line-height:15px;text-align:center;border-radius:3px;font-size:9px;font-weight:700;color:#fff}
+  .fp-V{background:var(--green)}.fp-N{background:var(--muted)}.fp-D{background:var(--live)}
+  .spark{width:78px;height:22px;vertical-align:middle}
+  .warn{color:var(--flash);font-size:11px}
   .ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;
     align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
   .modal{background:var(--card);border:1px solid var(--line);border-radius:14px;
     max-width:480px;width:100%;padding:16px}
   .modal h2{display:flex;justify-content:space-between;align-items:center;gap:10px}
-  .x{background:transparent;border:0;color:var(--muted);font-size:20px;cursor:pointer;line-height:1}
+  .x{background:transparent;border:0;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:4px 8px;min-height:36px}
   .ext{display:inline-block;margin-top:12px;color:var(--accent);font-size:13px;text-decoration:none}
   .ext:hover{text-decoration:underline}
 </style>
@@ -72,10 +81,10 @@
 <div id="app">
   <header>
     <div class="row">
-      <span class="brand">⚽ Foothunter Analyzer</span>
+      <span class="brand" @click="go('live')">⚽ Foothunter Analyzer</span>
       <span class="badge" v-if="season!=null">Saison {{season}}</span>
       <span class="badge" v-if="liveCount">🔴 {{liveCount}} en direct</span>
-      <span class="err" v-if="error">{{error}}</span>
+      <span class="badge" v-if="liveStale" title="Le flux live ne répond plus">⚠ live indisponible</span>
     </div>
     <nav>
       <button v-for="t in tabs" :key="t.id" :class="{on:tab===t.id}" @click="go(t.id)">{{t.label}}</button>
@@ -86,13 +95,13 @@
     <!-- LIVE -->
     <section v-if="tab==='live'">
       <div class="card">
-        <h2 style="margin:0">En direct <span class="muted" style="font-weight:400">· rafraîchi toutes les 10 s · <span style="color:var(--flash)">⚡</span> = occasion, but possible</span></h2>
+        <h2 style="margin:0">En direct <span class="note">· rafraîchi toutes les 10 s · <span style="color:var(--flash)">⚡</span> = occasion, but possible</span></h2>
         <div v-if="!live.length" class="muted" style="margin-top:8px">Aucun match en direct pour l'instant.</div>
         <div v-for="(ms,comp) in liveByComp" :key="comp">
-          <h3 class="lk" @click="openComp(comp)">{{comp}}</h3>
+          <h3 class="lk" @click="openComp(comp)">{{comp}} ↗</h3>
           <div class="match" v-for="(m,i) in ms" :key="i" :class="{hot:m.occas_dom||m.occas_ext}">
             <span class="t" :class="{hot:m.occas_dom}"><span v-if="m.occas_dom" class="imminent">⚡</span><span class="clk" @click="openTeam(m.nom_equipe_dom)">{{m.nom_equipe_dom}}</span></span>
-            <span class="sc live">{{m.score_dom}} - {{m.score_ext}}<span class="dot"></span></span>
+            <span class="sc live">{{m.score_dom ?? '–'}} - {{m.score_ext ?? '–'}}<span class="dot"></span></span>
             <span class="t away" :class="{hot:m.occas_ext}"><span class="clk" @click="openTeam(m.nom_equipe_ext)">{{m.nom_equipe_ext}}</span><span v-if="m.occas_ext" class="imminent">⚡</span></span>
           </div>
         </div>
@@ -104,30 +113,39 @@
       <div class="card">
         <div class="row"><h2 style="margin:0">Compétition</h2>
           <select v-model="comp" @change="loadComp"><option v-for="c in competitions" :key="c" :value="c">{{c}}</option></select>
-          <span class="muted" v-if="compData">{{compData.groups.length}} journées/tours</span>
+          <span class="muted" v-if="compData">{{compData.groups.length}} {{isLeague(comp)?'journées':'tours'}}</span>
         </div>
       </div>
-      <div class="grid2" v-if="compData">
+      <div v-if="!compData" class="card muted">{{error||'Chargement…'}}</div>
+      <div class="grid2" v-else>
         <div class="card">
           <h2>Matchs</h2>
           <div v-for="g in compData.groups" :key="g.label">
             <h3>{{g.label||'—'}}</h3>
-            <div class="match" v-for="(m,i) in g.matches" :key="i">
-              <span class="t clk" @click="openTeam(m.a)">{{m.a}}</span>
-              <span class="sc" :class="{live:m.site_live}">{{m.mid||'—'}}</span>
-              <span class="t away clk" @click="openTeam(m.b)">{{m.b}}</span>
+            <div class="match" v-for="(m,i) in g.matches" :key="i" :class="{hot:m.imminent_dom||m.imminent_ext}">
+              <span class="t clk" @click="openTeam(m.a)"><span v-if="m.imminent_dom" class="imminent">⚡</span>{{m.a}}</span>
+              <span class="sc" :class="{live:m.site_live, sched:!m.mid}">{{m.mid||'à venir'}}<span v-if="m.site_live" class="dot"></span></span>
+              <span class="t away clk" @click="openTeam(m.b)">{{m.b}}<span v-if="m.imminent_ext" class="imminent">⚡</span></span>
             </div>
           </div>
         </div>
         <div class="card" v-if="compData.standings && compData.standings.length">
-          <h2>Classement</h2>
+          <h2>Classement <span class="note">· clique un en-tête pour trier</span></h2>
           <div class="scroll"><table>
-            <tr><th>#</th><th>Équipe</th><th class="num">J</th><th class="num">Pts</th>
-              <th class="num">BP</th><th class="num">BC</th><th class="num">Diff</th></tr>
-            <tr v-for="(s,i) in compData.standings" :key="s.team">
+            <tr>
+              <th>#</th><th>Équipe</th>
+              <th class="num s" @click="sortStand('played')" title="Journées jouées">J{{stArrow('played')}}</th>
+              <th class="num s" @click="sortStand('points')" title="Points (V 3 · N 1 · D 0)">Pts{{stArrow('points')}}</th>
+              <th class="num s" @click="sortStand('gf')" title="Buts pour">BP{{stArrow('gf')}}</th>
+              <th class="num s" @click="sortStand('ga')" title="Buts contre">BC{{stArrow('ga')}}</th>
+              <th class="num s" @click="sortStand('gd')" title="Différence de buts">Diff{{stArrow('gd')}}</th>
+              <th title="5 derniers résultats (V/N/D)">Forme</th>
+            </tr>
+            <tr v-for="(s,i) in sortedStandings" :key="s.team">
               <td class="muted">{{i+1}}</td><td class="lk" @click="openTeam(s.team)">{{s.team}}</td>
               <td class="num">{{s.played}}</td><td class="num">{{s.points}}</td>
               <td class="num">{{s.gf}}</td><td class="num">{{s.ga}}</td><td class="num">{{s.gd}}</td>
+              <td><span class="form"><span v-for="(r,j) in (s.form||[])" :key="j" class="fp" :class="'fp-'+r" :title="r">{{r}}</span></span></td>
             </tr>
           </table></div>
         </div>
@@ -141,9 +159,12 @@
           <select v-model="teamComp" @change="loadTeams"><option v-for="c in competitions" :key="c" :value="c">{{c}}</option></select>
           <select v-model="teamMetric"><option v-for="m in metrics" :key="m[0]" :value="m[0]">{{m[1]}}</option></select>
         </div>
+        <div class="note" style="margin-top:6px">Stats d'équipe issues des matchs joués. « Taux de finition » = buts ÷ occasions ; « Arrêts % » = occasions adverses non transformées en but (dépend du gardien <em>et</em> de la finition adverse).</div>
       </div>
-      <div class="card" v-if="teamData">
-        <div v-for="t in sortedTeams" :key="t.team" style="margin:7px 0">
+      <div v-if="!teamData" class="card muted">{{error||'Chargement…'}}</div>
+      <div class="card" v-else>
+        <div v-if="!sortedTeams.length" class="muted">Aucune donnée pour cette métrique.</div>
+        <div v-for="t in sortedTeams" :key="t.team" style="margin:8px 0">
           <div class="row" style="justify-content:space-between"><span><span class="lk" @click="openTeam(t.team)">{{t.team}}</span> <span class="muted" style="font-size:11px">({{t.played}}j)</span></span><span class="muted">{{fmt(t[teamMetric])}}</span></div>
           <div class="bar"><i :style="{width:teamBarW(t)+'%'}"></i></div>
         </div>
@@ -156,18 +177,28 @@
         <h2>Explorer les joueurs par rôle</h2>
         <div class="row">
           <label>Poste <select v-model="sc.poste" @change="loadScout"><option v-for="p in postes" :key="p">{{p}}</option></select></label>
-          <label>Prix max <input type="number" v-model.number="sc.pmax" style="width:80px" @change="loadScout"> M€</label>
+          <label>Prix max <input type="number" min="0" step="1" v-model.number="sc.pmax" style="width:80px" @change="loadScout"> M€</label>
           <label>Adversité <select v-model="sc.adv" @change="loadScout"><option value="tous">tous matchs</option><option value="decisifs">matchs décisifs</option></select></label>
         </div>
-        <div class="pills" style="margin-top:8px">
-          <span v-for="lg in leagues" :key="lg" class="pill" :class="{on:sc.leagues.includes(lg)}" @click="toggleLeague(lg)">{{lg}}</span>
+        <div class="row" style="margin-top:8px;align-items:flex-start">
+          <span class="note" style="margin-top:6px">Ligues :</span>
+          <div class="pills" style="flex:1">
+            <span v-for="lg in leagues" :key="lg" class="pill" :class="{on:sc.leagues.includes(lg)}" @click="toggleLeague(lg)">{{lg}}</span>
+          </div>
+          <button class="ghost" @click="allLeagues">Toutes</button>
         </div>
+        <div class="note" style="margin-top:8px">La stat affichée est une stat <b>d'équipe</b> ; le poste n'y contribue que partiellement (seul GAR → Arrêts est mono-poste). Célébrité = popularité visible, <b>pas</b> le niveau réel (caché) : un jeune peut être sous-coté.</div>
       </div>
-      <div class="card">
-        <div class="muted" v-if="scoutData">{{scoutData.rows.length}} {{sc.poste}} · stat : {{scoutData.stat_label}} · adv = célé {{scoutData.counters.join('/')}} adverses</div>
-        <div class="scroll"><table v-if="scoutData">
-          <tr><th>Joueur</th><th>Équipe</th><th>Ligue</th><th class="num">{{scoutData.stat_label}}</th>
-            <th class="num">Adv.</th><th class="num">Célé</th><th class="num">M€</th><th></th></tr>
+      <div v-if="!scoutData" class="card muted">{{error||'Chargement…'}}</div>
+      <div class="card" v-else>
+        <div class="muted">{{scoutData.rows.length}} {{sc.poste}} · stat : {{scoutData.stat_label}} (équipe) · adv = célé {{scoutData.counters.join('/')}} adverses</div>
+        <div v-if="!scoutData.rows.length" class="muted" style="margin-top:8px">Aucun joueur ne correspond aux filtres.</div>
+        <div class="scroll" v-else><table>
+          <tr><th>Joueur</th><th>Équipe</th><th>Ligue</th>
+            <th class="num" title="Stat d'équipe — le poste n'y contribue que partiellement (sauf GAR → Arrêts)">{{scoutData.stat_label}}</th>
+            <th class="num" title="Adversité : célébrité moyenne des adversaires pertinents rencontrés">Adv.</th>
+            <th class="num" title="Célébrité (popularité visible, pas le niveau réel)">Célé</th>
+            <th class="num" title="Salaire annuel (M€)">M€</th><th></th></tr>
           <tr v-for="r in scoutData.rows" :key="r.nom+r.team">
             <td class="lk" @click="openPlayer(r.nom)">{{r.nom}}</td><td class="lk" @click="openTeam(r.team)">{{r.team}}</td><td class="lk" @click="openComp(r.competition)">{{r.competition}}</td>
             <td class="num" style="color:var(--accent)">{{fmt(r.stat)}}</td>
@@ -186,21 +217,27 @@
         <div class="row">
           <input v-model="evoSearch" placeholder="joueur…" style="width:150px">
           <select v-model="evoLeague"><option value="Toutes">Toutes ligues</option><option v-for="l in (evoData?evoData.leagues:[])" :key="l" :value="l">{{l}}</option></select>
-          <label>≤ <input type="number" v-model="evoPmax" placeholder="prix" style="width:70px"> M€</label>
+          <label>≤ <input type="number" min="0" v-model="evoPmax" placeholder="prix" style="width:70px"> M€</label>
           <select v-model="evoSort">
             <option value="var">Plus grosses variations</option>
             <option value="cel">Célébrité</option>
             <option value="nom">Nom</option>
           </select>
-          <span class="muted" style="font-size:12px">Δ = variation de célé · vert ↑ / rouge ↓</span>
+          <span class="note">Δ = variation de célé (dernière − première saison) · vert ↑ / rouge ↓</span>
         </div>
       </div>
-      <div class="card" v-if="evoData">
-        <div class="scroll"><table>
-          <tr><th>Joueur</th><th>Poste</th><th>Club</th><th class="num">Δ</th><th class="num" v-for="s in evoData.seasons" :key="s">S{{s}}</th></tr>
+      <div v-if="!evoData" class="card muted">{{error||'Chargement…'}}</div>
+      <div class="card" v-else>
+        <div v-if="!evoRows.length" class="muted">Aucun joueur ne correspond aux filtres.</div>
+        <div class="scroll" v-else><table>
+          <tr><th>Joueur</th><th>Poste</th><th>Club</th>
+            <th class="num" title="Variation de célébrité (dernière − première saison)">Δ</th>
+            <th>Tendance</th>
+            <th class="num" v-for="s in evoData.seasons" :key="s">S{{s}}</th></tr>
           <tr v-for="p in evoRows" :key="p.id">
             <td class="lk" @click="openPlayer(p.nom)">{{p.nom}}</td><td class="muted">{{p.poste}}</td><td class="lk" @click="openTeam(p.club)">{{p.club}}</td>
             <td class="num" :style="{color:p.var>0?'var(--green)':(p.var<0?'var(--live)':'var(--muted)')}">{{p.var>0?'+':''}}{{p.var}}</td>
+            <td><svg class="spark" viewBox="0 0 100 24" preserveAspectRatio="none" v-if="sparkPoints(p.celebrite,evoData.seasons)"><polyline :points="sparkPoints(p.celebrite,evoData.seasons)" fill="none" stroke="var(--accent)" stroke-width="2"/></svg></td>
             <td class="num" v-for="s in evoData.seasons" :key="s" :style="celCell(p,s)">{{p.celebrite[s]!=null?Math.round(p.celebrite[s]):'·'}}</td>
           </tr>
         </table></div>
@@ -212,21 +249,23 @@
     <section v-if="tab==='mercato'">
       <div class="grid2">
         <div class="card">
-          <h2>Mon effectif</h2>
+          <h2>Planificateur de recrutement</h2>
+          <div class="note" style="margin-bottom:8px">Simulateur « et si » : choisis un joueur par poste et la durée du contrat (salaire payé d'avance, sans frais de transfert). Indicateurs basés sur la célébrité (proxy visible), <b>pas</b> le niveau réel caché.</div>
           <div class="slot" v-for="pos in postes" :key="pos">
             <span class="pos">{{pos}}</span>
-            <select :value="squad[pos]?squad[pos].id:''" @change="pickPlayer(pos,$event.target.value)" style="flex:1">
+            <select :value="squad[pos]?slotKey(squad[pos]):''" @change="pickPlayer(pos,$event.target.value)" style="flex:1;min-width:150px">
               <option value="">— libre —</option>
-              <option v-for="p in poolByPoste[pos]||[]" :key="p.id" :value="p.id">{{p.nom}} ({{p.nom_equipe}}, {{fmt(p.celebrite)}}c, {{fmt(p.salaire)}}M)</option>
+              <option v-for="p in poolByPoste[pos]||[]" :key="p.id" :value="slotKey(p)">{{p.nom}} · {{p.nom_equipe}} · {{fmt(p.celebrite)}}c · {{fmt(p.salaire)}}M · {{p.age}}a</option>
             </select>
             <select v-if="squad[pos]" :value="years[pos]||1" @change="setYears(pos,$event.target.value)">
               <option :value="1">1 an</option><option :value="2">2 ans</option><option :value="3">3 ans</option>
             </select>
             <button v-if="squad[pos]" class="ghost" @click="pickPlayer(pos,'')">✕</button>
+            <span v-if="squad[pos] && retires(pos)" class="warn" title="Retraite à 36 ans (manuel)">⚠ retraite avant fin de contrat</span>
           </div>
           <div class="row" style="margin-top:10px">
             <button class="act" @click="saveMercato">💾 Sauvegarder</button>
-            <span v-if="saveCode">code : <code class="codebox">{{saveCode}}</code> <button class="ghost" @click="copyLink">copier le lien</button></span>
+            <span v-if="saveCode">code : <code class="codebox">{{saveCode}}</code> <button class="ghost" @click="copyLink">{{copied?'copié ✓':'copier le lien'}}</button></span>
           </div>
           <div class="row" style="margin-top:8px">
             <input v-model="loadCode" placeholder="code à charger" style="width:140px">
@@ -235,12 +274,13 @@
           </div>
         </div>
         <div class="card" v-if="evalData">
-          <h2>Bilan <span class="muted" style="font-weight:400">· coût total {{evalData.total_cost}} M€</span></h2>
+          <h2>Bilan <span class="note">· coût total {{evalData.total_cost}} M€</span></h2>
           <div class="muted" style="margin-bottom:8px">
             {{evalData.aggregate.count}}/7 · célé moy. {{evalData.aggregate.avg_celebrite||'—'}} ·
             âge moy. {{evalData.aggregate.avg_age||'—'}} · masse sal. {{evalData.aggregate.total_salaire}} M€
           </div>
           <h3 style="margin-top:0">Investissement par domaine (M€)</h3>
+          <div class="note" style="margin-bottom:6px">Où va le budget (réparti selon la contribution de chaque poste aux domaines, manuel) — pas une mesure de force.</div>
           <div v-for="d in evalData.domains" :key="d" style="margin:5px 0">
             <div class="row" style="justify-content:space-between"><span>{{evalData.domain_labels[d]}}</span><span class="muted">{{evalData.investment[d]}}</span></div>
             <div class="bar"><i :style="{width:invBarW(evalData.investment[d])+'%'}"></i></div>
@@ -252,11 +292,12 @@
     <!-- PALMARÈS -->
     <section v-if="tab==='palmares'">
       <div class="card">
-        <h2>Palmarès <span class="muted" style="font-weight:400" v-if="palmares">· {{palmares.n_matches}} matchs joués, 100% factuel</span></h2>
+        <h2>Palmarès <span class="note" v-if="palmares">· {{palmares.n_matches}} matchs joués, 100% factuel</span></h2>
       </div>
+      <div v-if="!palmares" class="card muted">{{error||'Chargement…'}}</div>
       <div class="card" v-for="cat in (palmares?palmares.categories:[])" :key="cat[0]" v-show="(palmares.records[cat[0]]||[]).length">
         <h3 style="margin-top:0">{{cat[1]}}</h3>
-        <div class="muted" style="font-size:12px;margin-bottom:6px">{{cat[2]}}</div>
+        <div class="note" style="margin-bottom:6px">{{cat[2]}}</div>
         <div class="match" v-for="(it,i) in (palmares.records[cat[0]]||[])" :key="i">
           <span class="medal">{{['🥇','🥈','🥉','4.','5.'][i]}}</span>
           <span style="color:var(--accent);font-weight:600;min-width:96px">{{it.head}}</span>
@@ -270,17 +311,19 @@
 
   <!-- MODAL détail joueur / équipe -->
   <div class="ovl" v-if="detail" @click.self="closeDetail">
-    <div class="modal">
+    <div class="modal" role="dialog" aria-modal="true">
       <!-- JOUEUR -->
       <template v-if="detail.type==='player'">
-        <h2><span>{{detail.nom}}</span><button class="x" @click="closeDetail">✕</button></h2>
+        <h2><span>{{detail.nom}}</span><button class="x" aria-label="Fermer" @click="closeDetail">✕</button></h2>
         <div v-if="detail.loading" class="muted">chargement…</div>
         <div v-else-if="detail.error" class="err">joueur introuvable</div>
         <template v-else>
           <div class="muted">{{detail.poste}} · <span class="lk" @click="openTeam(detail.club)">{{detail.club}}</span></div>
           <div style="margin:8px 0">Célébrité <b style="color:var(--accent)">{{fmt(detail.celebrite)}}</b>
             · Salaire {{fmt(detail.salaire)}} M€ · Âge {{detail.age||'—'}}</div>
-          <h3 style="margin-top:6px">Célébrité par saison</h3>
+          <h3 style="margin-top:6px">Célébrité par saison
+            <svg class="spark" viewBox="0 0 100 24" preserveAspectRatio="none" v-if="sparkPoints(detail.history,detail.seasons)"><polyline :points="sparkPoints(detail.history,detail.seasons)" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>
+          </h3>
           <div class="scroll"><table>
             <tr><th class="num" v-for="s in detail.seasons" :key="s">S{{s}}</th></tr>
             <tr><td class="num" v-for="s in detail.seasons" :key="s">{{detail.history[s]!=null?Math.round(detail.history[s]):'·'}}</td></tr>
@@ -294,7 +337,7 @@
       </template>
       <!-- ÉQUIPE -->
       <template v-else>
-        <h2><span>{{detail.team}}</span><button class="x" @click="closeDetail">✕</button></h2>
+        <h2><span>{{detail.team}}</span><button class="x" aria-label="Fermer" @click="closeDetail">✕</button></h2>
         <div v-if="detail.loading" class="muted">chargement…</div>
         <div v-else-if="detail.error" class="err">équipe introuvable</div>
         <template v-else>
@@ -317,11 +360,10 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="/vendor/vue.global.prod.js"></script>
 <script>
 const { createApp } = Vue;
 const api = (p, opt) => fetch('/api'+p, opt).then(r => { if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); });
-const MAJORS = ["Premier League","Liga","Bundesliga","Serie A","Ligue 1"];
 
 createApp({
   data(){return{
@@ -329,26 +371,30 @@ createApp({
       {id:'explorer',label:'Explorer'},{id:'evolution',label:'Évolutions'},{id:'mercato',label:'Mercato'},
       {id:'palmares',label:'🏆 Palmarès'}],
     tab:'live', season:null, competitions:[], error:'',
-    live:[], liveTimer:null,
-    comp:'', compData:null,
-    leagues:[], postes:['GAR','DC','LAT','MDEF','MOFF','AIL','AC'],
+    live:[], liveTimer:null, liveStale:false,
+    comp:'', compData:null, stSort:{key:'',dir:-1},
+    leagues:[], scoutLeagues:[], majors:[], postes:['GAR','DC','LAT','MDEF','MOFF','AIL','AC'],
     teamComp:'', teamMetric:'gf_pm', teamData:null,
     metrics:[['gf_pm','Buts / match'],['ga_pm','Encaissés / match'],['poss','Possession %'],
-      ['conv','Conversion %'],['save','Arrêts %'],['clean','Clean sheets'],['occ_for_pm','Occasions / match']],
-    sc:{poste:'GAR', pmax:200, adv:'tous', leagues:[...MAJORS]}, scoutData:null,
+      ['conv','Taux de finition %'],['save','Arrêts %'],['clean','Clean sheets'],
+      ['occ_for_pm','Occasions créées / match'],['occ_against_pm','Occasions concédées / match']],
+    sc:{poste:'GAR', pmax:200, adv:'tous', leagues:[]}, scoutData:null,
     evoData:null, evoSearch:'', evoLeague:'Toutes', evoPmax:'', evoSort:'var',
     pool:[], squad:{}, years:{}, evalData:null,
-    saveCode:'', loadCode:'', loadErr:'',
+    saveCode:'', loadCode:'', loadErr:'', copied:false,
     palmares:null,
     gameBase:'', detail:null,
   }},
   computed:{
-    liveByComp(){const o={};for(const m of this.live){(o[m.competition]=o[m.competition]||[]).push(m)}return o;},
+    liveByComp(){const o={};for(const m of this.live){const k=m.competition||'Autres';(o[k]=o[k]||[]).push(m)}return o;},
     liveCount(){return this.live.length;},
     poolByPoste(){const o={};for(const p of this.pool){(o[p.poste]=o[p.poste]||[]).push(p)}
       for(const k in o)o[k].sort((a,b)=>(b.celebrite||0)-(a.celebrite||0));return o;},
     sortedTeams(){if(!this.teamData)return[];const m=this.teamMetric;
       return[...this.teamData.teams].filter(t=>t[m]!=null).sort((a,b)=>(b[m])-(a[m]));},
+    sortedStandings(){if(!this.compData)return[];const a=[...(this.compData.standings||[])];
+      const k=this.stSort.key;if(!k)return a;
+      return a.sort((x,y)=>(((x[k]??0)-(y[k]??0))*this.stSort.dir));},
     evoRows(){if(!this.evoData)return[];let a=this.evoData.players;
       const q=this.evoSearch.toLowerCase().trim();
       if(q)a=a.filter(p=>(p.nom||'').toLowerCase().includes(q));
@@ -363,11 +409,23 @@ createApp({
   },
   methods:{
     fmt(v){return v==null?'—':(Math.round(v*10)/10);},
+    isLeague(c){return this.scoutLeagues.includes(c);},
+    slotKey(p){return (p.nom||'')+'@'+(p.nom_equipe||'');},
     invBarW(v){const max=Math.max(...this.evalData.domains.map(d=>this.evalData.investment[d]||0),1);return 100*(v||0)/max;},
     teamBarW(t){const m=this.teamMetric,max=Math.max(...this.teamData.teams.map(x=>x[m]||0),0.0001);return 100*(t[m]||0)/max;},
     celCell(p,s){const v=p.celebrite[s];if(v==null)return{};const prev=p.celebrite[s-1];
       if(prev==null)return{};return{color:v>prev?'var(--green)':(v<prev?'var(--live)':'')};},
-    go(t){this.tab=t;
+    sparkPoints(hist,seasons){if(!hist||!seasons)return'';
+      const pres=seasons.map((s,i)=>[i,hist[s]]).filter(p=>p[1]!=null);
+      if(pres.length<2)return'';
+      const xs=pres.map(p=>p[0]),ys=pres.map(p=>p[1]);
+      const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+      const sx=x1>x0?100/(x1-x0):0,sy=y1>y0?20/(y1-y0):0;
+      return pres.map(p=>((p[0]-x0)*sx).toFixed(1)+','+(22-(p[1]-y0)*sy).toFixed(1)).join(' ');},
+    sortStand(k){if(this.stSort.key===k)this.stSort.dir*=-1;else this.stSort={key:k,dir:-1};},
+    stArrow(k){return this.stSort.key===k?(this.stSort.dir<0?' ▾':' ▴'):'';},
+    retires(pos){const p=this.squad[pos];return p&&p.age!=null&&(p.age+(this.years[pos]||1))>36;},
+    go(t){this.error='';this.tab=t;
       if(t==='comp'&&!this.compData)this.loadComp();
       if(t==='teams'&&!this.teamData)this.loadTeams();
       if(t==='explorer'&&!this.scoutData)this.loadScout();
@@ -377,34 +435,39 @@ createApp({
     },
     async boot(){
       try{const s=await api('/state');this.season=s.season;this.competitions=s.competitions;
-        this.gameBase=s.game_base||'';
-        this.comp=this.competitions[0]||'';this.teamComp=this.comp;
-        this.leagues=["Premier League","Liga","Bundesliga","Serie A","Ligue 1","Liga Nos",
-          "Eredivisie","Süper Lig","Jupiler Pro League","Championship","Liga 2","Bundesliga 2","Serie B","Ligue 2"];
+        this.gameBase=s.game_base||'';this.scoutLeagues=s.scout_leagues||[];this.majors=s.majors||[];
+        this.leagues=this.scoutLeagues.slice();
+        this.sc.leagues=(this.majors.length?this.majors:this.scoutLeagues).slice();
+        this.comp=this.competitions[0]||'';this.teamComp=this.comp;this.error='';
       }catch(e){this.error='API injoignable';}
       this.refreshLive(); this.liveTimer=setInterval(this.refreshLive,10000);
-      const code=new URLSearchParams(location.search).get('m');
-      if(code){this.loadCode=code;this.loadMercato();}
+      const q=new URLSearchParams(location.search);
+      if(q.get('player'))this.openPlayer(q.get('player'));
+      else if(q.get('team'))this.openTeam(q.get('team'));
+      else if(q.get('m')){this.loadCode=q.get('m');this.loadMercato();}
       else{try{const s=JSON.parse(localStorage.getItem('fh_mercato')||'null');
         if(s){this.squad=s.squad||{};this.years=s.years||{};}}catch(e){}}
     },
-    async refreshLive(){try{this.live=(await api('/live')).matches||[];}catch(e){}},
-    async loadComp(){this.compData=null;try{this.compData=await api('/competition/'+encodeURIComponent(this.comp));}catch(e){this.error='compétition KO';}},
-    async loadTeams(){if(!this.teamComp)this.teamComp=this.comp||this.competitions[0]||'';this.teamData=null;
-      try{this.teamData=await api('/teams/'+encodeURIComponent(this.teamComp));}catch(e){this.error='stats équipes KO';}},
+    async refreshLive(){try{this.live=(await api('/live')).matches||[];this.liveStale=false;
+      if(this.error==='API injoignable')this.error='';}catch(e){this.liveStale=true;}},
+    async loadComp(){this.error='';this.compData=null;try{this.compData=await api('/competition/'+encodeURIComponent(this.comp));}catch(e){this.error='Impossible de charger la compétition.';}},
+    async loadTeams(){this.error='';if(!this.teamComp)this.teamComp=this.comp||this.competitions[0]||'';this.teamData=null;
+      try{this.teamData=await api('/teams/'+encodeURIComponent(this.teamComp));}catch(e){this.error='Impossible de charger les stats d\'équipe.';}},
     toggleLeague(lg){const i=this.sc.leagues.indexOf(lg);i<0?this.sc.leagues.push(lg):this.sc.leagues.splice(i,1);this.loadScout();},
-    async loadScout(){if(!this.sc.leagues.length)return;
-      const q=new URLSearchParams({poste:this.sc.poste,leagues:this.sc.leagues.join(','),adv:this.sc.adv,pmax:this.sc.pmax});
-      try{this.scoutData=await api('/scout?'+q);}catch(e){this.error='scout KO';}},
-    async loadEvo(){try{this.evoData=await api('/evolution');}catch(e){this.error='évolutions KO';}},
+    allLeagues(){this.sc.leagues=this.leagues.slice();this.loadScout();},
+    async loadScout(){this.error='';if(!this.sc.leagues.length){this.scoutData={rows:[],stat_label:'',counters:[],adv_key:'opp'};return;}
+      const q=new URLSearchParams({poste:this.sc.poste,leagues:this.sc.leagues.join(','),adv:this.sc.adv});
+      if(Number.isFinite(this.sc.pmax)&&this.sc.pmax>0)q.set('pmax',this.sc.pmax);
+      try{this.scoutData=await api('/scout?'+q);}catch(e){this.error='Impossible de charger le scouting.';}},
+    async loadEvo(){this.error='';try{this.evoData=await api('/evolution');}catch(e){this.error='Impossible de charger les évolutions.';}},
     async loadPool(){try{const d=await api('/players');this.pool=d.players;this.evalMercato();}catch(e){}},
-    pickPlayer(pos,id){
-      if(!id){delete this.squad[pos];delete this.years[pos];}
-      else{const p=(this.poolByPoste[pos]||[]).find(x=>String(x.id)===String(id));if(p){this.squad[pos]=p;if(!this.years[pos])this.years[pos]=1;}}
+    pickPlayer(pos,key){
+      if(!key){delete this.squad[pos];delete this.years[pos];}
+      else{const p=(this.poolByPoste[pos]||[]).find(x=>this.slotKey(x)===key);if(p){this.squad[pos]=p;if(!this.years[pos])this.years[pos]=1;}}
       this.squad={...this.squad};this.persist();this.evalMercato();},
     setYears(pos,y){this.years[pos]=+y;this.persist();this.evalMercato();},
     addToMercato(r){
-      this.squad[this.sc.poste]={id:r.nom+'@'+r.team,nom:r.nom,poste:this.sc.poste,nom_equipe:r.team,
+      this.squad[this.sc.poste]={id:this.slotKey(r)+'#'+this.sc.poste,nom:r.nom,poste:this.sc.poste,nom_equipe:r.team,
         salaire:r.salaire,celebrite:r.celebrite,age:r.age};
       if(!this.years[this.sc.poste])this.years[this.sc.poste]=1;
       this.squad={...this.squad};this.persist();this.tab='mercato';
@@ -414,23 +477,30 @@ createApp({
     persist(){try{localStorage.setItem('fh_mercato',JSON.stringify({squad:this.squad,years:this.years}));}catch(e){}},
     async saveMercato(){try{const d=await api('/mercato/save',{method:'POST',
       headers:{'Content-Type':'application/json'},body:JSON.stringify({squad:this.squad,years:this.years})});
-      this.saveCode=d.code;}catch(e){this.error='sauvegarde KO';}},
-    copyLink(){const url=location.origin+'/?m='+this.saveCode;navigator.clipboard&&navigator.clipboard.writeText(url);},
+      this.saveCode=d.code;this.copied=false;}catch(e){this.error='Sauvegarde impossible.';}},
+    copyLink(){const url=location.origin+'/?m='+this.saveCode;
+      if(navigator.clipboard){navigator.clipboard.writeText(url);this.copied=true;setTimeout(()=>this.copied=false,1500);}
+      else{prompt('Copier ce lien :',url);}},
     async loadMercato(){this.loadErr='';const code=(this.loadCode||'').trim();if(!code)return;
       try{const d=await api('/mercato/'+encodeURIComponent(code));this.squad=d.squad||{};this.years=d.years||{};
         this.persist();this.tab='mercato';this.pool.length?this.evalMercato():this.loadPool();}
       catch(e){this.loadErr='code introuvable';}},
-    async loadPalmares(){try{this.palmares=await api('/palmares');}catch(e){this.error='palmarès KO';}},
-    async openPlayer(nom){if(!nom)return;this.detail={type:'player',nom,loading:true};
+    async loadPalmares(){this.error='';try{this.palmares=await api('/palmares');}catch(e){this.error='Impossible de charger le palmarès.';}},
+    setUrl(params){const u=new URL(location);u.search='';for(const k in params)if(params[k])u.searchParams.set(k,params[k]);
+      history.replaceState(null,'',u);},
+    async openPlayer(nom){if(!nom)return;this.detail={type:'player',nom,loading:true};this.setUrl({player:nom});
       try{const d=await api('/player/'+encodeURIComponent(nom));this.detail={type:'player',loading:false,...d};}
       catch(e){this.detail={type:'player',nom,loading:false,error:true};}},
-    async openTeam(team){if(!team)return;this.detail={type:'team',team,loading:true};
+    async openTeam(team){if(!team)return;this.detail={type:'team',team,loading:true};this.setUrl({team});
       try{const d=await api('/team/'+encodeURIComponent(team));this.detail={type:'team',loading:false,...d};}
       catch(e){this.detail={type:'team',team,loading:false,error:true};}},
-    openComp(c){if(!c||!this.competitions.includes(c))return;this.detail=null;this.comp=c;this.tab='comp';this.loadComp();},
-    closeDetail(){this.detail=null;},
+    openComp(c){if(!c)return;if(!this.competitions.includes(c))this.competitions.push(c);
+      this.detail=null;this.setUrl({});this.comp=c;this.tab='comp';this.loadComp();},
+    closeDetail(){this.detail=null;this.setUrl({});},
   },
-  mounted(){this.boot();},
+  watch:{ detail(v){document.body.style.overflow=v?'hidden':'';} },
+  mounted(){this.boot();
+    window.addEventListener('keydown',e=>{if(e.key==='Escape'&&this.detail)this.closeDetail();});},
 }).mount('#app');
 </script>
 </body>

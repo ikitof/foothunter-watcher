@@ -10,6 +10,7 @@ CORS). Image Docker indépendante du reste de l'app.
 """
 import json
 import os
+import re
 import secrets
 import threading
 import time
@@ -86,7 +87,8 @@ def _startup():
 
 
 def _match(m):
-    return {k: m.get(k) for k in ("a", "b", "mid", "status", "poss", "occ", "site_live")}
+    return {k: m.get(k) for k in ("a", "b", "mid", "status", "poss", "occ", "site_live",
+                                  "imminent_dom", "imminent_ext")}
 
 
 # ----------------------------------------------------------------------------
@@ -105,7 +107,8 @@ def state():
     except Exception:
         pass
     return {"season": core.SEASON, "competitions": core.fetch_competitions(core.SEASON),
-            "game_base": core.BASE_URL}
+            "game_base": core.BASE_URL,
+            "scout_leagues": list(merc.SCOUT_LEAGUES), "majors": list(merc.MAJOR_LEAGUES)}
 
 
 @app.get("/api/live")
@@ -119,11 +122,15 @@ def competition(name: str):
     groups, _ = core.fetch_competition(name)
     # leaderboard() = classement brut (team/played/points/gf/ga/gd...) attendu par la SPA,
     # calculé depuis les résultats — y compris partiel pour la saison en cours.
+    standings = core.leaderboard(groups)
+    for s in standings:   # forme = 5 derniers résultats V/N/D (ordre chronologique)
+        played = (core.team_history(groups, s["team"]) or {}).get("played") or []
+        s["form"] = [m.get("res") for m in played][-5:]
     return {
         "name": name,
         "groups": [{"label": g["label"], "matches": [_match(m) for m in g["matches"]]}
                    for g in groups],
-        "standings": core.leaderboard(groups),
+        "standings": standings,
     }
 
 
@@ -147,6 +154,8 @@ def team(name: str):
 def scout(poste: str, leagues: str = "", adv: str = "tous", pmax: float = 1e12):
     if poste not in merc.ROLE_RELEVANCE:
         raise HTTPException(400, "poste inconnu")
+    if pmax != pmax or pmax <= 0:   # NaN (champ vidé) ou ≤0 -> illimité (pas de filtre muet)
+        pmax = 1e12
     lg = [x for x in (leagues.split(",") if leagues else []) if x] or list(merc.MAJOR_LEAGUES)
     lg = [x for x in lg if x in merc.SCOUT_LEAGUES]
     rows = core.role_scout_multi(lg, poste, player_pool())
@@ -289,7 +298,7 @@ def mercato_evaluate(body: dict = Body(...)):
 @app.post("/api/mercato/save")
 def mercato_save(body: dict = Body(...)):
     code = (body.get("code") or "").strip() or secrets.token_hex(3)
-    if not code.isalnum() or len(code) > 16:
+    if not re.fullmatch(r"[A-Za-z0-9]{1,16}", code):   # ASCII alnum only (URL-safe, sans ambiguïté)
         raise HTTPException(400, "code invalide")
     payload = json.dumps({"squad": body.get("squad") or {}, "years": body.get("years") or {}})
     if len(payload) > 100_000:
