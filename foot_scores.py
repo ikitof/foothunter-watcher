@@ -1204,6 +1204,37 @@ def team_domain_stats(groups):
     return out
 
 
+# Catégories de classement d'équipe : (clé team_domain_stats, libellé, haut=meilleur ?).
+TEAM_RANK_CATEGORIES = [
+    ("gf_pm",          "Attaque (buts / match)",        True),
+    ("ga_pm",          "Défense (encaissés / match)",   False),
+    ("diff",           "Différence de buts",            True),
+    ("poss",           "Possession %",                  True),
+    ("occ_for_pm",     "Occasions créées / match",      True),
+    ("occ_against_pm", "Occasions concédées / match",   False),
+    ("conv",           "Taux de finition %",            True),
+    ("save",           "Arrêts %",                      True),
+    ("clean",          "Clean sheets",                  True),
+]
+
+
+def rank_in_league(domstats, team, categories=TEAM_RANK_CATEGORIES):
+    """Classe `team` dans chaque catégorie parmi les équipes de `domstats` ({équipe: stats}
+    issu de team_domain_stats). rank=1 = meilleur ; les équipes sans valeur pour la catégorie
+    sont ignorées (et n'entrent pas dans n). Les ex æquo partagent le même rang. Renvoie
+    [{key, label, value, rank, n, better}] (better='high'|'low'), ou None si team absente."""
+    if team not in domstats:
+        return None
+    out = []
+    for key, label, high in categories:
+        vals = [s.get(key) for s in domstats.values() if s.get(key) is not None]
+        v = domstats[team].get(key)
+        rank = (1 + sum(1 for o in vals if ((o > v) if high else (o < v)))) if v is not None else None
+        out.append({"key": key, "label": label, "value": v, "rank": rank,
+                    "n": len(vals), "better": "high" if high else "low"})
+    return out
+
+
 def league_players(domstats, rosters, poste):
     """Joueurs d'un poste dans une ligue, avec les stats d'équipe par domaine.
 
@@ -1504,6 +1535,18 @@ def selftest_offline():
     assert career_transfers(_ode) == [{"season": 2, "from": "Arsenal", "to": "City"}]
     assert career_transfers(_car[("Vitinha", "MDEF")]) == []
     print("  ✓ build_player_careers OK (identité (nom,poste), slots réutilisés, transferts, homonymes)")
+
+    # 18) rank_in_league : classement par catégorie (haut=mieux ET bas=mieux, ex æquo, manquants).
+    _ds = {"A": {"gf_pm": 2.0, "ga_pm": 0.5}, "B": {"gf_pm": 1.0, "ga_pm": 1.0},
+           "C": {"gf_pm": 3.0, "ga_pm": 0.5}, "D": {"gf_pm": 2.0}}            # D sans ga_pm
+    _cats = [("gf_pm", "Attaque", True), ("ga_pm", "Défense", False)]
+    _rk = {d["key"]: d for d in rank_in_league(_ds, "A", _cats)}
+    assert _rk["gf_pm"]["rank"] == 2 and _rk["gf_pm"]["n"] == 4              # 2.0 -> 2e (C 3.0 devant)
+    assert _rk["ga_pm"]["rank"] == 1 and _rk["ga_pm"]["n"] == 3              # 0.5 ex æquo meilleur ; D ignoré
+    assert {d["key"]: d["rank"] for d in rank_in_league(_ds, "C", _cats)}["ga_pm"] == 1   # C aussi 1er (ex æquo)
+    assert rank_in_league(_ds, "D", _cats)[1]["rank"] is None and rank_in_league(_ds, "D", _cats)[1]["value"] is None
+    assert rank_in_league(_ds, "Z", _cats) is None
+    print("  ✓ rank_in_league OK (haut/bas=mieux, ex æquo, valeur manquante)")
 
 
 def selftest():
