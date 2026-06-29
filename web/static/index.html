@@ -79,6 +79,10 @@
   .kv b{font-size:15px}
   .tag{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:2px 9px;font-size:11px;margin-left:6px}
   .tr-arrow{color:var(--flash);font-weight:700;margin-right:2px}
+  .rk{font-weight:700}.rk1{color:#f0c040}.rk-top{color:var(--green)}
+  .lead{display:flex;flex-direction:column;gap:2px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;min-width:120px;flex:1}
+  .lead:hover{border-color:var(--accent)}
+  .lead .lt{font-size:11px;color:var(--muted)}.lead .lv{font-weight:700}.lead .ln{color:var(--accent);font-size:12px}
 </style>
 </head>
 <body>
@@ -171,16 +175,35 @@
           <select v-model="teamComp" @change="loadTeams"><option v-for="c in competitions" :key="c" :value="c">{{c}}</option></select>
           <select v-model="teamMetric"><option v-for="m in metrics" :key="m[0]" :value="m[0]">{{m[1]}}</option></select>
         </div>
-        <div class="note" style="margin-top:6px">Stats d'équipe issues des matchs joués. « Taux de finition » = buts ÷ occasions ; « Arrêts % » = occasions adverses non transformées en but (dépend du gardien <em>et</em> de la finition adverse).</div>
+        <div class="note" style="margin-top:6px">Stats d'équipe issues des matchs joués. « Taux de finition » = buts ÷ occasions ; « Arrêts % » = occasions adverses non transformées en but (dépend du gardien <em>et</em> de la finition adverse). Clique une équipe pour son classement par catégorie.</div>
       </div>
       <div v-if="!teamData" class="card muted">{{error||'Chargement…'}}</div>
-      <div class="card" v-else>
-        <div v-if="!sortedTeams.length" class="muted">Aucune donnée pour cette métrique.</div>
-        <div v-for="t in sortedTeams" :key="t.team" style="margin:8px 0">
-          <div class="row" style="justify-content:space-between"><span><span class="lk" @click="openTeam(t.team)">{{t.team}}</span> <span class="muted" style="font-size:11px">({{t.played}}j)</span></span><span class="muted">{{fmt(t[teamMetric])}}</span></div>
-          <div class="bar"><i :style="{width:teamBarW(t)+'%'}"></i></div>
+      <template v-else>
+        <div class="card" v-if="leaders.length">
+          <h2>Meneurs de {{teamComp}}</h2>
+          <div class="row" style="gap:8px">
+            <div class="lead" v-for="l in leaders" :key="l.key" @click="openTeam(l.team)">
+              <span class="lt">{{l.label}}</span>
+              <span class="lv">{{l.team}}</span>
+              <span class="ln">{{fmt(l.value)}}{{l.pct?'%':''}}</span>
+            </div>
+          </div>
         </div>
-      </div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <h2 style="margin:0">{{metricLabel}}</h2>
+            <span class="note">classé {{metricHigher[teamMetric]?'du + au − élevé':'du meilleur (− élevé) au pire'}}</span>
+          </div>
+          <div v-if="!sortedTeams.length" class="muted" style="margin-top:8px">Aucune donnée pour cette métrique.</div>
+          <div v-for="(t,i) in sortedTeams" :key="t.team" style="margin:8px 0">
+            <div class="row" style="justify-content:space-between">
+              <span><span class="rk" :class="{rk1:i===0,'rk-top':i>0&&i<3}">{{i+1}}.</span> <span class="lk" @click="openTeam(t.team)">{{t.team}}</span> <span class="muted" style="font-size:11px">({{t.played}}j)</span></span>
+              <span class="muted">{{fmt(t[teamMetric])}}{{metricPct.includes(teamMetric)?'%':''}}</span>
+            </div>
+            <div class="bar"><i :style="{width:teamBarW(t,i)+'%'}"></i></div>
+          </div>
+        </div>
+      </template>
     </section>
 
     <!-- EXPLORER -->
@@ -396,6 +419,17 @@
               <td class="num">{{fmt(p.celebrite)}}</td><td class="num">{{fmt(p.salaire)}}</td><td class="num">{{p.age||'—'}}</td>
             </tr>
           </table></div>
+          <template v-if="detail.rankings&&detail.rankings.length">
+            <h3>Classement dans {{detail.league}}</h3>
+            <div class="note" style="margin-bottom:6px">Rang de l'équipe par catégorie dans son championnat (stats des matchs joués). 1<sup>er</sup> = barre pleine.</div>
+            <div v-for="r in detail.rankings.filter(x=>x.rank)" :key="r.key" style="margin:4px 0">
+              <div class="row" style="justify-content:space-between">
+                <span>{{r.label}}</span>
+                <span class="muted">{{fmt(r.value)}}{{detail.percent.includes(r.key)?'%':''}} <span :style="rankColor(r)">· {{r.rank}}ᵉ/{{r.n}}</span></span>
+              </div>
+              <div class="bar"><i :style="{width:rankW(r)+'%'}"></i></div>
+            </div>
+          </template>
           <template v-if="detail.investment">
             <h3>Masse salariale par domaine (M€/an)</h3>
             <div class="note" style="margin-bottom:6px">Où va le budget de l'équipe : salaire annuel réparti par domaine selon la contribution des postes (manuel).</div>
@@ -429,6 +463,8 @@ createApp({
     metrics:[['gf_pm','Buts / match'],['ga_pm','Encaissés / match'],['poss','Possession %'],
       ['conv','Taux de finition %'],['save','Arrêts %'],['clean','Clean sheets'],
       ['occ_for_pm','Occasions créées / match'],['occ_against_pm','Occasions concédées / match']],
+    metricHigher:{gf_pm:1,ga_pm:0,poss:1,conv:1,save:1,clean:1,occ_for_pm:1,occ_against_pm:0},
+    metricPct:['poss','conv','save'],
     sc:{poste:'GAR', pmax:200, adv:'tous', leagues:[]}, scoutData:null,
     evoData:null, evoSearch:'', evoLeague:'Toutes', evoPmax:'', evoSort:'var',
     pool:[], squad:{}, years:{}, evalData:null,
@@ -442,8 +478,17 @@ createApp({
     liveCount(){let n=0;const o=this.liveByComp;for(const k in o)n+=o[k].length;return n;},
     poolByPoste(){const o={};for(const p of this.pool){(o[p.poste]=o[p.poste]||[]).push(p)}
       for(const k in o)o[k].sort((a,b)=>(b.celebrite||0)-(a.celebrite||0));return o;},
-    sortedTeams(){if(!this.teamData)return[];const m=this.teamMetric;
-      return[...this.teamData.teams].filter(t=>t[m]!=null).sort((a,b)=>(b[m])-(a[m]));},
+    sortedTeams(){if(!this.teamData)return[];const m=this.teamMetric,hi=this.metricHigher[m];
+      return[...this.teamData.teams].filter(t=>t[m]!=null).sort((a,b)=>hi?(b[m]-a[m]):(a[m]-b[m]));},
+    metricLabel(){const e=this.metrics.find(x=>x[0]===this.teamMetric);return e?e[1]:'';},
+    leaders(){if(!this.teamData)return[];
+      const defs=[['gf_pm','Meilleure attaque',1],['ga_pm','Meilleure défense',0],['poss','Possession',1],['conv','Finition',1],['save','Arrêts',1]];
+      const out=[];
+      for(const d of defs){const k=d[0],hi=d[2];const ts=this.teamData.teams.filter(t=>t[k]!=null);
+        if(!ts.length)continue;
+        const best=ts.reduce((a,b)=>(hi?(b[k]>a[k]):(b[k]<a[k]))?b:a);
+        out.push({key:k,label:d[1],team:best.team,value:best[k],pct:this.metricPct.includes(k)});}
+      return out;},
     sortedStandings(){if(!this.compData)return[];const a=[...(this.compData.standings||[])];
       const k=this.stSort.key;if(!k)return a;
       return a.sort((x,y)=>(((x[k]??0)-(y[k]??0))*this.stSort.dir));},
@@ -464,7 +509,7 @@ createApp({
     isLeague(c){return this.scoutLeagues.includes(c);},
     slotKey(p){return (p.nom||'')+'@'+(p.nom_equipe||'');},
     pctOf(val,obj){const m=Math.max(...Object.values(obj||{}).map(x=>x||0),1);return 100*(val||0)/m;},
-    teamBarW(t){const m=this.teamMetric,max=Math.max(...this.teamData.teams.map(x=>x[m]||0),0.0001);return 100*(t[m]||0)/max;},
+    teamBarW(t,i){const n=this.sortedTeams.length||1;return 100*(n-i)/n;},   // barre = rang (1er = pleine)
     rankW(r){if(!r||!r.rank||!r.n)return 0;return 100*(r.n-r.rank+1)/r.n;},
     rankColor(r){if(!r||!r.rank)return{};return r.rank===1?{color:'#f0c040',fontWeight:'700'}:(r.rank<=3?{color:'var(--green)'}:{});},
     isRookie(d){return d&&d.debut_age!=null&&d.debut_age<=18&&d.debut>0;},

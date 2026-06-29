@@ -153,14 +153,20 @@ def teams(name: str):
 
 @app.get("/api/team/{name}")
 def team(name: str):
-    """Détail d'une équipe : effectif (7 joueurs, ordre des postes) + agrégats."""
+    """Détail d'une équipe : effectif (7 joueurs, ordre des postes) + agrégats + répartition
+    salariale par domaine + classement par catégorie dans son championnat (attaque, défense,
+    possession, finition, arrêts…)."""
     squad = sorted((p for p in player_pool() if p.get("nom_equipe") == name),
                    key=lambda p: merc.TEAM_POSTES.index(p["poste"])
                    if p.get("poste") in merc.TEAM_POSTES else 99)
     salaries = [(p.get("poste"), p.get("salaire")) for p in squad]
+    league = _club_league_map().get(name)
+    rankings = core.rank_in_league(_league_domstats(league), name) if league else None
     return {"team": name, "squad": squad, "aggregate": merc.squad_aggregate(squad),
             "investment": merc.team_domain_investment(salaries),
-            "domains": merc.DOMAINS, "domain_labels": merc.DOMAIN_LABELS}
+            "domains": merc.DOMAINS, "domain_labels": merc.DOMAIN_LABELS,
+            "league": league, "rankings": rankings,
+            "percent": list(core.PERCENT_STATS)}
 
 
 @app.get("/api/scout")
