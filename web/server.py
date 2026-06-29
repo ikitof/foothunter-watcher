@@ -58,17 +58,27 @@ def player_pool():
         return _pool["data"]
 
 
-_palmares = {"data": None, "ts": 0.0}
+_palmares = {"data": None, "season": None, "ts": 0.0}
 _palmares_lock = threading.Lock()
 
 
 def palmares_cached():
     with _palmares_lock:
         now = time.time()
-        if _palmares["data"] is None or now - _palmares["ts"] > 1800:
+        if (_palmares["data"] is None or _palmares["season"] != core.SEASON
+                or now - _palmares["ts"] > 1800):   # invalide aussi au changement de saison
             _palmares["data"] = core.palmares_data(top=5)
+            _palmares["season"] = core.SEASON
             _palmares["ts"] = now
         return _palmares["data"]
+
+
+def _league_domstats(league):
+    """Stats par domaine des équipes d'un championnat (saison courante)."""
+    if not league:
+        return {}
+    groups, _ = core.fetch_competition(league)
+    return core.team_domain_stats(groups)
 
 
 def _db():
@@ -176,7 +186,7 @@ def players():
             "postes": list(merc.TEAM_POSTES)}
 
 
-_evo = {"data": None, "ts": 0.0}
+_evo = {"data": None, "careers": None, "season": None, "ts": 0.0}
 _evo_lock = threading.Lock()
 
 
@@ -195,50 +205,51 @@ def _club_league_map():
     return m
 
 
-def evolution_cached():
-    """Historique par joueur (célébrité + clubs par saison) reconstruit depuis
-    /infos_all_joueurs (clé = id stable), enrichi du salaire/ligue actuels et de la
-    variation de célébrité (dernière saison connue - première). Web-only."""
+def _evo_state():
+    """Carrières + table d'évolution, reconstruites depuis /infos_all_joueurs sur toutes les
+    saisons. Identité = (nom, poste) — l'« id » de l'API est un EMPLACEMENT réutilisé d'une
+    saison à l'autre (un même id a hébergé jusqu'à 3 joueurs différents), donc grouper par id
+    fabriquait des « carrières » mélangeant plusieurs joueurs (~87% des lignes faussées).
+    Cache invalidé au changement de saison (comme player_pool) ou après 30 min."""
     with _evo_lock:
         now = time.time()
-        if _evo["data"] is None or now - _evo["ts"] > 1800:
+        if (_evo["data"] is None or _evo["season"] != core.SEASON
+                or now - _evo["ts"] > 1800):
             seasons = list(range(core.SEASON + 1))
             leagues = _club_league_map()
-            by_id = {}
-            for sn in seasons:
-                for p in core.api_all_joueurs(sn):
-                    pid = p.get("id")
-                    if pid is None:
-                        continue
-                    e = by_id.setdefault(pid, {"id": pid, "nom": None, "poste": None,
-                                               "celebrite": {}, "clubs": {}, "salaire": {}})
-                    e["nom"] = p.get("nom") or e["nom"]
-                    e["poste"] = p.get("poste") or e["poste"]
-                    if p.get("celebrite") is not None:
-                        e["celebrite"][sn] = p["celebrite"]
-                    if p.get("nom_equipe"):
-                        e["clubs"][sn] = p["nom_equipe"]
-                    if p.get("salaire") is not None:
-                        e["salaire"][sn] = p["salaire"]
-            players = []
-            for e in by_id.values():
-                cel = e["celebrite"]
-                if not e["nom"] or not cel:
+            careers = core.build_player_careers(
+                {sn: core.api_all_joueurs(sn) for sn in seasons})
+            rows = []
+            for c in careers.values():
+                cel = c["cel"]
+                if not cel:
                     continue
-                ls = max(e["clubs"]) if e["clubs"] else None
-                e["club"] = e["clubs"].get(ls) if ls is not None else None
-                e["league"] = leagues.get(e["club"])
-                lsal = max(e["salaire"]) if e["salaire"] else None
-                e["salaire_cur"] = e["salaire"].get(lsal) if lsal is not None else None
-                lo, hi = min(cel), max(cel)
-                e["var"] = round(cel[hi] - cel[lo], 1)        # tendance globale (signée)
-                e["peak"] = max(cel.values())
-                players.append(e)
-            players.sort(key=lambda e: -e["peak"])
-            _evo["data"] = {"seasons": seasons, "players": players,
+                pres = sorted(cel)                                  # saisons avec célébrité
+                club = c["club"].get(max(c["club"])) if c["club"] else None
+                rows.append({
+                    "key": c["nom"] + "|" + c["poste"],             # clé stable pour v-for
+                    "nom": c["nom"], "poste": c["poste"], "club": club,
+                    "league": leagues.get(club),
+                    "celebrite": cel,
+                    "salaire_cur": c["sal"].get(max(c["sal"])) if c["sal"] else None,
+                    # variation = dernière − première saison ; None si une seule saison
+                    # (un joueur nouveau ne doit pas afficher « 0 » comme un vétéran stable)
+                    "var": round(cel[pres[-1]] - cel[pres[0]], 1) if len(pres) >= 2 else None,
+                    "peak": max(cel.values()),
+                    "debut": pres[0],                               # 1re saison connue
+                    "is_new": len(pres) == 1 and pres[0] == core.SEASON,
+                })
+            rows.sort(key=lambda e: -e["peak"])
+            _evo["careers"] = careers
+            _evo["data"] = {"seasons": seasons, "players": rows,
                             "leagues": sorted({v for v in leagues.values() if v})}
+            _evo["season"] = core.SEASON
             _evo["ts"] = now
-        return _evo["data"]
+        return _evo
+
+
+def evolution_cached():
+    return _evo_state()["data"]
 
 
 @app.get("/api/evolution")
@@ -246,27 +257,75 @@ def evolution():
     return evolution_cached()
 
 
-@app.get("/api/player/{nom}")
-def player(nom: str):
-    """Détail d'un joueur : poste, club + célé/salaire/âge actuels, et l'historique
-    (célébrité + clubs par saison)."""
-    data = evolution_cached()
-    cur = next((p for p in player_pool() if p.get("nom") == nom), None)
-    hist = next((p for p in data["players"] if p.get("nom") == nom), None)
-    if not cur and not hist:
-        raise HTTPException(404, "joueur introuvable")
-    cel = (hist or {}).get("celebrite") or {}
-    last = max(cel) if cel else None
+def _role_context(poste, club, league):
+    """Contexte « stats du rôle » FACTUEL pour un joueur : les stats d'ÉQUIPE pertinentes pour
+    son poste (manuel : tout domaine sauf Arrêts dépend de PLUSIEURS joueurs — jamais un stat
+    individuel), avec le rang de son équipe dans son championnat pour chacune. Renvoie
+    {labels:[(label,key,higher_better)], stats:{key:val}, ranks:{key:{rank,n}}, league}."""
+    defs = core.POSTE_STATS.get((poste or "").upper())
+    if not defs or not club:
+        return None
+    dom = _league_domstats(league)
+    teamrow = dom.get(club) or {}
+    higher = {k: hb for _lbl, k, hb in defs}
+    cats = [(k, lbl, higher[k]) for lbl, k, _hb in defs]
+    ranks = {}
+    for r in (core.rank_in_league(dom, club, cats) or []):
+        ranks[r["key"]] = {"rank": r["rank"], "n": r["n"]}
     return {
-        "nom": nom,
-        "poste": (cur or hist or {}).get("poste"),
-        "club": (cur or {}).get("nom_equipe") or (hist or {}).get("club"),
-        "celebrite": (cur or {}).get("celebrite") if cur else (cel.get(last) if last is not None else None),
-        "salaire": (cur or {}).get("salaire"),
-        "age": (cur or {}).get("age"),
-        "history": cel,
-        "clubs": (hist or {}).get("clubs") or {},
-        "seasons": data["seasons"],
+        "labels": [{"label": lbl, "key": k, "higher": hb} for lbl, k, hb in defs],
+        "stats": {k: teamrow.get(k) for _lbl, k, _hb in defs},
+        "ranks": ranks, "league": league, "percent": list(core.PERCENT_STATS),
+    }
+
+
+@app.get("/api/player/{nom}")
+def player(nom: str, poste: str = ""):
+    """Détail FACTUEL d'un joueur (identité (nom, poste)) : club/célé/salaire/âge actuels,
+    historique par saison (club, célébrité, salaire, âge), transferts, percentiles de
+    célébrité/salaire parmi les joueurs du même poste, et stats d'ÉQUIPE pertinentes pour le
+    rôle (rang en championnat). Reste joignable même pour un joueur qui n'est plus dans la
+    saison courante (ex. retraité/remplacé)."""
+    nom = (nom or "").strip()
+    state = _evo_state()
+    careers = state["careers"]
+    poste = (poste or "").upper()
+    # carrière(s) portant ce nom (désambiguïsation par poste si fourni ou si homonymes)
+    cands = [c for (cn, cp), c in careers.items() if cn == nom and (not poste or cp == poste)]
+    if not cands:
+        cands = [c for (cn, cp), c in careers.items() if cn == nom]
+    if not cands:
+        raise HTTPException(404, "joueur introuvable")
+    car = max(cands, key=lambda c: len(c["seasons"]))   # la carrière la plus fournie
+    cel = car["cel"]
+    last = max(cel) if cel else None
+    cur_club = car["club"].get(max(car["club"])) if car["club"] else None
+    league = _club_league_map().get(cur_club)
+    # percentiles de célébrité / salaire parmi les joueurs du MÊME poste (saison courante)
+    pool = player_pool()
+    pct = {}
+    if last == core.SEASON:
+        for fld in ("celebrite", "salaire"):
+            pc = core.position_percentile(pool, car["poste"], fld, (cel.get(last) if fld == "celebrite"
+                                          else car["sal"].get(last)))
+            if pc:
+                pct[fld] = pc
+    return {
+        "nom": car["nom"], "poste": car["poste"], "club": cur_club,
+        "celebrite": cel.get(last) if last is not None else None,
+        "salaire": car["sal"].get(max(car["sal"])) if car["sal"] else None,
+        "age": car["age"].get(max(car["age"])) if car["age"] else None,
+        "history": cel, "clubs": car["club"], "salaries": car["sal"], "ages": car["age"],
+        "seasons": state["data"]["seasons"], "career_seasons": car["seasons"],
+        "transfers": core.career_transfers(car),
+        "debut": car["seasons"][0] if car["seasons"] else None,
+        "debut_age": car["age"].get(car["seasons"][0]) if car["seasons"] else None,
+        "peak": max(cel.values()) if cel else None,
+        "peak_season": max(cel, key=cel.get) if cel else None,
+        "active": last == core.SEASON,
+        "percentiles": pct,
+        "role": _role_context(car["poste"], cur_club, league) if last == core.SEASON else None,
+        "namesakes": sorted({c["poste"] for c in cands}) if len(cands) > 1 else [],
     }
 
 

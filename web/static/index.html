@@ -75,6 +75,10 @@
   .x{background:transparent;border:0;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:4px 8px;min-height:36px}
   .ext{display:inline-block;margin-top:12px;color:var(--accent);font-size:13px;text-decoration:none}
   .ext:hover{text-decoration:underline}
+  .kv{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px}
+  .kv b{font-size:15px}
+  .tag{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:2px 9px;font-size:11px;margin-left:6px}
+  .tr-arrow{color:var(--flash);font-weight:700;margin-right:2px}
 </style>
 </head>
 <body>
@@ -204,11 +208,11 @@
         <div class="scroll" v-else><table>
           <tr><th>Joueur</th><th>Équipe</th><th>Ligue</th>
             <th class="num" title="Stat d'équipe — le poste n'y contribue que partiellement (sauf GAR → Arrêts)">{{scoutData.stat_label}}</th>
-            <th class="num" title="Adversité : célébrité moyenne des adversaires pertinents rencontrés">Adv.</th>
+            <th class="num" title="Adversité : célébrité moyenne des adversaires pertinents rencontrés (proxy de notoriété, pas le niveau réel)">Adv.</th>
             <th class="num" title="Célébrité (popularité visible, pas le niveau réel)">Célé</th>
             <th class="num" title="Salaire annuel (M€)">M€</th><th></th></tr>
           <tr v-for="r in scoutData.rows" :key="r.nom+r.team">
-            <td class="lk" @click="openPlayer(r.nom)">{{r.nom}}</td><td class="lk" @click="openTeam(r.team)">{{r.team}}</td><td class="lk" @click="openComp(r.competition)">{{r.competition}}</td>
+            <td class="lk" @click="openPlayer(r.nom,sc.poste)">{{r.nom}}</td><td class="lk" @click="openTeam(r.team)">{{r.team}}</td><td class="lk" @click="openComp(r.competition)">{{r.competition}}</td>
             <td class="num" style="color:var(--accent)">{{fmt(r.stat)}}</td>
             <td class="num">{{fmt(r[scoutData.adv_key])}}</td>
             <td class="num">{{fmt(r.celebrite)}}</td><td class="num">{{fmt(r.salaire)}}</td>
@@ -242,9 +246,9 @@
             <th class="num" title="Variation de célébrité (dernière − première saison)">Δ</th>
             <th>Tendance</th>
             <th class="num" v-for="s in evoData.seasons" :key="s">S{{s}}</th></tr>
-          <tr v-for="p in evoRows" :key="p.id">
-            <td class="lk" @click="openPlayer(p.nom)">{{p.nom}}</td><td class="muted">{{p.poste}}</td><td class="lk" @click="openTeam(p.club)">{{p.club}}</td>
-            <td class="num" :style="{color:p.var>0?'var(--green)':(p.var<0?'var(--live)':'var(--muted)')}">{{p.var>0?'+':''}}{{p.var}}</td>
+          <tr v-for="p in evoRows" :key="p.key">
+            <td class="lk" @click="openPlayer(p.nom,p.poste)">{{p.nom}}</td><td class="muted">{{p.poste}}</td><td class="lk" @click="openTeam(p.club)">{{p.club}}</td>
+            <td class="num" :style="{color:p.var>0?'var(--green)':(p.var<0?'var(--live)':'var(--muted)')}" :title="p.var==null?'une seule saison de données':''">{{p.var==null?'—':(p.var>0?'+':'')+p.var}}</td>
             <td><svg class="spark" viewBox="0 0 100 24" preserveAspectRatio="none" v-if="sparkPoints(p.celebrite,evoData.seasons)"><polyline :points="sparkPoints(p.celebrite,evoData.seasons)" fill="none" stroke="var(--accent)" stroke-width="2"/></svg></td>
             <td class="num" v-for="s in evoData.seasons" :key="s" :style="celCell(p,s)">{{p.celebrite[s]!=null?Math.round(p.celebrite[s]):'·'}}</td>
           </tr>
@@ -326,20 +330,51 @@
         <div v-if="detail.loading" class="muted">chargement…</div>
         <div v-else-if="detail.error" class="err">joueur introuvable</div>
         <template v-else>
-          <div class="muted">{{detail.poste}} · <span class="lk" @click="openTeam(detail.club)">{{detail.club}}</span></div>
-          <div style="margin:8px 0">Célébrité <b style="color:var(--accent)">{{fmt(detail.celebrite)}}</b>
-            · Salaire {{fmt(detail.salaire)}} M€ · Âge {{detail.age||'—'}}</div>
-          <h3 style="margin-top:6px">Célébrité par saison
+          <div class="muted">
+            {{detail.poste}} · <span class="lk" @click="openTeam(detail.club)">{{detail.club||'—'}}</span><span v-if="detail.role&&detail.role.league"> · {{detail.role.league}}</span>
+            <span v-if="!detail.active" class="tag" title="N'apparaît pas dans la saison courante (retraité ou parti)">inactif</span>
+            <span v-if="isRookie(detail)" class="tag" style="color:var(--green)">🌱 recrue · vu dès S{{detail.debut}} à {{Math.round(detail.debut_age)}} ans</span>
+          </div>
+          <div class="grid2" style="gap:8px;margin:10px 0">
+            <div class="kv">Célébrité <b style="color:var(--accent)">{{fmt(detail.celebrite)}}</b>
+              <span class="note" v-if="detail.percentiles&&detail.percentiles.celebrite"><br>{{detail.percentiles.celebrite.pct}}ᵉ pct des {{detail.poste}}</span></div>
+            <div class="kv">Salaire <b>{{fmt(detail.salaire)}}</b> M€
+              <span class="note" v-if="detail.percentiles&&detail.percentiles.salaire"><br>{{detail.percentiles.salaire.pct}}ᵉ pct des {{detail.poste}}</span></div>
+            <div class="kv">Âge <b>{{detail.age||'—'}}</b><span class="note" v-if="detail.active"><br>retraite à 36 ans</span></div>
+            <div class="kv">Pic de célé <b>{{fmt(detail.peak)}}</b><span class="note" v-if="detail.peak_season!=null"><br>saison {{detail.peak_season}}</span></div>
+          </div>
+          <div class="note" v-if="isYoung(detail)" style="margin-bottom:8px">🌱 Jeune joueur : sa célébrité est gonflée par l'« effet jeunesse », d'autant plus fort qu'il est jeune (jusqu'à ≈+45 % à 16 ans d'après le manuel, l'effet décroît avec l'âge). C'est de la <b>notoriété</b> visible, <b>pas</b> le niveau réel (caché — il débute entre 55 et 65).</div>
+          <h3 style="margin-top:6px">Parcours par saison
             <svg class="spark" viewBox="0 0 100 24" preserveAspectRatio="none" v-if="sparkPoints(detail.history,detail.seasons)"><polyline :points="sparkPoints(detail.history,detail.seasons)" fill="none" stroke="var(--accent)" stroke-width="2"/></svg>
+            <span class="note">· célébrité</span>
           </h3>
           <div class="scroll"><table>
-            <tr><th class="num" v-for="s in detail.seasons" :key="s">S{{s}}</th></tr>
-            <tr><td class="num" v-for="s in detail.seasons" :key="s">{{detail.history[s]!=null?Math.round(detail.history[s]):'·'}}</td></tr>
+            <tr><th>Saison</th><th>Club</th><th class="num" title="Célébrité (notoriété visible, pas le niveau)">Célé</th><th class="num">M€</th><th class="num">Âge</th></tr>
+            <tr v-for="s in detail.career_seasons" :key="s">
+              <td class="muted">S{{s}}</td>
+              <td><span v-if="transferAt(detail,s)" class="tr-arrow" title="Transfert cette saison">→</span><span class="lk" @click="openTeam(detail.clubs[s])">{{detail.clubs[s]||'—'}}</span></td>
+              <td class="num" :style="celCellH(detail.history,s)">{{detail.history[s]!=null?Math.round(detail.history[s]):'·'}}</td>
+              <td class="num">{{fmt(detail.salaries&&detail.salaries[s])}}</td>
+              <td class="num">{{detail.ages&&detail.ages[s]!=null?Math.round(detail.ages[s]):'·'}}</td>
+            </tr>
           </table></div>
-          <h3>Clubs par saison</h3>
-          <div class="muted" style="font-size:12px">
-            <span v-for="s in detail.seasons" :key="s">S{{s}} : {{detail.clubs[s]||'—'}}<span v-if="s!==detail.seasons[detail.seasons.length-1]"> · </span></span>
-          </div>
+          <template v-if="detail.transfers&&detail.transfers.length">
+            <h3>Transferts</h3>
+            <div class="muted" style="font-size:12px">
+              <div v-for="t in detail.transfers" :key="t.season">S{{t.season}} : {{t.from}} <span class="tr-arrow">→</span> {{t.to}}</div>
+            </div>
+          </template>
+          <template v-if="detail.role&&detail.role.labels.length">
+            <h3>Stats du rôle <span class="note">· équipe ({{detail.role.league}})</span></h3>
+            <div class="note" style="margin-bottom:6px">Stats d'<b>équipe</b> (matchs joués), <b>pas</b> individuelles : le poste {{detail.poste}} n'y contribue que partiellement<span v-if="detail.poste==='GAR'"> — sauf les arrêts (100 % gardien)</span>. Le niveau réel du joueur reste caché.</div>
+            <div v-for="l in detail.role.labels" :key="l.key" style="margin:5px 0">
+              <div class="row" style="justify-content:space-between">
+                <span>{{l.label}}</span>
+                <span class="muted">{{fmt(detail.role.stats[l.key])}}{{detail.role.percent.includes(l.key)?'%':''}}<span v-if="detail.role.ranks[l.key]&&detail.role.ranks[l.key].rank" :style="rankColor(detail.role.ranks[l.key])"> · {{detail.role.ranks[l.key].rank}}ᵉ/{{detail.role.ranks[l.key].n}}</span></span>
+              </div>
+              <div class="bar"><i :style="{width:rankW(detail.role.ranks[l.key])+'%'}"></i></div>
+            </div>
+          </template>
           <a class="ext" :href="gameBase+'/joueurs/'+encodeURIComponent(detail.nom)" target="_blank" rel="noopener">Voir sur Foothunter ↗</a>
         </template>
       </template>
@@ -357,7 +392,7 @@
             <tr><th>Poste</th><th>Joueur</th><th class="num">Célé</th><th class="num">M€</th><th class="num">Âge</th></tr>
             <tr v-for="p in detail.squad" :key="p.id">
               <td style="color:var(--accent);font-weight:600">{{p.poste}}</td>
-              <td class="lk" @click="openPlayer(p.nom)">{{p.nom}}</td>
+              <td class="lk" @click="openPlayer(p.nom,p.poste)">{{p.nom}}</td>
               <td class="num">{{fmt(p.celebrite)}}</td><td class="num">{{fmt(p.salaire)}}</td><td class="num">{{p.age||'—'}}</td>
             </tr>
           </table></div>
@@ -430,6 +465,13 @@ createApp({
     slotKey(p){return (p.nom||'')+'@'+(p.nom_equipe||'');},
     pctOf(val,obj){const m=Math.max(...Object.values(obj||{}).map(x=>x||0),1);return 100*(val||0)/m;},
     teamBarW(t){const m=this.teamMetric,max=Math.max(...this.teamData.teams.map(x=>x[m]||0),0.0001);return 100*(t[m]||0)/max;},
+    rankW(r){if(!r||!r.rank||!r.n)return 0;return 100*(r.n-r.rank+1)/r.n;},
+    rankColor(r){if(!r||!r.rank)return{};return r.rank===1?{color:'#f0c040',fontWeight:'700'}:(r.rank<=3?{color:'var(--green)'}:{});},
+    isRookie(d){return d&&d.debut_age!=null&&d.debut_age<=18&&d.debut>0;},
+    isYoung(d){return d&&d.age!=null&&d.age<=18;},
+    transferAt(d,s){return!!(d&&d.transfers&&d.transfers.some(t=>t.season===s));},
+    celCellH(hist,s){if(!hist)return{};const v=hist[s];if(v==null)return{};const prev=hist[s-1];
+      if(prev==null)return{};return{color:v>prev?'var(--green)':(v<prev?'var(--live)':'')};},
     celCell(p,s){const v=p.celebrite[s];if(v==null)return{};const prev=p.celebrite[s-1];
       if(prev==null)return{};return{color:v>prev?'var(--green)':(v<prev?'var(--live)':'')};},
     sparkPoints(hist,seasons){if(!hist||!seasons)return'';
@@ -461,7 +503,7 @@ createApp({
       }catch(e){this.error='API injoignable';}
       this.refreshLive(); this.liveTimer=setInterval(this.refreshLive,10000);
       const q=new URLSearchParams(location.search);
-      if(q.get('player'))this.openPlayer(q.get('player'));
+      if(q.get('player'))this.openPlayer(q.get('player'),q.get('poste'));
       else if(q.get('team'))this.openTeam(q.get('team'));
       else if(q.get('m')){this.loadCode=q.get('m');this.loadMercato();}
       else{try{const s=JSON.parse(localStorage.getItem('fh_mercato')||'null');
@@ -507,8 +549,8 @@ createApp({
     async loadPalmares(){this.error='';try{this.palmares=await api('/palmares');}catch(e){this.error='Impossible de charger le palmarès.';}},
     setUrl(params){const u=new URL(location);u.search='';for(const k in params)if(params[k])u.searchParams.set(k,params[k]);
       history.replaceState(null,'',u);},
-    async openPlayer(nom){if(!nom)return;this.detail={type:'player',nom,loading:true};this.setUrl({player:nom});
-      try{const d=await api('/player/'+encodeURIComponent(nom));this.detail={type:'player',loading:false,...d};}
+    async openPlayer(nom,poste){if(!nom)return;this.detail={type:'player',nom,loading:true};this.setUrl({player:nom,poste});
+      try{const d=await api('/player/'+encodeURIComponent(nom)+(poste?'?poste='+encodeURIComponent(poste):''));this.detail={type:'player',loading:false,...d};}
       catch(e){this.detail={type:'player',nom,loading:false,error:true};}},
     async openTeam(team){if(!team)return;this.detail={type:'team',team,loading:true};this.setUrl({team});
       try{const d=await api('/team/'+encodeURIComponent(team));this.detail={type:'team',loading:false,...d};}
