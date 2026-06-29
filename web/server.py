@@ -81,6 +81,48 @@ def _league_domstats(league):
     return core.team_domain_stats(groups)
 
 
+# Stats d'équipe par domaine PAR SAISON et PAR COMPÉTITION, depuis les matchs joués de chaque
+# saison (terminées + courante). Sert aux « stats du rôle PAR SAISON » de la fiche joueur : on
+# regarde l'équipe où il était CETTE saison-là, pas son club actuel. Cache invalidé au
+# changement de saison (comme player_pool) ou après 30 min.
+_sdm = {"data": None, "season": None, "ts": 0.0}
+_sdm_lock = threading.Lock()
+
+
+def _season_dom_map():
+    with _sdm_lock:
+        now = time.time()
+        if (_sdm["data"] is None or _sdm["season"] != core.SEASON
+                or now - _sdm["ts"] > 1800):
+            out = {}
+
+            def add(sn, matches):
+                bycomp = {}
+                for o in (matches or []):
+                    bycomp.setdefault(o.get("competition") or "?", []).append(o)
+                out[sn] = {c: core.season_domstats_from_api(ms) for c, ms in bycomp.items()}
+
+            for skey, lst in (core.api_all_matchs() or {}).items():     # saisons terminées
+                sn = int("".join(ch for ch in skey if ch.isdigit()) or "-1")
+                if sn >= 0:
+                    add(sn, lst)
+            add(core.SEASON, core.api_season_matches(core.SEASON))      # saison courante
+            _sdm["data"] = out
+            _sdm["season"] = core.SEASON
+            _sdm["ts"] = now
+        return _sdm["data"]
+
+
+def _team_season_dom(season, team):
+    """(championnat, {équipe: domstats}) où jouait `team` cette saison-là (championnat
+    prioritaire : round-robin -> classement comparable), ou (None, None) si introuvable."""
+    smap = _season_dom_map().get(season) or {}
+    for comp, dom in smap.items():
+        if comp in merc.SCOUT_LEAGUES and team in dom:
+            return comp, dom
+    return None, None
+
+
 def _db():
     con = sqlite3.connect(DB_PATH)
     con.execute("CREATE TABLE IF NOT EXISTS mercato "
@@ -263,26 +305,32 @@ def evolution():
     return evolution_cached()
 
 
-def _role_context(poste, club, league):
-    """Contexte « stats du rôle » FACTUEL pour un joueur : les stats d'ÉQUIPE pertinentes pour
-    son poste (manuel : tout domaine sauf Arrêts dépend de PLUSIEURS joueurs — jamais un stat
-    individuel), avec le rang de son équipe dans son championnat pour chacune. Renvoie
-    {labels:[(label,key,higher_better)], stats:{key:val}, ranks:{key:{rank,n}}, league}."""
-    defs = core.POSTE_STATS.get((poste or "").upper())
-    if not defs or not club:
-        return None
-    dom = _league_domstats(league)
-    teamrow = dom.get(club) or {}
-    higher = {k: hb for _lbl, k, hb in defs}
-    cats = [(k, lbl, higher[k]) for lbl, k, _hb in defs]
-    ranks = {}
-    for r in (core.rank_in_league(dom, club, cats) or []):
-        ranks[r["key"]] = {"rank": r["rank"], "n": r["n"]}
-    return {
-        "labels": [{"label": lbl, "key": k, "higher": hb} for lbl, k, hb in defs],
-        "stats": {k: teamrow.get(k) for _lbl, k, _hb in defs},
-        "ranks": ranks, "league": league, "percent": list(core.PERCENT_STATS),
-    }
+def _role_history(career):
+    """Stats du rôle PAR SAISON pour un joueur : pour chaque saison de sa carrière, les stats
+    d'ÉQUIPE pertinentes pour son poste, calculées au club où il était CETTE saison-là (et non
+    son club actuel), avec le rang de cette équipe dans son championnat. Factuel — manuel : tout
+    domaine sauf Arrêts dépend de PLUSIEURS joueurs, donc ce sont des stats d'équipe, jamais
+    individuelles. Renvoie {season: {league, stats:{key:val}, ranks:{key:{rank,n}}}}."""
+    poste = (career.get("poste") or "").upper()
+    defs = core.POSTE_STATS.get(poste)
+    if not defs:
+        return {}
+    cats = [(k, lbl, hb) for lbl, k, hb in defs]
+    hist = {}
+    for s in career["seasons"]:
+        club = career["club"].get(s)
+        if not club:
+            continue
+        comp, dom = _team_season_dom(s, club)
+        if not dom or club not in dom:
+            continue
+        teamrow = dom[club]
+        ranks = {r["key"]: {"rank": r["rank"], "n": r["n"]}
+                 for r in (core.rank_in_league(dom, club, cats) or [])}
+        hist[s] = {"league": comp,
+                   "stats": {k: teamrow.get(k) for _lbl, k, _hb in defs},
+                   "ranks": ranks}
+    return hist
 
 
 @app.get("/api/player/{nom}")
@@ -290,8 +338,8 @@ def player(nom: str, poste: str = ""):
     """Détail FACTUEL d'un joueur (identité (nom, poste)) : club/célé/salaire/âge actuels,
     historique par saison (club, célébrité, salaire, âge), transferts, percentiles de
     célébrité/salaire parmi les joueurs du même poste, et stats d'ÉQUIPE pertinentes pour le
-    rôle (rang en championnat). Reste joignable même pour un joueur qui n'est plus dans la
-    saison courante (ex. retraité/remplacé)."""
+    rôle PAR SAISON (au club de l'époque + rang en championnat). Reste joignable même pour un
+    joueur qui n'est plus dans la saison courante (ex. retraité/remplacé)."""
     nom = (nom or "").strip()
     state = _evo_state()
     careers = state["careers"]
@@ -306,7 +354,6 @@ def player(nom: str, poste: str = ""):
     cel = car["cel"]
     last = max(cel) if cel else None
     cur_club = car["club"].get(max(car["club"])) if car["club"] else None
-    league = _club_league_map().get(cur_club)
     # percentiles de célébrité / salaire parmi les joueurs du MÊME poste (saison courante)
     pool = player_pool()
     pct = {}
@@ -316,8 +363,11 @@ def player(nom: str, poste: str = ""):
                                           else car["sal"].get(last)))
             if pc:
                 pct[fld] = pc
+    role_defs = core.POSTE_STATS.get(car["poste"]) or []
+    role_hist = _role_history(car)
     return {
         "nom": car["nom"], "poste": car["poste"], "club": cur_club,
+        "league": (role_hist.get(last) or {}).get("league"),
         "celebrite": cel.get(last) if last is not None else None,
         "salaire": car["sal"].get(max(car["sal"])) if car["sal"] else None,
         "age": car["age"].get(max(car["age"])) if car["age"] else None,
@@ -330,7 +380,10 @@ def player(nom: str, poste: str = ""):
         "peak_season": max(cel, key=cel.get) if cel else None,
         "active": last == core.SEASON,
         "percentiles": pct,
-        "role": _role_context(car["poste"], cur_club, league) if last == core.SEASON else None,
+        # stats du rôle (équipe) par saison, au club de l'époque
+        "role_keys": [{"label": lbl, "key": k, "higher": hb} for lbl, k, hb in role_defs],
+        "role_percent": list(core.PERCENT_STATS),
+        "role_hist": role_hist,
         "namesakes": sorted({c["poste"] for c in cands}) if len(cands) > 1 else [],
     }
 

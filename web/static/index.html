@@ -354,7 +354,7 @@
         <div v-else-if="detail.error" class="err">joueur introuvable</div>
         <template v-else>
           <div class="muted">
-            {{detail.poste}} · <span class="lk" @click="openTeam(detail.club)">{{detail.club||'—'}}</span><span v-if="detail.role&&detail.role.league"> · {{detail.role.league}}</span>
+            {{detail.poste}} · <span class="lk" @click="openTeam(detail.club)">{{detail.club||'—'}}</span><span v-if="detail.league"> · {{detail.league}}</span>
             <span v-if="!detail.active" class="tag" title="N'apparaît pas dans la saison courante (retraité ou parti)">inactif</span>
             <span v-if="isRookie(detail)" class="tag" style="color:var(--green)">🌱 recrue · vu dès S{{detail.debut}} à {{Math.round(detail.debut_age)}} ans</span>
           </div>
@@ -387,16 +387,19 @@
               <div v-for="t in detail.transfers" :key="t.season">S{{t.season}} : {{t.from}} <span class="tr-arrow">→</span> {{t.to}}</div>
             </div>
           </template>
-          <template v-if="detail.role&&detail.role.labels.length">
-            <h3>Stats du rôle <span class="note">· équipe ({{detail.role.league}})</span></h3>
-            <div class="note" style="margin-bottom:6px">Stats d'<b>équipe</b> (matchs joués), <b>pas</b> individuelles : le poste {{detail.poste}} n'y contribue que partiellement<span v-if="detail.poste==='GAR'"> — sauf les arrêts (100 % gardien)</span>. Le niveau réel du joueur reste caché.</div>
-            <div v-for="l in detail.role.labels" :key="l.key" style="margin:5px 0">
-              <div class="row" style="justify-content:space-between">
-                <span>{{l.label}}</span>
-                <span class="muted">{{fmt(detail.role.stats[l.key])}}{{detail.role.percent.includes(l.key)?'%':''}}<span v-if="detail.role.ranks[l.key]&&detail.role.ranks[l.key].rank" :style="rankColor(detail.role.ranks[l.key])"> · {{detail.role.ranks[l.key].rank}}ᵉ/{{detail.role.ranks[l.key].n}}</span></span>
-              </div>
-              <div class="bar"><i :style="{width:rankW(detail.role.ranks[l.key])+'%'}"></i></div>
-            </div>
+          <template v-if="detail.role_keys&&detail.role_keys.length&&roleSeasons.length">
+            <h3>Stats du rôle par saison <span class="note">· équipe</span></h3>
+            <div class="note" style="margin-bottom:6px">Stats de l'<b>équipe</b> où il jouait chaque saison (matchs joués) + son rang en championnat <span class="note">(ᵉ)</span>. Ce sont des stats d'équipe, <b>pas</b> individuelles : le poste {{detail.poste}} n'y contribue que partiellement<span v-if="detail.poste==='GAR'"> — sauf les arrêts (100 % gardien)</span>. Le niveau réel reste caché.</div>
+            <div class="scroll"><table>
+              <tr><th>Saison</th><th>Club</th><th class="num" v-for="k in detail.role_keys" :key="k.key" :title="k.label">{{k.label}}</th></tr>
+              <tr v-for="s in roleSeasons" :key="s">
+                <td class="muted">S{{s}}</td>
+                <td><span class="lk" @click="openTeam(detail.clubs[s])">{{detail.clubs[s]||'—'}}</span></td>
+                <td class="num" v-for="k in detail.role_keys" :key="k.key">
+                  {{fmt(detail.role_hist[s].stats[k.key])}}{{detail.role_percent.includes(k.key)?'%':''}}<sup v-if="detail.role_hist[s].ranks[k.key]&&detail.role_hist[s].ranks[k.key].rank" :style="rankColor(detail.role_hist[s].ranks[k.key])"> {{detail.role_hist[s].ranks[k.key].rank}}<span class="note">/{{detail.role_hist[s].ranks[k.key].n}}</span></sup>
+                </td>
+              </tr>
+            </table></div>
           </template>
           <a class="ext" :href="gameBase+'/joueurs/'+encodeURIComponent(detail.nom)" target="_blank" rel="noopener">Voir sur Foothunter ↗</a>
         </template>
@@ -489,6 +492,8 @@ createApp({
         const best=ts.reduce((a,b)=>(hi?(b[k]>a[k]):(b[k]<a[k]))?b:a);
         out.push({key:k,label:d[1],team:best.team,value:best[k],pct:this.metricPct.includes(k)});}
       return out;},
+    roleSeasons(){const d=this.detail;if(!d||!d.role_hist)return[];
+      return (d.career_seasons||[]).filter(s=>d.role_hist[s]);},
     sortedStandings(){if(!this.compData)return[];const a=[...(this.compData.standings||[])];
       const k=this.stSort.key;if(!k)return a;
       return a.sort((x,y)=>(((x[k]??0)-(y[k]??0))*this.stSort.dir));},
