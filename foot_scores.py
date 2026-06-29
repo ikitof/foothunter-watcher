@@ -795,50 +795,85 @@ def fetch_team_squad(team, season_number=None):
             for p in api_all_joueurs(sn) if p.get("nom_equipe") == team]
 
 
+def build_player_careers(seasons_players):
+    """Reconstruit la carrière de chaque joueur depuis {saison: [joueurs API]}.
+
+    ATTENTION — l'« id » de /infos_all_joueurs N'EST PAS une identité de joueur stable :
+    c'est un EMPLACEMENT (slot équipe+poste) par saison, réutilisé d'une saison à l'autre.
+    Vérifié sur les données réelles : id=5 = le slot MOFF d'Arsenal, tenu par Odegaard
+    (S0-S3) puis Désiré Doué (S4) ; quand Odegaard part à City il prend l'id=12 (ex-Cherki).
+    Grouper par id mélange donc DES JOUEURS DIFFÉRENTS dans une même « carrière ».
+    L'identité réelle d'un joueur est son NOM, désambiguïsé par le POSTE (seul cas
+    d'homonymes sur des postes distincts : « Vitinha » MDEF du PSG vs « Vitinha » AC
+    d'Alanyaspor). Clé de carrière = (nom, poste).
+
+    Renvoie {(nom, poste): {nom, poste, cel, club, sal, age, seasons}} où cel/club/sal/age
+    sont des dicts {saison: valeur} et seasons la liste triée des saisons présentes."""
+    careers = {}
+    for sn in sorted(seasons_players):
+        for p in seasons_players[sn]:
+            nom = (p.get("nom") or "").strip()   # l'API renvoie parfois un espace final
+            poste = (p.get("poste") or "").upper()
+            if not nom or not poste:
+                continue
+            key = (nom, poste)
+            c = careers.get(key)
+            if c is None:
+                c = careers[key] = {"nom": nom, "poste": poste,
+                                    "cel": {}, "club": {}, "sal": {}, "age": {}}
+            cel, age, sal = _num(p.get("celebrite")), _num(p.get("age")), _num(p.get("salaire"))
+            if cel is not None:
+                c["cel"][sn] = cel
+            if p.get("nom_equipe"):
+                c["club"][sn] = p["nom_equipe"]
+            if age is not None:
+                c["age"][sn] = age
+            if sal is not None:
+                c["sal"][sn] = sal
+    for c in careers.values():
+        c["seasons"] = sorted(set(c["cel"]) | set(c["club"]) | set(c["age"]) | set(c["sal"]))
+    return careers
+
+
+def career_transfers(career):
+    """Changements de club d'un joueur entre saisons CONSÉCUTIVES où il est présent.
+    Renvoie [{season, from, to}] (season = saison d'arrivée dans le nouveau club)."""
+    club = career.get("club") or {}
+    seasons = sorted(club)
+    return [{"season": cur, "from": club[prev], "to": club[cur]}
+            for prev, cur in zip(seasons, seasons[1:]) if club[prev] != club[cur]]
+
+
 def fetch_player_history(season_to=None):
     """Historique par joueur (célébrité + clubs par saison) reconstruit depuis l'API
-    /infos_all_joueurs sur toutes les saisons (clé = id stable). Remplace l'export CSV
-    websocket de /joueurs. Renvoie {players, histories, clubs, seasons} (clés de saison
-    = int) :
+    /infos_all_joueurs sur toutes les saisons. L'identité d'un joueur = (nom, poste) —
+    l'« id » de l'API est un emplacement réutilisé, pas un joueur (voir build_player_careers).
+    Renvoie {players, histories, clubs, seasons} (clés de saison = int) :
       histories[nom] = {saison: célébrité} · clubs[nom] = {saison: club}
       players = [{nom, poste, nom_equipe, age, celebrite, salaire}] (dernière saison connue)."""
     if season_to is None:
         season_to = SEASON
     seasons = list(range(season_to + 1))
-    by_id = {}
-    for sn in seasons:
-        for p in api_all_joueurs(sn):
-            pid = p.get("id")
-            if pid is None:
-                continue
-            e = by_id.setdefault(pid, {"nom": None, "poste": None,
-                                       "cel": {}, "club": {}, "age": {}, "sal": {}})
-            e["nom"] = p.get("nom") or e["nom"]
-            e["poste"] = p.get("poste") or e["poste"]
-            c, a, s = _num(p.get("celebrite")), _num(p.get("age")), _num(p.get("salaire"))
-            if c is not None:
-                e["cel"][sn] = c
-            if p.get("nom_equipe"):
-                e["club"][sn] = p["nom_equipe"]
-            if a is not None:
-                e["age"][sn] = a
-            if s is not None:
-                e["sal"][sn] = s
-    players, histories, clubs = [], {}, {}
-    for e in by_id.values():
-        nom = e["nom"]
-        if not nom or not e["cel"]:
+    careers = build_player_careers({sn: api_all_joueurs(sn) for sn in seasons})
+    players = []
+    # Vues indexées par NOM (desktop/mobile) : en cas d'homonymes (ex. deux « Vitinha »
+    # sur des postes différents), on garde la carrière la plus fournie pour ce nom.
+    best = {}
+    for c in careers.values():
+        if not c["cel"]:
             continue
-        histories[nom] = e["cel"]
-        if e["club"]:
-            clubs[nom] = e["club"]
         players.append({
-            "nom": nom, "poste": e["poste"],
-            "nom_equipe": e["club"].get(max(e["club"])) if e["club"] else None,
-            "age": e["age"].get(max(e["age"])) if e["age"] else None,
-            "celebrite": e["cel"].get(max(e["cel"])),
-            "salaire": e["sal"].get(max(e["sal"])) if e["sal"] else None,
+            "nom": c["nom"], "poste": c["poste"],
+            "nom_equipe": c["club"].get(max(c["club"])) if c["club"] else None,
+            "age": c["age"].get(max(c["age"])) if c["age"] else None,
+            "celebrite": c["cel"].get(max(c["cel"])),
+            "salaire": c["sal"].get(max(c["sal"])) if c["sal"] else None,
         })
+        cur = best.get(c["nom"])
+        if cur is None or len(c["seasons"]) > len(cur["seasons"]):
+            best[c["nom"]] = c
+    histories = {nom: c["cel"] for nom, c in best.items() if c["cel"]}
+    clubs = {nom: c["club"] for nom, c in best.items() if c["club"]}
     return {"players": players, "histories": histories, "clubs": clubs, "seasons": seasons}
 
 
@@ -1444,6 +1479,31 @@ def selftest_offline():
     assert _rec["pire_defense"][0]["head"] == "6.0 enc/m" and "Faible" in _rec["pire_defense"][0]["desc"]
     assert _rec["flop"][0]["head"] == "200 M€/pt" and "Riche" in _rec["flop"][0]["desc"]
     print("  ✓ palmarès OK (10 records de match + attaque/défense/malin + anti-records par saison)")
+
+    # 17) build_player_careers : l'identité = (nom, poste), PAS l'id (slot réutilisé).
+    _sp = {
+        0: [dict(id=5,  nom="Odegaard", poste="MOFF", nom_equipe="Arsenal", age=26, celebrite=89.0, salaire=20.0),
+            dict(id=12, nom="Cherki",   poste="MOFF", nom_equipe="City",    age=21, celebrite=80.0, salaire=12.0),
+            dict(id=99, nom="Vitinha",  poste="MDEF", nom_equipe="PSG",     age=25, celebrite=99.0, salaire=29.0)],
+        1: [dict(id=5,  nom="Odegaard", poste="MOFF", nom_equipe="Arsenal", age=27, celebrite=96.0, salaire=27.0),
+            dict(id=12, nom="Cherki",   poste="MOFF", nom_equipe="City",    age=22, celebrite=82.0, salaire=13.0),
+            dict(id=99, nom="Vitinha",  poste="MDEF", nom_equipe="PSG",     age=26, celebrite=99.0, salaire=29.0)],
+        2: [dict(id=5,  nom="Doué",     poste="MOFF", nom_equipe="Arsenal", age=20, celebrite=85.0, salaire=15.0),   # slot 5 change d'occupant
+            dict(id=12, nom="Odegaard", poste="MOFF", nom_equipe="City",    age=28, celebrite=97.0, salaire=28.0),   # Odegaard -> City (slot 12)
+            dict(id=99, nom="Vitinha",  poste="MDEF", nom_equipe="PSG",     age=27, celebrite=99.5, salaire=29.6),
+            dict(id=560, nom="Vitinha", poste="AC",   nom_equipe="Alanya",  age=29, celebrite=90.0, salaire=23.0)],  # homonyme, poste différent
+    }
+    _car = build_player_careers(_sp)
+    _ode = _car[("Odegaard", "MOFF")]
+    assert _ode["cel"] == {0: 89.0, 1: 96.0, 2: 97.0}, _ode["cel"]          # contigu, PAS mélangé avec Doué
+    assert _ode["club"] == {0: "Arsenal", 1: "Arsenal", 2: "City"}
+    assert _car[("Doué", "MOFF")]["cel"] == {2: 85.0}                       # recrue (1 seule saison)
+    assert ("Vitinha", "MDEF") in _car and ("Vitinha", "AC") in _car        # homonymes séparés par le poste
+    assert _car[("Vitinha", "AC")]["cel"] == {2: 90.0}
+    assert _car[("Cherki", "MOFF")]["cel"] == {0: 80.0, 1: 82.0}            # Cherki n'hérite PAS d'Odegaard
+    assert career_transfers(_ode) == [{"season": 2, "from": "Arsenal", "to": "City"}]
+    assert career_transfers(_car[("Vitinha", "MDEF")]) == []
+    print("  ✓ build_player_careers OK (identité (nom,poste), slots réutilisés, transferts, homonymes)")
 
 
 def selftest():
