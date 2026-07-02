@@ -223,8 +223,15 @@ def scout(poste: str, leagues: str = "", adv: str = "tous", pmax: float = 1e12):
     rows = [r for r in rows if r.get("salaire") is not None and r["salaire"] <= pmax]
     rows.sort(key=lambda r: (r.get("stat") is None, -(r.get("stat") or 0)))
     stat_key, stat_label, counters = merc.ROLE_RELEVANCE[poste]
-    return {"poste": poste, "leagues": lg, "stat_label": stat_label,
+    role_defs = core.POSTE_STATS.get(poste) or []
+    return {"poste": poste, "leagues": lg, "stat_label": stat_label, "stat_key": stat_key,
             "counters": counters, "adv_key": "opp_dec" if adv == "decisifs" else "opp",
+            # toutes les stats d'équipe pertinentes pour le poste (colonnes du tableau),
+            # avec la part (%) que ce poste apporte à chaque stat (matrice domaines, manuel)
+            "role_keys": [{"label": lbl, "key": k, "higher": hb,
+                           "contrib": merc.poste_stat_contribution(poste, k)}
+                          for lbl, k, hb in role_defs],
+            "role_percent": list(core.PERCENT_STATS),
             "rows": rows[:300]}
 
 

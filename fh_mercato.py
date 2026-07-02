@@ -102,6 +102,33 @@ def team_domain_investment(signings):
     return {d: round(v, 2) for d, v in out.items()}
 
 
+# Domaines de jeu (manuel) reflétés par chaque stat d'équipe observable. Une stat de match
+# n'est pas un domaine pur : p.ex. les buts encaissés dépendent de la Défense ET des Arrêts.
+STAT_DOMAINS = {
+    "save": ["arrets"], "arrets_pm": ["arrets"],
+    "clean": ["defense", "arrets"], "ga_pm": ["defense", "arrets"],
+    "occ_against_pm": ["defense", "recuperation"],
+    "occ_for_pm": ["creation"],
+    "conv": ["finition", "concretisation"], "gf_pm": ["finition", "concretisation"],
+    "poss": ["conservation"],
+    "diff": ["finition", "defense"],
+}
+
+
+def poste_stat_contribution(poste, stat_key):
+    """Part (%) qu'apporte un poste à une stat d'ÉQUIPE, dérivée de la matrice poste→domaine
+    (manuel p.20) : somme des poids du poste sur les domaines reflétés par la stat, divisée
+    par la somme totale de ces domaines sur tous les postes. Ex. GAR → % d'arrêts = 100 %
+    (domaine Arrêts, mono-poste) ; GAR → clean sheets ≈ 42 % (Défense + Arrêts) ; GAR →
+    occasions concédées = 0 % (Défense/Récupération, sans le gardien). None si stat inconnue."""
+    doms = STAT_DOMAINS.get(stat_key)
+    if not doms:
+        return None
+    num = sum(POSTE_DOMAIN_WEIGHTS.get((poste or "").upper(), {}).get(d, 0) for d in doms)
+    den = sum(w.get(d, 0) for d in doms for w in POSTE_DOMAIN_WEIGHTS.values())
+    return round(100 * num / den) if den else None
+
+
 # Pour chaque poste : (stat d'équipe pertinente, libellé, postes adverses dont la
 # célébrité mesure l'« adversité » affrontée dans ce rôle). Stats issues de
 # team_domain_stats ; « plus c'est haut, mieux c'est ».

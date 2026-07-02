@@ -433,10 +433,13 @@ def role_scout_rows(competition, poste, pool):
             allq.append(q)
             if (ga > 0) if defensive else (gf > 0):
                 decq.append(q)
+        teamrow = tds.get(team, {})
         rows.append({
             "nom": p.get("nom"), "team": team, "celebrite": _num(p.get("celebrite")),
             "salaire": _num(p.get("salaire")), "age": _num(p.get("age")),
-            "stat": tds.get(team, {}).get(stat_key), "competition": competition,
+            "stat": teamrow.get(stat_key), "competition": competition,
+            # toutes les stats d'équipe pertinentes pour le poste (pas seulement la phare)
+            "stats": {k: teamrow.get(k) for _lbl, k, _hb in POSTE_STATS.get(poste, [])},
             "opp": round(sum(allq) / len(allq), 1) if allq else None,
             "opp_dec": round(sum(decq) / len(decq), 1) if decq else None,
         })
@@ -1470,7 +1473,14 @@ def selftest_offline():
     assert len(TEAM_POSTES) == 7 and "AIL" in TEAM_POSTES   # 1 joueur par poste
     _inv = team_domain_investment([("GAR", 20.0), ("AC", 30.0)])
     assert _inv["arrets"] == 16.0 and _inv["finition"] == 18.0   # 20×80% ; 30×60%
-    print("  ✓ modèle mercato OK (coût, supplément, force, investissement/domaine, agrégats)")
+    assert poste_stat_contribution("GAR", "save") == 100        # Arrêts = mono-poste gardien
+    assert poste_stat_contribution("GAR", "occ_against_pm") == 0  # Défense/Récup : sans le gardien
+    assert poste_stat_contribution("GAR", "clean") == 42          # Défense(110)+Arrêts(80) ; 80/190
+    assert poste_stat_contribution("AC", "gf_pm") == 40           # Finition(100)+Concrét.(100) ; 80/200
+    assert poste_stat_contribution("MOFF", "occ_for_pm") == 55    # Création(110) ; 60/110
+    assert poste_stat_contribution("AC", "poss") == 20            # Conservation(100) ; AC 20/100
+    assert poste_stat_contribution("GAR", "unknown_stat") is None
+    print("  ✓ modèle mercato OK (coût, supplément, force, investissement/domaine, contribution, agrégats)")
 
     # 15) note de version : affichée une seule fois par build.
     assert should_show_whats_new({}, "abc", enabled=True)
