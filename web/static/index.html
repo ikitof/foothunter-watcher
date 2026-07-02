@@ -79,6 +79,7 @@
   .kv b{font-size:15px}
   .tag{display:inline-block;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:2px 9px;font-size:11px;margin-left:6px}
   .tr-arrow{color:var(--flash);font-weight:700;margin-right:2px}
+  .hint{cursor:help;text-decoration:underline dotted;text-decoration-color:var(--line);text-underline-offset:2px}
   .rk{font-weight:700}.rk1{color:#f0c040}.rk-top{color:var(--green)}
   .lead{display:flex;flex-direction:column;gap:2px;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;min-width:120px;flex:1}
   .lead:hover{border-color:var(--accent)}
@@ -183,7 +184,7 @@
           <h2>Meneurs de {{teamComp}}</h2>
           <div class="row" style="gap:8px">
             <div class="lead" v-for="l in leaders" :key="l.key" @click="openTeam(l.team)">
-              <span class="lt">{{l.label}}</span>
+              <span class="lt hint" :title="statTip[l.key]">{{l.label}}</span>
               <span class="lv">{{l.team}}</span>
               <span class="ln">{{fmt(l.value)}}{{l.pct?'%':''}}</span>
             </div>
@@ -191,7 +192,7 @@
         </div>
         <div class="card">
           <div class="row" style="justify-content:space-between">
-            <h2 style="margin:0">{{metricLabel}}</h2>
+            <h2 style="margin:0" class="hint" :title="statTip[teamMetric]">{{metricLabel}}</h2>
             <span class="note">classé {{metricHigher[teamMetric]?'du + au − élevé':'du meilleur (− élevé) au pire'}}</span>
           </div>
           <div v-if="!sortedTeams.length" class="muted" style="margin-top:8px">Aucune donnée pour cette métrique.</div>
@@ -317,7 +318,7 @@
           <h3 style="margin-top:0">Masse salariale par domaine (M€/an)</h3>
           <div class="note" style="margin-bottom:6px">Salaire <b>annuel</b> réparti selon la contribution de chaque poste aux domaines (manuel) — indépendant de la durée du contrat ; montre où va le budget, pas une mesure de force.</div>
           <div v-for="d in evalData.domains" :key="d" style="margin:5px 0">
-            <div class="row" style="justify-content:space-between"><span>{{evalData.domain_labels[d]}}</span><span class="muted">{{evalData.investment[d]}}</span></div>
+            <div class="row" style="justify-content:space-between"><span class="hint" :title="domTip[d]||evalData.domain_labels[d]">{{evalData.domain_labels[d]}}</span><span class="muted">{{evalData.investment[d]}}</span></div>
             <div class="bar"><i :style="{width:pctOf(evalData.investment[d],evalData.investment)+'%'}"></i></div>
           </div>
         </div>
@@ -391,7 +392,7 @@
             <h3>Stats du rôle par saison <span class="note">· équipe</span></h3>
             <div class="note" style="margin-bottom:6px">Stats de l'<b>équipe</b> où il jouait chaque saison (matchs joués) + son rang en championnat <span class="note">(ᵉ)</span>. Ce sont des stats d'équipe, <b>pas</b> individuelles : le poste {{detail.poste}} n'y contribue que partiellement<span v-if="detail.poste==='GAR'"> — sauf les arrêts (100 % gardien)</span>. Le niveau réel reste caché.</div>
             <div class="scroll"><table>
-              <tr><th>Saison</th><th>Club</th><th class="num" v-for="k in detail.role_keys" :key="k.key" :title="k.label">{{k.label}}</th></tr>
+              <tr><th>Saison</th><th>Club</th><th class="num hint" v-for="k in detail.role_keys" :key="k.key" :title="statTip[k.key]||k.label">{{k.label}}</th></tr>
               <tr v-for="s in roleSeasons" :key="s">
                 <td class="muted">S{{s}}</td>
                 <td><span class="lk" @click="openTeam(detail.clubs[s])">{{detail.clubs[s]||'—'}}</span></td>
@@ -427,7 +428,7 @@
             <div class="note" style="margin-bottom:6px">Rang de l'équipe par catégorie dans son championnat (stats des matchs joués). 1<sup>er</sup> = barre pleine.</div>
             <div v-for="r in detail.rankings.filter(x=>x.rank)" :key="r.key" style="margin:4px 0">
               <div class="row" style="justify-content:space-between">
-                <span>{{r.label}}</span>
+                <span class="hint" :title="statTip[r.key]||r.label">{{r.label}}</span>
                 <span class="muted">{{fmt(r.value)}}{{detail.percent.includes(r.key)?'%':''}} <span :style="rankColor(r)">· {{r.rank}}ᵉ/{{r.n}}</span></span>
               </div>
               <div class="bar"><i :style="{width:rankW(r)+'%'}"></i></div>
@@ -437,7 +438,7 @@
             <h3>Masse salariale par domaine (M€/an)</h3>
             <div class="note" style="margin-bottom:6px">Où va le budget de l'équipe : salaire annuel réparti par domaine selon la contribution des postes (manuel).</div>
             <div v-for="d in detail.domains" :key="d" style="margin:4px 0">
-              <div class="row" style="justify-content:space-between"><span>{{detail.domain_labels[d]}}</span><span class="muted">{{detail.investment[d]}}</span></div>
+              <div class="row" style="justify-content:space-between"><span class="hint" :title="domTip[d]||detail.domain_labels[d]">{{detail.domain_labels[d]}}</span><span class="muted">{{detail.investment[d]}}</span></div>
               <div class="bar"><i :style="{width:pctOf(detail.investment[d],detail.investment)+'%'}"></i></div>
             </div>
           </template>
@@ -468,6 +469,30 @@ createApp({
       ['occ_for_pm','Occasions créées / match'],['occ_against_pm','Occasions concédées / match']],
     metricHigher:{gf_pm:1,ga_pm:0,poss:1,conv:1,save:1,clean:1,occ_for_pm:1,occ_against_pm:0},
     metricPct:['poss','conv','save'],
+    // Explications des stats d'ÉQUIPE (cohérentes avec le manuel : entonnoir Possession →
+    // Création → Occasion → But, et la matrice poste→domaine p.20). Toutes des stats d'équipe.
+    statTip:{
+      gf_pm:"Buts marqués par match. Aboutissement de la Finition (occasion → but) — surtout AC, puis AIL/MOFF. Stat d'équipe.",
+      ga_pm:"Buts encaissés par match (plus bas = mieux). Dépend de la défense (DC, LAT), de la récupération et du gardien.",
+      diff:"Différence de buts sur la saison (buts marqués − buts encaissés).",
+      poss:"Possession moyenne (%). Domaine Conservation du manuel (gardien, DC, MDEF, AC).",
+      occ_for_pm:"Occasions créées par match. Sortie de la phase Création — surtout MOFF, puis AIL/LAT/MDEF.",
+      occ_against_pm:"Occasions concédées par match (plus bas = mieux). Reflète la Défense (DC, LAT) et la Récupération (MDEF).",
+      conv:"Taux de finition (%) = buts ÷ occasions créées. Efficacité de la Finition (occasion → but).",
+      save:"% d'arrêts = occasions adverses NON transformées en but (1 − buts encaissés ÷ occasions concédées). Dépend du gardien (domaine Arrêts, 80 % gardien) ET de la finition adverse.",
+      arrets_pm:"Arrêts par match : occasions adverses stoppées avant le but (occasions concédées − buts encaissés).",
+      clean:"Clean sheets : matchs terminés sans encaisser de but.",
+    },
+    // Explications des 7 domaines de jeu (manuel p.20 : talent = somme pondérée des niveaux).
+    domTip:{
+      arrets:"Arrêts — stopper les tirs adverses. 100 % gardien (seul domaine mono-poste, manuel).",
+      defense:"Défense — empêcher les occasions adverses. DC 60 % + LAT 50 %.",
+      recuperation:"Récupération — reprendre le ballon. MDEF 50 % + LAT 30 % + DC 20 %.",
+      conservation:"Conservation — garder le ballon. MDEF 40 % + gardien/DC/AC 20 %.",
+      creation:"Création — créer des occasions. MOFF 60 % + LAT/AIL 20 % + MDEF 10 %.",
+      concretisation:"Concrétisation — transformer le jeu en occasions. AIL 50 % + MOFF 30 % + AC 20 %.",
+      finition:"Finition — convertir les occasions en buts. AC 60 % + AIL 30 % + MOFF 10 %.",
+    },
     sc:{poste:'GAR', pmax:200, adv:'tous', leagues:[]}, scoutData:null,
     evoData:null, evoSearch:'', evoLeague:'Toutes', evoPmax:'', evoSort:'var',
     pool:[], squad:{}, years:{}, evalData:null,
