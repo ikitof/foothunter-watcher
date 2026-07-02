@@ -1121,21 +1121,28 @@ def role_evolution_summary(rows):
 # Le modèle du jeu : un match est un entonnoir Possession -> Création -> Occasion
 # -> But, et chaque poste alimente des domaines (manuel p.20). On dérive donc des
 # stats d'équipe par domaine, et on les présente selon le poste du joueur.
+# Stats d'ÉQUIPE pertinentes par poste (label, clé team_domain_stats, haut=meilleur ?). Le
+# 1er élément est la stat « phare » du rôle (utilisé tel quel par le desktop) ; les suivants
+# complètent le profil pertinent du poste (dérivé de POSTE_DOMAIN_WEIGHTS : on montre les stats
+# des domaines auxquels le poste contribue). Ce sont des stats d'équipe, pas individuelles.
 POSTE_STATS = {
     "GAR":  [("% d'arrêts", "save", True), ("Arrêts / match", "arrets_pm", True),
-             ("Clean sheets", "clean", True), ("Buts encaissés / match", "ga_pm", False)],
+             ("Clean sheets", "clean", True), ("Buts encaissés / match", "ga_pm", False),
+             ("Occasions concédées / match", "occ_against_pm", False)],
     "DC":   [("Occasions concédées / match", "occ_against_pm", False),
-             ("Buts encaissés / match", "ga_pm", False), ("Clean sheets", "clean", True)],
+             ("Buts encaissés / match", "ga_pm", False), ("Clean sheets", "clean", True),
+             ("Possession moy.", "poss", True)],
     "LAT":  [("Occasions concédées / match", "occ_against_pm", False),
-             ("Buts encaissés / match", "ga_pm", False), ("Occasions créées / match", "occ_for_pm", True)],
+             ("Buts encaissés / match", "ga_pm", False), ("Clean sheets", "clean", True),
+             ("Occasions créées / match", "occ_for_pm", True), ("Possession moy.", "poss", True)],
     "MDEF": [("Possession moy.", "poss", True), ("Occasions concédées / match", "occ_against_pm", False),
-             ("Buts encaissés / match", "ga_pm", False)],
+             ("Buts encaissés / match", "ga_pm", False), ("Occasions créées / match", "occ_for_pm", True)],
     "MOFF": [("Occasions créées / match", "occ_for_pm", True), ("Possession moy.", "poss", True),
-             ("Taux de finition", "conv", True)],
+             ("Taux de finition", "conv", True), ("Buts / match", "gf_pm", True)],
     "AIL":  [("Occasions créées / match", "occ_for_pm", True), ("Taux de finition", "conv", True),
-             ("Buts / match", "gf_pm", True)],
+             ("Buts / match", "gf_pm", True), ("Possession moy.", "poss", True)],
     "AC":   [("Buts / match", "gf_pm", True), ("Taux de finition", "conv", True),
-             ("Occasions créées / match", "occ_for_pm", True)],
+             ("Occasions créées / match", "occ_for_pm", True), ("Possession moy.", "poss", True)],
 }
 PERCENT_STATS = {"save", "conv", "poss"}   # affichés en %
 
