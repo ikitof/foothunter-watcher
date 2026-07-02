@@ -227,17 +227,17 @@
       </div>
       <div v-if="!scoutData" class="card muted">{{error||'Chargement…'}}</div>
       <div class="card" v-else>
-        <div class="muted">{{scoutData.rows.length}} {{sc.poste}} · stat : {{scoutData.stat_label}} (équipe) · adv = célé {{scoutData.counters.join('/')}} adverses</div>
+        <div class="muted">{{scoutData.rows.length}} {{sc.poste}} · trié par {{scoutData.stat_label}} (stat d'équipe) · adv = célé {{scoutData.counters.join('/')}} adverses · survole un en-tête pour l'explication</div>
         <div v-if="!scoutData.rows.length" class="muted" style="margin-top:8px">Aucun joueur ne correspond aux filtres.</div>
         <div class="scroll" v-else><table>
           <tr><th>Joueur</th><th>Équipe</th><th>Ligue</th>
-            <th class="num" title="Stat d'équipe — le poste n'y contribue que partiellement (sauf GAR → Arrêts)">{{scoutData.stat_label}}</th>
-            <th class="num" title="Adversité : célébrité moyenne des adversaires pertinents rencontrés (proxy de notoriété, pas le niveau réel)">Adv.</th>
-            <th class="num" title="Célébrité (popularité visible, pas le niveau réel)">Célé</th>
-            <th class="num" title="Salaire annuel (M€)">M€</th><th></th></tr>
-          <tr v-for="r in scoutData.rows" :key="r.nom+r.team">
+            <th class="num s" v-for="k in scoutData.role_keys" :key="k.key" :title="statTip[k.key]||k.label" @click="sortScout(k.key)" :style="k.key===scoutData.stat_key?{color:'var(--accent)'}:{}">{{k.label}}{{scArrow(k.key)}}<span v-if="k.contrib!=null" class="note" style="display:block;font-weight:400" :title="'Contribution d\'un '+sc.poste+' à cette stat d\'équipe (matrice domaines du manuel)'">{{sc.poste}} · {{k.contrib}}%</span></th>
+            <th class="num s" title="Adversité : célébrité moyenne des adversaires pertinents rencontrés (proxy de notoriété, pas le niveau réel)" @click="sortScout('adv')">Adv.{{scArrow('adv')}}</th>
+            <th class="num s" title="Célébrité (popularité visible, pas le niveau réel)" @click="sortScout('cel')">Célé{{scArrow('cel')}}</th>
+            <th class="num s" title="Salaire annuel (M€)" @click="sortScout('sal')">M€{{scArrow('sal')}}</th><th></th></tr>
+          <tr v-for="r in sortedScout" :key="r.nom+r.team">
             <td class="lk" @click="openPlayer(r.nom,sc.poste)">{{r.nom}}</td><td class="lk" @click="openTeam(r.team)">{{r.team}}</td><td class="lk" @click="openComp(r.competition)">{{r.competition}}</td>
-            <td class="num" style="color:var(--accent)">{{fmt(r.stat)}}</td>
+            <td class="num" v-for="k in scoutData.role_keys" :key="k.key" :style="k.key===scoutData.stat_key?{color:'var(--accent)',fontWeight:'600'}:{}">{{fmt(r.stats&&r.stats[k.key])}}{{r.stats&&r.stats[k.key]!=null&&scoutData.role_percent.includes(k.key)?'%':''}}</td>
             <td class="num">{{fmt(r[scoutData.adv_key])}}</td>
             <td class="num">{{fmt(r.celebrite)}}</td><td class="num">{{fmt(r.salaire)}}</td>
             <td><button class="mini" @click="addToMercato(r)">+ merc</button></td>
@@ -493,7 +493,7 @@ createApp({
       concretisation:"Concrétisation — transformer le jeu en occasions. AIL 50 % + MOFF 30 % + AC 20 %.",
       finition:"Finition — convertir les occasions en buts. AC 60 % + AIL 30 % + MOFF 10 %.",
     },
-    sc:{poste:'GAR', pmax:200, adv:'tous', leagues:[]}, scoutData:null,
+    sc:{poste:'GAR', pmax:200, adv:'tous', leagues:[]}, scoutData:null, scSort:{key:'',dir:-1},
     evoData:null, evoSearch:'', evoLeague:'Toutes', evoPmax:'', evoSort:'var',
     pool:[], squad:{}, years:{}, evalData:null,
     saveCode:'', loadCode:'', loadErr:'', copied:false,
@@ -522,6 +522,10 @@ createApp({
     sortedStandings(){if(!this.compData)return[];const a=[...(this.compData.standings||[])];
       const k=this.stSort.key;if(!k)return a;
       return a.sort((x,y)=>(((x[k]??0)-(y[k]??0))*this.stSort.dir));},
+    sortedScout(){if(!this.scoutData)return[];const rows=this.scoutData.rows||[];const k=this.scSort.key;
+      if(!k)return rows;const dir=this.scSort.dir;
+      return [...rows].sort((a,b)=>{const x=this.scoutVal(a,k),y=this.scoutVal(b,k);
+        if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return (x-y)*dir;});},
     evoRows(){if(!this.evoData)return[];let a=this.evoData.players;
       const q=this.evoSearch.toLowerCase().trim();
       if(q)a=a.filter(p=>(p.nom||'').toLowerCase().includes(q));
@@ -558,6 +562,10 @@ createApp({
       const sx=x1>x0?100/(x1-x0):0,sy=y1>y0?20/(y1-y0):0;
       return pres.map(p=>((p[0]-x0)*sx).toFixed(1)+','+(22-(p[1]-y0)*sy).toFixed(1)).join(' ');},
     sortStand(k){if(this.stSort.key===k)this.stSort.dir*=-1;else this.stSort={key:k,dir:-1};},
+    sortScout(k){if(this.scSort.key===k)this.scSort.dir*=-1;else this.scSort={key:k,dir:-1};},
+    scArrow(k){return this.scSort.key===k?(this.scSort.dir<0?' ▾':' ▴'):'';},
+    scoutVal(r,k){if(k==='adv')return r[this.scoutData.adv_key];if(k==='cel')return r.celebrite;
+      if(k==='sal')return r.salaire;return r.stats&&r.stats[k];},
     stArrow(k){return this.stSort.key===k?(this.stSort.dir<0?' ▾':' ▴'):'';},
     retires(pos){const p=this.squad[pos];return p&&p.age!=null&&(p.age+(this.years[pos]||1))>36;},
     go(t){this.error='';this.tab=t;
@@ -592,7 +600,7 @@ createApp({
       try{this.teamData=await api('/teams/'+encodeURIComponent(this.teamComp));}catch(e){this.error='Impossible de charger les stats d\'équipe.';}},
     toggleLeague(lg){const i=this.sc.leagues.indexOf(lg);i<0?this.sc.leagues.push(lg):this.sc.leagues.splice(i,1);this.loadScout();},
     allLeagues(){this.sc.leagues=this.leagues.slice();this.loadScout();},
-    async loadScout(){this.error='';if(!this.sc.leagues.length){this.scoutData={rows:[],stat_label:'',counters:[],adv_key:'opp'};return;}
+    async loadScout(){this.error='';this.scSort={key:'',dir:-1};if(!this.sc.leagues.length){this.scoutData={rows:[],stat_label:'',stat_key:'',counters:[],adv_key:'opp',role_keys:[],role_percent:[]};return;}
       const q=new URLSearchParams({poste:this.sc.poste,leagues:this.sc.leagues.join(','),adv:this.sc.adv});
       if(Number.isFinite(this.sc.pmax)&&this.sc.pmax>0)q.set('pmax',this.sc.pmax);
       try{this.scoutData=await api('/scout?'+q);}catch(e){this.error='Impossible de charger le scouting.';}},
