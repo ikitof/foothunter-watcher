@@ -200,7 +200,7 @@
               <span><span class="rk" :class="{rk1:i===0,'rk-top':i>0&&i<3}">{{i+1}}.</span> <span class="lk" @click="openTeam(t.team)">{{t.team}}</span> <span class="muted" style="font-size:11px">({{t.played}}j)</span></span>
               <span class="muted">{{fmt(t[teamMetric])}}{{metricPct.includes(teamMetric)?'%':''}}</span>
             </div>
-            <div class="bar"><i :style="{width:teamBarW(t,i)+'%'}"></i></div>
+            <div class="bar"><i :style="{width:teamBarW(t)+'%'}"></i></div>
           </div>
         </div>
       </template>
@@ -514,7 +514,8 @@ createApp({
     isLeague(c){return this.scoutLeagues.includes(c);},
     slotKey(p){return (p.nom||'')+'@'+(p.nom_equipe||'');},
     pctOf(val,obj){const m=Math.max(...Object.values(obj||{}).map(x=>x||0),1);return 100*(val||0)/m;},
-    teamBarW(t,i){const n=this.sortedTeams.length||1;return 100*(n-i)/n;},   // barre = rang (1er = pleine)
+    teamBarW(t){const m=this.teamMetric,v=t[m];if(v==null)return 0;   // barre ∝ VALEUR / max de l'échantillon
+      const mx=Math.max(...this.teamData.teams.map(x=>x[m]||0),0.0001);return 100*v/mx;},
     rankW(r){if(!r||!r.rank||!r.n)return 0;return 100*(r.n-r.rank+1)/r.n;},
     rankColor(r){if(!r||!r.rank)return{};return r.rank===1?{color:'#f0c040',fontWeight:'700'}:(r.rank<=3?{color:'var(--green)'}:{});},
     isRookie(d){return d&&d.debut_age!=null&&d.debut_age<=18&&d.debut>0;},
