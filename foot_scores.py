@@ -437,6 +437,7 @@ def role_scout_rows(competition, poste, pool):
         rows.append({
             "nom": p.get("nom"), "team": team, "celebrite": _num(p.get("celebrite")),
             "salaire": _num(p.get("salaire")), "age": _num(p.get("age")),
+            "montant_transfert": _num(p.get("montant_transfert")),   # prix d'achat définitif
             "stat": teamrow.get(stat_key), "competition": competition,
             # toutes les stats d'équipe pertinentes pour le poste (pas seulement la phare)
             "stats": {k: teamrow.get(k) for _lbl, k, _hb in POSTE_STATS.get(poste, [])},
@@ -823,8 +824,9 @@ def build_player_careers(seasons_players):
             c = careers.get(key)
             if c is None:
                 c = careers[key] = {"nom": nom, "poste": poste,
-                                    "cel": {}, "club": {}, "sal": {}, "age": {}}
+                                    "cel": {}, "club": {}, "sal": {}, "age": {}, "mt": {}}
             cel, age, sal = _num(p.get("celebrite")), _num(p.get("age")), _num(p.get("salaire"))
+            mt = _num(p.get("montant_transfert"))
             if cel is not None:
                 c["cel"][sn] = cel
             if p.get("nom_equipe"):
@@ -833,6 +835,8 @@ def build_player_careers(seasons_players):
                 c["age"][sn] = age
             if sal is not None:
                 c["sal"][sn] = sal
+            if mt is not None:
+                c["mt"][sn] = mt
     for c in careers.values():
         c["seasons"] = sorted(set(c["cel"]) | set(c["club"]) | set(c["age"]) | set(c["sal"]))
     return careers
@@ -1463,6 +1467,9 @@ def selftest_offline():
     print("  ✓ celebrity_evolution_rows / role_evolution_summary OK")
 
     # 14) modèle mercato / simulation (coût contrat, prolongation, force par domaine).
+    assert recruit_cost("louer", 5.0, 120.0) == 5.0       # location 1 an = salaire
+    assert recruit_cost("acheter", 5.0, 120.0) == 120.0    # achat définitif = montant de transfert
+    assert recruit_cost("acheter", 5.0, None) is None      # pas de prix d'achat connu
     assert contract_cost(2.0, 3) == 6.0 and contract_cost(2.0, 1) == 2.0
     assert extension_cost(4.0, 5.0) == 5.5      # célébrité montée -> +10%
     assert extension_cost(5.0, 4.0) == 5.0      # célébrité baissée -> ancien salaire

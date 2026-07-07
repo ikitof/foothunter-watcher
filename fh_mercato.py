@@ -48,9 +48,18 @@ def _num(x):
 
 
 def contract_cost(salaire, years):
-    """Coût d'un recrutement : salaire annuel payé d'avance pour `years` (1/2/3) ans."""
+    """OBSOLÈTE (règles pré-saison 5 : contrats pluriannuels). Coût = salaire × années.
+    Conservé pour compat ; le jeu ne permet plus les contrats pluriannuels — voir recruit_cost."""
     s = _num(salaire)
     return None if s is None else round(s * max(1, int(years)), 2)
+
+
+def recruit_cost(mode, salaire, montant_transfert):
+    """Coût immédiat d'un recrutement (règles saison 5+) :
+    - 'acheter' : achat définitif = montant de transfert (dépend surtout de l'âge/potentiel) ;
+    - 'louer'   : location 1 an = salaire annuel (dépend de la célébrité).
+    Renvoie None si le montant requis est absent."""
+    return _num(montant_transfert) if mode == "acheter" else _num(salaire)
 
 
 def extension_cost(old_salary, current_salary):

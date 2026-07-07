@@ -377,8 +377,10 @@ def player(nom: str, poste: str = ""):
         "league": (role_hist.get(last) or {}).get("league"),
         "celebrite": cel.get(last) if last is not None else None,
         "salaire": car["sal"].get(max(car["sal"])) if car["sal"] else None,
+        "montant_transfert": car["mt"].get(max(car["mt"])) if car["mt"] else None,  # prix d'achat
         "age": car["age"].get(max(car["age"])) if car["age"] else None,
         "history": cel, "clubs": car["club"], "salaries": car["sal"], "ages": car["age"],
+        "montants": car["mt"],
         "seasons": state["data"]["seasons"], "career_seasons": car["seasons"],
         "transfers": core.career_transfers(car),
         "debut": car["seasons"][0] if car["seasons"] else None,
@@ -408,14 +410,15 @@ def palmares():
 @app.post("/api/mercato/evaluate")
 def mercato_evaluate(body: dict = Body(...)):
     squad = body.get("squad") or {}        # {poste: player}
-    years = body.get("years") or {}        # {poste: 1|2|3}
+    modes = body.get("modes") or {}        # {poste: 'louer'|'acheter'} (défaut 'louer')
     total, salaries = 0.0, []
     for poste, p in squad.items():
-        sal = (p or {}).get("salaire")
-        cost = merc.contract_cost(sal, years.get(poste, 1))   # cash payé d'avance = salaire×années
+        p = p or {}
+        cost = merc.recruit_cost(modes.get(poste, "louer"),
+                                 p.get("salaire"), p.get("montant_transfert"))
         if cost:
             total += cost
-        salaries.append((poste, sal))      # répartition par domaine = salaire ANNUEL (pas ×années)
+        salaries.append((poste, p.get("salaire")))   # domaine = masse salariale ANNUELLE
     return {
         "aggregate": merc.squad_aggregate([p for p in squad.values() if p]),
         "investment": merc.team_domain_investment(salaries),
@@ -429,7 +432,7 @@ def mercato_save(body: dict = Body(...)):
     code = (body.get("code") or "").strip() or secrets.token_hex(3)
     if not re.fullmatch(r"[A-Za-z0-9]{1,16}", code):   # ASCII alnum only (URL-safe, sans ambiguïté)
         raise HTTPException(400, "code invalide")
-    payload = json.dumps({"squad": body.get("squad") or {}, "years": body.get("years") or {}})
+    payload = json.dumps({"squad": body.get("squad") or {}, "modes": body.get("modes") or {}})
     if len(payload) > 100_000:
         raise HTTPException(413, "effectif trop volumineux")
     now = time.time()
