@@ -234,12 +234,14 @@
             <th class="num s" v-for="k in scoutData.role_keys" :key="k.key" :title="statTip[k.key]||k.label" @click="sortScout(k.key)" :style="k.key===scoutData.stat_key?{color:'var(--accent)'}:{}">{{k.label}}{{scArrow(k.key)}}<span v-if="k.contrib!=null" class="note" style="display:block;font-weight:400" :title="'Contribution d\'un '+sc.poste+' à cette stat d\'équipe (matrice domaines du manuel)'">{{sc.poste}} · {{k.contrib}}%</span></th>
             <th class="num s" title="Adversité : célébrité moyenne des adversaires pertinents rencontrés (proxy de notoriété, pas le niveau réel)" @click="sortScout('adv')">Adv.{{scArrow('adv')}}</th>
             <th class="num s" title="Célébrité (popularité visible, pas le niveau réel)" @click="sortScout('cel')">Célé{{scArrow('cel')}}</th>
-            <th class="num s" title="Salaire annuel (M€)" @click="sortScout('sal')">M€{{scArrow('sal')}}</th><th></th></tr>
+            <th class="num s" title="Location 1 an = salaire annuel (M€), ∝ célébrité" @click="sortScout('sal')">Louer{{scArrow('sal')}}</th>
+            <th class="num s" title="Achat définitif = montant de transfert (M€), ∝ âge/potentiel" @click="sortScout('buy')">Achat{{scArrow('buy')}}</th><th></th></tr>
           <tr v-for="r in sortedScout" :key="r.nom+r.team">
             <td class="lk" @click="openPlayer(r.nom,sc.poste)">{{r.nom}}</td><td class="lk" @click="openTeam(r.team)">{{r.team}}</td><td class="lk" @click="openComp(r.competition)">{{r.competition}}</td>
             <td class="num" v-for="k in scoutData.role_keys" :key="k.key" :style="k.key===scoutData.stat_key?{color:'var(--accent)',fontWeight:'600'}:{}">{{fmt(r.stats&&r.stats[k.key])}}{{r.stats&&r.stats[k.key]!=null&&scoutData.role_percent.includes(k.key)?'%':''}}</td>
             <td class="num">{{fmt(r[scoutData.adv_key])}}</td>
             <td class="num">{{fmt(r.celebrite)}}</td><td class="num">{{fmt(r.salaire)}}</td>
+            <td class="num">{{fmt(r.montant_transfert)}}</td>
             <td><button class="mini" @click="addToMercato(r)">+ merc</button></td>
           </tr>
         </table></div>
@@ -286,18 +288,19 @@
       <div class="grid2">
         <div class="card">
           <h2>Planificateur de recrutement</h2>
-          <div class="note" style="margin-bottom:8px">Simulateur « et si » : choisis un joueur par poste et la durée du contrat (salaire payé d'avance, sans frais de transfert). Indicateurs basés sur la célébrité (proxy visible), <b>pas</b> le niveau réel caché.</div>
+          <div class="note" style="margin-bottom:8px">Simulateur « et si » : choisis un joueur par poste, puis <b>loue-le 1 an</b> (salaire) ou <b>achète-le définitivement</b> (montant de transfert). Le salaire suit la célébrité (proxy visible, <b>pas</b> le niveau réel caché) ; le prix d'achat dépend surtout de l'âge/potentiel.</div>
           <div class="slot" v-for="pos in postes" :key="pos">
             <span class="pos">{{pos}}</span>
             <select :value="squad[pos]?slotKey(squad[pos]):''" @change="pickPlayer(pos,$event.target.value)" style="flex:1;min-width:150px">
               <option value="">— libre —</option>
-              <option v-for="p in poolByPoste[pos]||[]" :key="p.id" :value="slotKey(p)">{{p.nom}} · {{p.nom_equipe}} · {{fmt(p.celebrite)}}c · {{fmt(p.salaire)}}M · {{p.age}}a</option>
+              <option v-for="p in poolByPoste[pos]||[]" :key="p.id" :value="slotKey(p)">{{p.nom}} · {{p.nom_equipe}} · {{fmt(p.celebrite)}}c · louer {{fmt(p.salaire)}}M / achat {{fmt(p.montant_transfert)}}M · {{p.age}}a</option>
             </select>
-            <select v-if="squad[pos]" :value="years[pos]||1" @change="setYears(pos,$event.target.value)">
-              <option :value="1">1 an</option><option :value="2">2 ans</option><option :value="3">3 ans</option>
+            <select v-if="squad[pos]" :value="modes[pos]||'louer'" @change="setMode(pos,$event.target.value)">
+              <option value="louer">louer 1 an · {{fmt(squad[pos].salaire)}} M€</option>
+              <option value="acheter">acheter · {{fmt(squad[pos].montant_transfert)}} M€</option>
             </select>
             <button v-if="squad[pos]" class="ghost" @click="pickPlayer(pos,'')">✕</button>
-            <span v-if="squad[pos] && retires(pos)" class="warn" title="Retraite à 36 ans (manuel)">⚠ retraite avant fin de contrat</span>
+            <span v-if="squad[pos] && modes[pos]==='acheter' && squad[pos].age!=null && squad[pos].age>=34" class="warn" title="Retraite à 36 ans (manuel)">⚠ retraite dans {{Math.max(0,36-squad[pos].age)}} saison(s)</span>
           </div>
           <div class="row" style="margin-top:10px">
             <button class="act" @click="saveMercato">💾 Sauvegarder</button>
@@ -316,7 +319,7 @@
             âge moy. {{evalData.aggregate.avg_age||'—'}} · masse sal. {{evalData.aggregate.total_salaire}} M€
           </div>
           <h3 style="margin-top:0">Masse salariale par domaine (M€/an)</h3>
-          <div class="note" style="margin-bottom:6px">Salaire <b>annuel</b> réparti selon la contribution de chaque poste aux domaines (manuel) — indépendant de la durée du contrat ; montre où va le budget, pas une mesure de force.</div>
+          <div class="note" style="margin-bottom:6px">Salaire <b>annuel</b> réparti selon la contribution de chaque poste aux domaines (manuel) — montre où va la masse salariale, pas une mesure de force. Le <b>coût total</b> ci-dessus additionne salaires (location) et montants d'achat.</div>
           <div v-for="d in evalData.domains" :key="d" style="margin:5px 0">
             <div class="row" style="justify-content:space-between"><span class="hint" :title="domTip[d]||evalData.domain_labels[d]">{{evalData.domain_labels[d]}}</span><span class="muted">{{evalData.investment[d]}}</span></div>
             <div class="bar"><i :style="{width:pctOf(evalData.investment[d],evalData.investment)+'%'}"></i></div>
@@ -361,11 +364,11 @@
           </div>
           <div class="grid2" style="gap:8px;margin:10px 0">
             <div class="kv">Célébrité <b style="color:var(--accent)">{{fmt(detail.celebrite)}}</b>
-              <span class="note" v-if="detail.percentiles&&detail.percentiles.celebrite"><br>{{detail.percentiles.celebrite.pct}}ᵉ pct des {{detail.poste}}</span></div>
-            <div class="kv">Salaire <b>{{fmt(detail.salaire)}}</b> M€
+              <span class="note"><span v-if="detail.percentiles&&detail.percentiles.celebrite">{{detail.percentiles.celebrite.pct}}ᵉ pct des {{detail.poste}} · </span><span v-if="detail.peak_season!=null">pic {{fmt(detail.peak)}} (S{{detail.peak_season}})</span></span></div>
+            <div class="kv" title="Location 1 an = salaire annuel (∝ célébrité)">Louer 1 an <b>{{fmt(detail.salaire)}}</b> M€
               <span class="note" v-if="detail.percentiles&&detail.percentiles.salaire"><br>{{detail.percentiles.salaire.pct}}ᵉ pct des {{detail.poste}}</span></div>
+            <div class="kv" title="Achat définitif = montant de transfert (∝ âge/potentiel)">Achat <b>{{detail.montant_transfert!=null?fmt(detail.montant_transfert):'—'}}</b> M€<span class="note"><br>achat définitif</span></div>
             <div class="kv">Âge <b>{{detail.age||'—'}}</b><span class="note" v-if="detail.active"><br>retraite à 36 ans</span></div>
-            <div class="kv">Pic de célé <b>{{fmt(detail.peak)}}</b><span class="note" v-if="detail.peak_season!=null"><br>saison {{detail.peak_season}}</span></div>
           </div>
           <div class="note" v-if="isYoung(detail)" style="margin-bottom:8px">🌱 Jeune joueur : sa célébrité est gonflée par l'« effet jeunesse », d'autant plus fort qu'il est jeune (jusqu'à ≈+45 % à 16 ans d'après le manuel, l'effet décroît avec l'âge). C'est de la <b>notoriété</b> visible, <b>pas</b> le niveau réel (caché — il débute entre 55 et 65).</div>
           <h3 style="margin-top:6px">Parcours par saison
@@ -373,12 +376,13 @@
             <span class="note">· célébrité</span>
           </h3>
           <div class="scroll"><table>
-            <tr><th>Saison</th><th>Club</th><th class="num" title="Célébrité (notoriété visible, pas le niveau)">Célé</th><th class="num">M€</th><th class="num">Âge</th></tr>
+            <tr><th>Saison</th><th>Club</th><th class="num" title="Célébrité (notoriété visible, pas le niveau)">Célé</th><th class="num" title="Salaire = location 1 an">Louer</th><th class="num" title="Prix d'achat définitif (montant de transfert)">Achat</th><th class="num">Âge</th></tr>
             <tr v-for="s in detail.career_seasons" :key="s">
               <td class="muted">S{{s}}</td>
               <td><span v-if="transferAt(detail,s)" class="tr-arrow" title="Transfert cette saison">→</span><span class="lk" @click="openTeam(detail.clubs[s])">{{detail.clubs[s]||'—'}}</span></td>
               <td class="num" :style="celCellH(detail.history,s)">{{detail.history[s]!=null?Math.round(detail.history[s]):'·'}}</td>
               <td class="num">{{fmt(detail.salaries&&detail.salaries[s])}}</td>
+              <td class="num">{{detail.montants&&detail.montants[s]?fmt(detail.montants[s]):'·'}}</td>
               <td class="num">{{detail.ages&&detail.ages[s]!=null?Math.round(detail.ages[s]):'·'}}</td>
             </tr>
           </table></div>
@@ -495,7 +499,7 @@ createApp({
     },
     sc:{poste:'GAR', pmax:200, adv:'tous', leagues:[]}, scoutData:null, scSort:{key:'',dir:-1},
     evoData:null, evoSearch:'', evoLeague:'Toutes', evoPmax:'', evoSort:'var',
-    pool:[], squad:{}, years:{}, evalData:null,
+    pool:[], squad:{}, modes:{}, evalData:null,
     saveCode:'', loadCode:'', loadErr:'', copied:false,
     palmares:null,
     gameBase:'', detail:null,
@@ -565,9 +569,8 @@ createApp({
     sortScout(k){if(this.scSort.key===k)this.scSort.dir*=-1;else this.scSort={key:k,dir:-1};},
     scArrow(k){return this.scSort.key===k?(this.scSort.dir<0?' ▾':' ▴'):'';},
     scoutVal(r,k){if(k==='adv')return r[this.scoutData.adv_key];if(k==='cel')return r.celebrite;
-      if(k==='sal')return r.salaire;return r.stats&&r.stats[k];},
+      if(k==='sal')return r.salaire;if(k==='buy')return r.montant_transfert;return r.stats&&r.stats[k];},
     stArrow(k){return this.stSort.key===k?(this.stSort.dir<0?' ▾':' ▴'):'';},
-    retires(pos){const p=this.squad[pos];return p&&p.age!=null&&(p.age+(this.years[pos]||1))>36;},
     go(t){this.error='';this.tab=t;
       if(t==='comp'&&!this.compData)this.loadComp();
       if(t==='teams'&&!this.teamData)this.loadTeams();
@@ -591,7 +594,7 @@ createApp({
       else if(q.get('team'))this.openTeam(q.get('team'));
       else if(q.get('m')){this.loadCode=q.get('m');this.loadMercato();}
       else{try{const s=JSON.parse(localStorage.getItem('fh_mercato')||'null');
-        if(s){this.squad=s.squad||{};this.years=s.years||{};}}catch(e){}}
+        if(s){this.squad=s.squad||{};this.modes=s.modes||{};}}catch(e){}}
     },
     async refreshLive(){try{this.live=(await api('/live')).matches||[];this.liveStale=false;
       if(this.error==='API injoignable')this.error='';}catch(e){this.liveStale=true;}},
@@ -607,27 +610,27 @@ createApp({
     async loadEvo(){this.error='';try{this.evoData=await api('/evolution');}catch(e){this.error='Impossible de charger les évolutions.';}},
     async loadPool(){try{const d=await api('/players');this.pool=d.players;this.evalMercato();}catch(e){}},
     pickPlayer(pos,key){
-      if(!key){delete this.squad[pos];delete this.years[pos];}
-      else{const p=(this.poolByPoste[pos]||[]).find(x=>this.slotKey(x)===key);if(p){this.squad[pos]=p;if(!this.years[pos])this.years[pos]=1;}}
+      if(!key){delete this.squad[pos];delete this.modes[pos];}
+      else{const p=(this.poolByPoste[pos]||[]).find(x=>this.slotKey(x)===key);if(p){this.squad[pos]=p;if(!this.modes[pos])this.modes[pos]='louer';}}
       this.squad={...this.squad};this.persist();this.evalMercato();},
-    setYears(pos,y){this.years[pos]=+y;this.persist();this.evalMercato();},
+    setMode(pos,m){this.modes[pos]=m;this.modes={...this.modes};this.persist();this.evalMercato();},
     addToMercato(r){
       this.squad[this.sc.poste]={id:this.slotKey(r)+'#'+this.sc.poste,nom:r.nom,poste:this.sc.poste,nom_equipe:r.team,
-        salaire:r.salaire,celebrite:r.celebrite,age:r.age};
-      if(!this.years[this.sc.poste])this.years[this.sc.poste]=1;
+        salaire:r.salaire,montant_transfert:r.montant_transfert,celebrite:r.celebrite,age:r.age};
+      if(!this.modes[this.sc.poste])this.modes[this.sc.poste]='louer';
       this.squad={...this.squad};this.persist();this.tab='mercato';
       this.pool.length?this.evalMercato():this.loadPool();},
     async evalMercato(){try{this.evalData=await api('/mercato/evaluate',{method:'POST',
-      headers:{'Content-Type':'application/json'},body:JSON.stringify({squad:this.squad,years:this.years})});}catch(e){}},
-    persist(){try{localStorage.setItem('fh_mercato',JSON.stringify({squad:this.squad,years:this.years}));}catch(e){}},
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({squad:this.squad,modes:this.modes})});}catch(e){}},
+    persist(){try{localStorage.setItem('fh_mercato',JSON.stringify({squad:this.squad,modes:this.modes}));}catch(e){}},
     async saveMercato(){try{const d=await api('/mercato/save',{method:'POST',
-      headers:{'Content-Type':'application/json'},body:JSON.stringify({squad:this.squad,years:this.years})});
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({squad:this.squad,modes:this.modes})});
       this.saveCode=d.code;this.copied=false;}catch(e){this.error='Sauvegarde impossible.';}},
     copyLink(){const url=location.origin+'/?m='+this.saveCode;
       if(navigator.clipboard){navigator.clipboard.writeText(url);this.copied=true;setTimeout(()=>this.copied=false,1500);}
       else{prompt('Copier ce lien :',url);}},
     async loadMercato(){this.loadErr='';const code=(this.loadCode||'').trim();if(!code)return;
-      try{const d=await api('/mercato/'+encodeURIComponent(code));this.squad=d.squad||{};this.years=d.years||{};
+      try{const d=await api('/mercato/'+encodeURIComponent(code));this.squad=d.squad||{};this.modes=d.modes||{};
         this.persist();this.tab='mercato';this.pool.length?this.evalMercato():this.loadPool();}
       catch(e){this.loadErr='code introuvable';}},
     async loadPalmares(){this.error='';try{this.palmares=await api('/palmares');}catch(e){this.error='Impossible de charger le palmarès.';}},
