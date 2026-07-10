@@ -94,6 +94,13 @@
       <span class="badge" v-if="season!=null">Saison {{season}}</span>
       <span class="badge" v-if="liveCount">🔴 {{liveCount}} en direct</span>
       <span class="badge" v-if="liveStale" title="Le flux live ne répond plus">⚠ live indisponible</span>
+      <span style="margin-left:auto"></span>
+      <template v-if="me">
+        <img v-if="me.picture" :src="me.picture" referrerpolicy="no-referrer" alt="" style="width:24px;height:24px;border-radius:50%">
+        <span class="badge" :title="me.email||''">{{me.name}}</span>
+        <button class="ghost" @click="logout">Déconnexion</button>
+      </template>
+      <a v-else-if="authEnabled" class="ext" style="margin-top:0" href="/api/auth/login">Se connecter</a>
     </div>
     <nav>
       <button v-for="t in tabs" :key="t.id" :class="{on:tab===t.id}" @click="go(t.id)">{{t.label}}</button>
@@ -346,6 +353,69 @@
       </div>
     </section>
 
+    <!-- PRONOS -->
+    <section v-if="tab==='bets'">
+      <div class="card">
+        <div class="row"><h2 style="margin:0">🎯 Pronostics</h2>
+          <select v-model="betComp" @change="loadBets"><option v-for="c in competitions" :key="c" :value="c">{{c}}</option></select>
+          <span class="muted" v-if="betData">saison {{betData.season}}</span>
+        </div>
+        <div class="note" style="margin-top:6px">Prédis le <b>score</b> des matchs à venir. Bon résultat (vainqueur ou nul) = points <b>toujours positifs</b>, d'autant plus que le score est précis (max <b>+25</b> si exact) ; mauvais résultat = points négatifs selon l'écart de buts. Un pari se <b>verrouille</b> dès que le match démarre.</div>
+        <div class="note" v-if="!me && authEnabled" style="margin-top:6px;color:var(--flash)">Connecte-toi (en haut à droite) pour parier — le classement ne compte que les comptes connectés.</div>
+        <div class="note" v-else-if="!authEnabled" style="margin-top:6px">Connexion non configurée sur ce serveur : pronostics indisponibles.</div>
+      </div>
+      <div v-if="!betData" class="card muted">{{error||'Chargement…'}}</div>
+      <template v-else>
+        <div class="card">
+          <h2>À parier <span class="note">· {{betData.fixtures.length}} match(s) à venir</span></h2>
+          <div v-if="!betData.fixtures.length" class="muted">Aucun match à venir dans cette compétition.</div>
+          <div class="match" v-for="f in betData.fixtures" :key="bkey(f)">
+            <span class="t clk" @click="openTeam(f.home)">{{f.home}}</span>
+            <span style="display:flex;gap:4px;align-items:center;justify-content:center;min-width:112px">
+              <input type="number" min="0" max="30" v-model.number="betInputs[bkey(f)].h" style="width:42px;text-align:center" :disabled="!me">
+              <span class="muted">–</span>
+              <input type="number" min="0" max="30" v-model.number="betInputs[bkey(f)].a" style="width:42px;text-align:center" :disabled="!me">
+            </span>
+            <span class="t away clk" @click="openTeam(f.away)">{{f.away}}</span>
+            <button class="mini" :disabled="!me" @click="placeBet(f)">{{f.my_bet?'maj':'parier'}}</button>
+            <button v-if="f.my_bet" class="ghost" @click="removeBet(f)" title="Retirer le pari">✕</button>
+          </div>
+        </div>
+        <div class="card" v-if="me && betData.my_bets.length">
+          <h2>Mes paris <span class="note">· total {{myBetTotal}} pts</span></h2>
+          <div class="scroll"><table>
+            <tr><th>Match</th><th class="num">Prono</th><th class="num">Score</th><th class="num">Pts</th><th>État</th></tr>
+            <tr v-for="b in betData.my_bets" :key="bkey(b)">
+              <td><span class="clk" @click="openTeam(b.home)">{{b.home}}</span> - <span class="clk" @click="openTeam(b.away)">{{b.away}}</span></td>
+              <td class="num">{{b.pred_home}}-{{b.pred_away}}</td>
+              <td class="num">{{b.settled&&!b.voided?b.act_home+'-'+b.act_away:'·'}}</td>
+              <td class="num" :style="{color:(b.points>0?'var(--green)':(b.points<0?'var(--live)':'var(--muted)'))}">{{b.settled&&!b.voided?((b.points>0?'+':'')+b.points):'·'}}</td>
+              <td class="muted" style="font-size:11px">{{b.voided?'annulé':(b.settled?'réglé':(b.locked?'en cours':'en attente'))}}</td>
+            </tr>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <h2 style="margin:0">🏆 Classement</h2>
+            <span class="pills">
+              <span class="pill" :class="{on:leaderScope==='global'}" @click="leaderScope='global';loadLeaderboard()">Global</span>
+              <span class="pill" :class="{on:leaderScope==='comp'}" @click="leaderScope='comp';loadLeaderboard()">{{betComp}}</span>
+            </span>
+          </div>
+          <div v-if="!leaderData || !leaderData.rows.length" class="muted" style="margin-top:8px">Aucun pari réglé pour l'instant.</div>
+          <div class="scroll" v-else><table>
+            <tr><th>#</th><th>Joueur</th><th class="num">Points</th><th class="num" title="Paris réglés">Paris</th><th class="num" title="Paris gagnants">Bons</th></tr>
+            <tr v-for="r in leaderData.rows" :key="r.rank" :style="r.is_me?{background:'rgba(90,158,224,.14)'}:{}">
+              <td class="rk" :class="{rk1:r.rank===1,'rk-top':r.rank>1&&r.rank<=3}">{{r.rank}}</td>
+              <td>{{r.name}}<span v-if="r.is_me" class="muted"> · toi</span></td>
+              <td class="num" style="font-weight:700">{{r.points}}</td>
+              <td class="num">{{r.n}}</td><td class="num">{{r.good}}</td>
+            </tr>
+          </table></div>
+        </div>
+      </template>
+    </section>
+
   </main>
 
   <!-- MODAL détail joueur / équipe -->
@@ -460,7 +530,7 @@ const api = (p, opt) => fetch('/api'+p, opt).then(r => { if(!r.ok) throw new Err
 
 createApp({
   data(){return{
-    tabs:[{id:'live',label:'🔴 Live'},{id:'comp',label:'Compétitions'},{id:'teams',label:'Équipes'},
+    tabs:[{id:'live',label:'🔴 Live'},{id:'comp',label:'Compétitions'},{id:'teams',label:'Équipes'},{id:'bets',label:'🎯 Pronos'},
       {id:'explorer',label:'Explorer'},{id:'evolution',label:'Évolutions'},{id:'mercato',label:'Mercato'},
       {id:'palmares',label:'🏆 Palmarès'}],
     tab:'live', season:null, competitions:[], error:'',
@@ -502,6 +572,8 @@ createApp({
     pool:[], squad:{}, modes:{}, evalData:null,
     saveCode:'', loadCode:'', loadErr:'', copied:false,
     palmares:null,
+    me:null, authEnabled:false,
+    betComp:'', betData:null, betInputs:{}, leaderScope:'global', leaderData:null,
     gameBase:'', detail:null,
   }},
   computed:{
@@ -530,6 +602,7 @@ createApp({
       if(!k)return rows;const dir=this.scSort.dir;
       return [...rows].sort((a,b)=>{const x=this.scoutVal(a,k),y=this.scoutVal(b,k);
         if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return (x-y)*dir;});},
+    myBetTotal(){return ((this.betData&&this.betData.my_bets)||[]).filter(b=>b.settled&&!b.voided).reduce((s,b)=>s+(b.points||0),0);},
     evoRows(){if(!this.evoData)return[];let a=this.evoData.players;
       const q=this.evoSearch.toLowerCase().trim();
       if(q)a=a.filter(p=>(p.nom||'').toLowerCase().includes(q));
@@ -578,16 +651,18 @@ createApp({
       if(t==='evolution'&&!this.evoData)this.loadEvo();
       if(t==='mercato'&&!this.pool.length)this.loadPool();
       if(t==='palmares'&&!this.palmares)this.loadPalmares();
+      if(t==='bets'){this.loadBets();this.loadLeaderboard();}
     },
     async boot(){
       try{const s=await api('/state');this.season=s.season;this.competitions=s.competitions;
         this.gameBase=s.game_base||'';this.scoutLeagues=s.scout_leagues||[];this.majors=s.majors||[];
         this.leagues=this.scoutLeagues.slice();
         this.sc.leagues=(this.majors.length?this.majors:this.scoutLeagues).slice();
-        this.comp=this.competitions[0]||'';this.teamComp=this.comp;this.error='';
+        this.comp=this.competitions[0]||'';this.teamComp=this.comp;this.betComp=this.comp;this.error='';
         try{const ls=JSON.parse(localStorage.getItem('fh_liveSel'));
           this.liveSel=Array.isArray(ls)?ls.filter(c=>this.competitions.includes(c)):null;}catch(e){}
       }catch(e){this.error='API injoignable';}
+      this.loadMe();
       this.refreshLive(); this.liveTimer=setInterval(this.refreshLive,10000);
       const q=new URLSearchParams(location.search);
       if(q.get('player'))this.openPlayer(q.get('player'),q.get('poste'));
@@ -634,6 +709,24 @@ createApp({
         this.persist();this.tab='mercato';this.pool.length?this.evalMercato():this.loadPool();}
       catch(e){this.loadErr='code introuvable';}},
     async loadPalmares(){this.error='';try{this.palmares=await api('/palmares');}catch(e){this.error='Impossible de charger le palmarès.';}},
+    async loadMe(){try{const d=await api('/auth/me');this.authEnabled=!!d.auth_enabled;this.me=d.user||null;}catch(e){this.me=null;}},
+    async logout(){try{await api('/auth/logout',{method:'POST'});}catch(e){}location.reload();},
+    bkey(f){return f.home+'|'+f.away;},
+    async loadBets(){this.error='';if(!this.betComp)this.betComp=this.competitions[0]||'';this.betData=null;
+      try{const d=await api('/bets/fixtures/'+encodeURIComponent(this.betComp));this.betData=d;
+        const bi={};for(const f of d.fixtures){bi[this.bkey(f)]={h:f.my_bet?f.my_bet.pred_home:'',a:f.my_bet?f.my_bet.pred_away:''};}
+        this.betInputs=bi;}catch(e){this.error='Impossible de charger les pronostics.';}},
+    async placeBet(f){const v=this.betInputs[this.bkey(f)]||{};
+      if(v.h===''||v.a===''||v.h==null||v.a==null){this.error='Entre un score complet.';return;}
+      try{await api('/bets',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({competition:this.betComp,home:f.home,away:f.away,pred_home:+v.h,pred_away:+v.a})});
+        this.error='';this.loadBets();this.loadLeaderboard();}
+      catch(e){this.error='Pari refusé (match démarré/verrouillé ?).';}},
+    async removeBet(f){try{await api('/bets/remove',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({competition:this.betComp,home:f.home,away:f.away})});this.loadBets();}
+      catch(e){this.error='Retrait impossible (pari verrouillé).';}},
+    async loadLeaderboard(){try{const c=this.leaderScope==='comp'?this.betComp:'';
+      this.leaderData=await api('/leaderboard'+(c?'?competition='+encodeURIComponent(c):''));}catch(e){}},
     setUrl(params){const u=new URL(location);u.search='';for(const k in params)if(params[k])u.searchParams.set(k,params[k]);
       history.replaceState(null,'',u);},
     async openPlayer(nom,poste){if(!nom)return;this.detail={type:'player',nom,loading:true};this.setUrl({player:nom,poste});
