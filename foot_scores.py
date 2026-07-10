@@ -387,6 +387,17 @@ def api_calendrier(season_number=None):
 
 
 
+def api_tactiques(season_number=None):
+    """Tactiques des clubs GÉRÉS PAR DES HUMAINS via /api/tactiques -> {club: style} (ex.
+    « Tiki taka », « Gegen Pressing »). Les clubs IA n'en ont pas. {} si injoignable. L'API
+    ignore season_number (paramètre conservé par cohérence)."""
+    try:
+        d = _api_get_json(f"{API_BASE}/tactiques", ttl=600)
+        return d.get("resultats") or {}
+    except Exception:
+        return {}
+
+
 def role_scout_rows(competition, poste, pool):
     """Joueurs d'un poste dans une compétition, avec la stat pertinente de leur équipe
     pour ce rôle (ex. GAR -> Arrêts %) et l'« adversité » : célébrité moyenne des postes

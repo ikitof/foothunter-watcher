@@ -56,6 +56,14 @@ def build_played_index(rows):
     return idx
 
 
+def market_points(user_choices, winners, points):
+    """Points d'un pari SPÉCIAL (promotion/relégation/vainqueur…) : `points` par bon choix,
+    0 pour les mauvais (pas de malus). L'utilisateur choisit N équipes ; chacune qui figure
+    dans l'ensemble gagnant rapporte `points` (ex. relégation : 2 choix, 2 bons -> 2×points)."""
+    w = set(winners or [])
+    return int(points) * sum(1 for c in set(user_choices or []) if c in w)
+
+
 def selftest():
     assert (outcome(2, 1), outcome(1, 1), outcome(0, 2)) == ("H", "D", "A")
     # (pred) vs (actual) -> points attendus (barème par défaut)
@@ -87,6 +95,11 @@ def selftest():
         {"competition": "L1", "home": "C", "away": "D", "home_goals": None, "away_goals": 1},
     ])
     assert idx == {("L1", "A", "B"): (2, 1)}
+    # paris spéciaux : points par bon choix, 0 sinon
+    assert market_points(["A", "B"], ["A", "B", "C"], 20) == 40      # 2 bons -> 2×20
+    assert market_points(["A", "X"], ["A", "B"], 20) == 20           # 1 bon
+    assert market_points(["X", "Y"], ["A", "B"], 20) == 0            # aucun bon
+    assert market_points(["A", "A"], ["A"], 20) == 20                # doublons ignorés
     print("fh_bets selftest OK ✅")
 
 
