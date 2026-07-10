@@ -62,6 +62,8 @@ SESSION_SECRET = os.environ.get("FH_SESSION_SECRET") or secrets.token_hex(32)
 # Raccourci de login POUR LE DEV UNIQUEMENT (jamais activer en prod) : /api/auth/login?dev=NOM
 AUTH_STUB = os.environ.get("FH_AUTH_STUB") == "1"
 AUTH_ENABLED = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and OAuth is not None)
+# Emails Google (minuscules) autorisés à gérer les paris spéciaux (créer/fermer/régler).
+ADMIN_EMAILS = {e.strip().lower() for e in os.environ.get("FH_ADMIN_EMAILS", "").split(",") if e.strip()}
 
 if SessionMiddleware is not None:       # cookie de session signé (survit à la redirection Google)
     # https_only par défaut (prod TLS derrière Caddy) ; FH_INSECURE_COOKIE=1 pour tester en local http.
@@ -183,6 +185,18 @@ def _db():
     con.execute("CREATE INDEX IF NOT EXISTS idx_bets_settle ON bets(season, settled)")
     con.execute("CREATE INDEX IF NOT EXISTS idx_bets_leader ON bets(season, competition, settled)")
     con.execute("CREATE INDEX IF NOT EXISTS idx_bets_user ON bets(user_id, season)")
+    # Mercato sauvegardé par utilisateur connecté.
+    con.execute("CREATE TABLE IF NOT EXISTS user_mercato("
+                "user_id INTEGER PRIMARY KEY, payload TEXT, updated REAL)")
+    # Paris spéciaux (promotion/relégation/vainqueur) gérés par l'admin.
+    con.execute("""CREATE TABLE IF NOT EXISTS markets(
+        id INTEGER PRIMARY KEY AUTOINCREMENT, season INTEGER, title TEXT NOT NULL,
+        competition TEXT, choices TEXT NOT NULL, points INTEGER DEFAULT 20, pick INTEGER DEFAULT 1,
+        status TEXT DEFAULT 'open', winners TEXT, created_by INTEGER, created REAL, updated REAL)""")
+    con.execute("""CREATE TABLE IF NOT EXISTS market_bets(
+        id INTEGER PRIMARY KEY AUTOINCREMENT, market_id INTEGER NOT NULL, user_id INTEGER NOT NULL,
+        choices TEXT NOT NULL, points INTEGER, created REAL, updated REAL,
+        UNIQUE(market_id, user_id))""")
     return con
 
 
@@ -264,7 +278,14 @@ def team(name: str):
             "investment": merc.team_domain_investment(salaries),
             "domains": merc.DOMAINS, "domain_labels": merc.DOMAIN_LABELS,
             "league": league, "rankings": rankings,
-            "percent": list(core.PERCENT_STATS)}
+            "percent": list(core.PERCENT_STATS),
+            "tactic": core.api_tactiques().get(name)}   # style (clubs gérés par des humains)
+
+
+@app.get("/api/tactiques")
+def tactiques():
+    """Tactiques des clubs gérés par des humains ({club: style})."""
+    return {"tactics": core.api_tactiques()}
 
 
 @app.get("/api/scout")
@@ -548,6 +569,17 @@ def _require_user(request):
     return u
 
 
+def _is_admin(user):
+    return bool(user and user.get("email") and user["email"].lower() in ADMIN_EMAILS)
+
+
+def _require_admin(request):
+    u = _require_user(request)
+    if not _is_admin(u):
+        raise HTTPException(403, "réservé à l'administrateur")
+    return u
+
+
 # Limitation de débit par utilisateur (token bucket en mémoire) pour la pose de paris.
 _rl, _rl_lock = {}, threading.Lock()
 
@@ -660,7 +692,8 @@ async def auth_callback(request: Request):
 
 @app.get("/api/auth/me")
 def auth_me(request: Request):
-    return {"auth_enabled": bool(AUTH_ENABLED or AUTH_STUB), "user": current_user(request)}
+    u = current_user(request)
+    return {"auth_enabled": bool(AUTH_ENABLED or AUTH_STUB), "user": u, "is_admin": _is_admin(u)}
 
 
 @app.post("/api/auth/logout")
@@ -778,23 +811,185 @@ def bets_mine(request: Request):
 
 @app.get("/api/leaderboard")
 def bets_leaderboard(request: Request, competition: str = ""):
+    """Classement combiné = pronos de match (réglés) + paris spéciaux (réglés), par
+    utilisateur, filtré par compétition ou global. points/n/bons cumulent les deux."""
     maybe_settle()
     me = current_user(request)
     me_id = me["id"] if me else None
-    q = ("SELECT u.id,u.name,u.picture,COALESCE(SUM(b.points),0) pts,COUNT(*) n,"
-         "SUM(CASE WHEN b.points>0 THEN 1 ELSE 0 END) good "
-         "FROM bets b JOIN users u ON u.id=b.user_id "
-         "WHERE b.season=? AND b.settled=1 AND b.voided=0")
-    args = [core.SEASON]
-    if competition:
-        q += " AND b.competition=?"
-        args.append(competition)
-    q += " GROUP BY u.id ORDER BY pts DESC, good DESC, n ASC"
+    agg = {}   # uid -> [points, n, good]
+
+    def add(uid, pts):
+        a = agg.setdefault(uid, [0, 0, 0])
+        a[0] += pts or 0
+        a[1] += 1
+        a[2] += 1 if (pts or 0) > 0 else 0
+
     with closing(_db()) as con:
-        rows = con.execute(q, args).fetchall()
-    out = [{"rank": i, "name": r[1], "picture": r[2], "points": r[3], "n": r[4], "good": r[5],
-            "is_me": (r[0] == me_id)} for i, r in enumerate(rows, 1)]
+        mq = "SELECT user_id,points FROM bets WHERE season=? AND settled=1 AND voided=0"
+        margs = [core.SEASON]
+        if competition:
+            mq += " AND competition=?"
+            margs.append(competition)
+        for uid, pts in con.execute(mq, margs).fetchall():
+            add(uid, pts)
+        kq = ("SELECT mb.user_id,mb.points FROM market_bets mb JOIN markets m ON m.id=mb.market_id "
+              "WHERE m.status='settled' AND m.season=? AND mb.points IS NOT NULL")
+        kargs = [core.SEASON]
+        if competition:
+            kq += " AND m.competition=?"
+            kargs.append(competition)
+        for uid, pts in con.execute(kq, kargs).fetchall():
+            add(uid, pts)
+        names = {r[0]: (r[1], r[2]) for r in con.execute("SELECT id,name,picture FROM users").fetchall()}
+    rows = sorted(([uid] + v for uid, v in agg.items()), key=lambda r: (-r[1], -r[3], r[2]))
+    out = [{"rank": i, "name": names.get(r[0], ("?", None))[0], "picture": names.get(r[0], ("?", None))[1],
+            "points": r[1], "n": r[2], "good": r[3], "is_me": (r[0] == me_id)}
+           for i, r in enumerate(rows, 1)]
     return {"competition": competition or None, "season": core.SEASON, "rows": out}
+
+
+# --- Mercato sauvegardé par compte (en plus des codes de partage anonymes) ---
+@app.get("/api/user/mercato")
+def user_mercato_get(request: Request):
+    u = _require_user(request)
+    with closing(_db()) as con:
+        row = con.execute("SELECT payload FROM user_mercato WHERE user_id=?", (u["id"],)).fetchone()
+    return json.loads(row[0]) if row else {"squad": {}, "modes": {}}
+
+
+@app.post("/api/user/mercato")
+def user_mercato_save(request: Request, body: dict = Body(...)):
+    u = _require_user(request)
+    payload = json.dumps({"squad": body.get("squad") or {}, "modes": body.get("modes") or {}})
+    if len(payload) > 100_000:
+        raise HTTPException(413, "effectif trop volumineux")
+    with closing(_db()) as con:
+        con.execute("INSERT INTO user_mercato(user_id,payload,updated) VALUES(?,?,?) "
+                    "ON CONFLICT(user_id) DO UPDATE SET payload=excluded.payload,updated=excluded.updated",
+                    (u["id"], payload, time.time()))
+        con.commit()
+    return {"ok": True}
+
+
+# --- Paris spéciaux (marchés gérés par l'admin) ---
+@app.get("/api/markets")
+def markets_list(request: Request):
+    u = current_user(request)
+    uid = u["id"] if u else None
+    with closing(_db()) as con:
+        rows = con.execute(
+            "SELECT id,title,competition,choices,points,pick,status,winners,season FROM markets "
+            "ORDER BY (status='open') DESC, id DESC").fetchall()
+        mine = {}
+        if uid:
+            for r in con.execute("SELECT market_id,choices,points FROM market_bets WHERE user_id=?",
+                                 (uid,)).fetchall():
+                mine[r[0]] = {"choices": json.loads(r[1]), "points": r[2]}
+    out = [{"id": r[0], "title": r[1], "competition": r[2], "choices": json.loads(r[3]),
+            "points": r[4], "pick": r[5], "status": r[6],
+            "winners": json.loads(r[7]) if r[7] else None, "season": r[8],
+            "my_bet": mine.get(r[0])} for r in rows]
+    return {"markets": out, "is_admin": _is_admin(u)}
+
+
+@app.post("/api/markets/{mid}/bet")
+def market_bet(mid: int, request: Request, body: dict = Body(...)):
+    u = _require_user(request)
+    if not _rate_ok(u["id"]):
+        raise HTTPException(429, "trop de paris, réessaie dans un instant")
+    picks = [c for c in (body.get("choices") or []) if isinstance(c, str)]
+    with closing(_db()) as con:
+        m = con.execute("SELECT choices,pick,status FROM markets WHERE id=?", (mid,)).fetchone()
+        if not m:
+            raise HTTPException(404, "marché introuvable")
+        allowed, pick, status = set(json.loads(m[0])), m[1], m[2]
+        if status != "open":
+            raise HTTPException(409, "paris fermés pour ce marché")
+        picks = sorted({c for c in picks if c in allowed})
+        if len(picks) != pick:
+            raise HTTPException(400, f"choisis exactement {pick} équipe(s)")
+        now = time.time()
+        con.execute("INSERT INTO market_bets(market_id,user_id,choices,created,updated) VALUES(?,?,?,?,?) "
+                    "ON CONFLICT(market_id,user_id) DO UPDATE SET choices=excluded.choices,updated=excluded.updated",
+                    (mid, u["id"], json.dumps(picks), now, now))
+        con.commit()
+    return {"ok": True, "choices": picks}
+
+
+@app.post("/api/markets")
+def market_create(request: Request, body: dict = Body(...)):
+    _require_admin(request)
+    title = (body.get("title") or "").strip()
+    choices = sorted({c.strip() for c in (body.get("choices") or [])
+                      if isinstance(c, str) and c.strip()})
+    try:
+        pick, points = int(body.get("pick") or 1), int(body.get("points") or 20)
+    except (TypeError, ValueError):
+        raise HTTPException(400, "paramètres invalides")
+    comp = (body.get("competition") or "").strip() or None
+    if not title or len(choices) < 2 or not (1 <= pick < len(choices)) or points < 1:
+        raise HTTPException(400, "marché invalide (titre, ≥2 choix, 1≤pick<choix, points>0)")
+    now = time.time()
+    with closing(_db()) as con:
+        con.execute("INSERT INTO markets(season,title,competition,choices,points,pick,status,created,updated) "
+                    "VALUES(?,?,?,?,?,?, 'open',?,?)",
+                    (core.SEASON, title, comp, json.dumps(choices), points, pick, now, now))
+        con.commit()
+    return {"ok": True}
+
+
+@app.post("/api/markets/{mid}/close")
+def market_close(mid: int, request: Request):
+    _require_admin(request)
+    with closing(_db()) as con:
+        con.execute("UPDATE markets SET status='closed',updated=? WHERE id=? AND status='open'",
+                    (time.time(), mid))
+        con.commit()
+    return {"ok": True}
+
+
+@app.post("/api/markets/{mid}/reopen")
+def market_reopen(mid: int, request: Request):
+    _require_admin(request)
+    with closing(_db()) as con:
+        con.execute("UPDATE markets SET status='open',winners=NULL,updated=? WHERE id=? AND status!='open'",
+                    (time.time(), mid))
+        con.execute("UPDATE market_bets SET points=NULL WHERE market_id=?", (mid,))
+        con.commit()
+    return {"ok": True}
+
+
+@app.post("/api/markets/{mid}/settle")
+def market_settle(mid: int, request: Request, body: dict = Body(...)):
+    _require_admin(request)
+    winners_in = [c for c in (body.get("winners") or []) if isinstance(c, str)]
+    now = time.time()
+    with closing(_db()) as con:
+        m = con.execute("SELECT choices,points FROM markets WHERE id=?", (mid,)).fetchone()
+        if not m:
+            raise HTTPException(404, "marché introuvable")
+        allowed, points = set(json.loads(m[0])), m[1]
+        winners = sorted({c for c in winners_in if c in allowed})
+        if not winners:
+            raise HTTPException(400, "sélectionne au moins une bonne réponse")
+        con.execute("UPDATE markets SET status='settled',winners=?,updated=? WHERE id=?",
+                    (json.dumps(winners), now, mid))
+        for bid, ch in con.execute("SELECT id,choices FROM market_bets WHERE market_id=?",
+                                   (mid,)).fetchall():
+            pts = bets.market_points(json.loads(ch), winners, points)
+            con.execute("UPDATE market_bets SET points=?,updated=? WHERE id=?", (pts, now, bid))
+        con.commit()
+    return {"ok": True}
+
+
+@app.post("/api/markets/{mid}/delete")
+def market_delete(mid: int, request: Request):
+    _require_admin(request)
+    with closing(_db()) as con:
+        con.execute("DELETE FROM market_bets WHERE market_id=?", (mid,))
+        con.execute("DELETE FROM markets WHERE id=?", (mid,))
+        con.commit()
+    return {"ok": True}
 
 
 # La SPA (catch-all) APRÈS les routes /api pour qu'elles aient la priorité.

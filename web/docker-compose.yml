@@ -23,6 +23,8 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - FH_SESSION_SECRET=${FH_SESSION_SECRET:-}
+      # Emails Google admin (gèrent les paris spéciaux), séparés par des virgules.
+      - FH_ADMIN_EMAILS=${FH_ADMIN_EMAILS:-}
     restart: unless-stopped
 
   caddy:
