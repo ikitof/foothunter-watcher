@@ -158,8 +158,8 @@
           <div class="scroll"><table>
             <tr>
               <th>#</th><th>Équipe</th>
-              <th class="num s" @click="sortStand('played')" title="Journées jouées">J{{stArrow('played')}}</th>
               <th class="num s" @click="sortStand('points')" title="Points (V 3 · N 1 · D 0)">Pts{{stArrow('points')}}</th>
+              <th class="num s" @click="sortStand('played')" title="Journées jouées">J{{stArrow('played')}}</th>
               <th class="num s" @click="sortStand('gf')" title="Buts pour">BP{{stArrow('gf')}}</th>
               <th class="num s" @click="sortStand('ga')" title="Buts contre">BC{{stArrow('ga')}}</th>
               <th class="num s" @click="sortStand('gd')" title="Différence de buts">Diff{{stArrow('gd')}}</th>
@@ -167,7 +167,7 @@
             </tr>
             <tr v-for="(s,i) in sortedStandings" :key="s.team">
               <td class="muted">{{i+1}}</td><td class="lk" @click="openTeam(s.team)">{{s.team}}</td>
-              <td class="num">{{s.played}}</td><td class="num">{{s.points}}</td>
+              <td class="num">{{s.points}}</td><td class="num">{{s.played}}</td>
               <td class="num">{{s.gf}}</td><td class="num">{{s.ga}}</td><td class="num">{{s.gd}}</td>
               <td><span class="form"><span v-for="(r,j) in (s.form||[])" :key="j" class="fp" :class="'fp-'+r" :title="r">{{r}}</span></span></td>
             </tr>
