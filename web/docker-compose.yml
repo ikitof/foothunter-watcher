@@ -17,6 +17,12 @@ services:
       - analyzer-data:/data    # mercatos sauvegardés (sqlite), persistants
     environment:
       - FH_WEB_ORIGINS=https://analyzer.wiriath.com
+      - FH_PUBLIC_URL=https://analyzer.wiriath.com
+      # Pronostics / connexion Google — renseigner dans web/.env (auto-chargé par compose).
+      # Vides -> l'auth est désactivée et l'app tourne en lecture seule (pas d'erreur).
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - FH_SESSION_SECRET=${FH_SESSION_SECRET:-}
     restart: unless-stopped
 
   caddy:

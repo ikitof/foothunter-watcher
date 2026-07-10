@@ -17,12 +17,25 @@ import time
 from contextlib import closing
 import sqlite3
 
-from fastapi import Body, FastAPI, HTTPException
+from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+
+# Auth (optionnelle) : importée de façon défensive pour que l'app démarre même si les libs
+# ne sont pas installées (dev) ou si les secrets Google ne sont pas configurés.
+try:
+    from starlette.middleware.sessions import SessionMiddleware
+except Exception:                       # pragma: no cover
+    SessionMiddleware = None
+try:
+    from authlib.integrations.starlette_client import OAuth
+except Exception:                       # pragma: no cover
+    OAuth = None
 
 import foot_scores as core
 import fh_mercato as merc
+import fh_bets as bets
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(HERE, "static")
@@ -37,6 +50,33 @@ _origins = [o.strip() for o in os.environ.get(
     "FH_WEB_ORIGINS", "https://analyzer.wiriath.com").split(",") if o.strip()]
 app.add_middleware(CORSMiddleware, allow_origins=_origins,
                    allow_methods=["GET", "POST"], allow_headers=["*"])
+
+# ----------------------------------------------------------------------------
+# Auth Google (flux OAuth côté serveur). AUTH_ENABLED=False si les secrets manquent : l'app
+# fonctionne alors en lecture seule (les endpoints d'écriture renvoient 401, /api/auth/* 503).
+# ----------------------------------------------------------------------------
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+PUBLIC_URL = os.environ.get("FH_PUBLIC_URL", "https://analyzer.wiriath.com").rstrip("/")
+SESSION_SECRET = os.environ.get("FH_SESSION_SECRET") or secrets.token_hex(32)
+# Raccourci de login POUR LE DEV UNIQUEMENT (jamais activer en prod) : /api/auth/login?dev=NOM
+AUTH_STUB = os.environ.get("FH_AUTH_STUB") == "1"
+AUTH_ENABLED = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and OAuth is not None)
+
+if SessionMiddleware is not None:       # cookie de session signé (survit à la redirection Google)
+    # https_only par défaut (prod TLS derrière Caddy) ; FH_INSECURE_COOKIE=1 pour tester en local http.
+    app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET, session_cookie="fh_session",
+                       same_site="lax", https_only=(os.environ.get("FH_INSECURE_COOKIE") != "1"),
+                       max_age=30 * 86400)
+
+oauth = None
+if AUTH_ENABLED:
+    oauth = OAuth()
+    oauth.register(
+        name="google",
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        client_id=GOOGLE_CLIENT_ID, client_secret=GOOGLE_CLIENT_SECRET,
+        client_kwargs={"scope": "openid email profile"})
 
 
 # ----------------------------------------------------------------------------
@@ -124,9 +164,25 @@ def _team_season_dom(season, team):
 
 
 def _db():
-    con = sqlite3.connect(DB_PATH)
+    con = sqlite3.connect(DB_PATH, timeout=30)
+    con.execute("PRAGMA journal_mode=WAL")          # meilleure concurrence en écriture
     con.execute("CREATE TABLE IF NOT EXISTS mercato "
                 "(code TEXT PRIMARY KEY, payload TEXT, created REAL, updated REAL)")
+    # Pronostics : comptes (identité = sub Google) + paris (clé = user+saison+compétition+match).
+    con.execute("""CREATE TABLE IF NOT EXISTS users(
+        id INTEGER PRIMARY KEY AUTOINCREMENT, google_sub TEXT UNIQUE NOT NULL,
+        email TEXT, name TEXT, picture TEXT, created REAL, last_login REAL)""")
+    con.execute("""CREATE TABLE IF NOT EXISTS bets(
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, season INTEGER NOT NULL,
+        competition TEXT NOT NULL, home TEXT NOT NULL, away TEXT NOT NULL, phase TEXT,
+        pred_home INTEGER NOT NULL, pred_away INTEGER NOT NULL,
+        act_home INTEGER, act_away INTEGER, points INTEGER,
+        locked INTEGER DEFAULT 0, settled INTEGER DEFAULT 0, voided INTEGER DEFAULT 0,
+        created REAL, updated REAL, settled_ts REAL,
+        UNIQUE(user_id, season, competition, home, away))""")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_bets_settle ON bets(season, settled)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_bets_leader ON bets(season, competition, settled)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_bets_user ON bets(user_id, season)")
     return con
 
 
@@ -452,6 +508,293 @@ def mercato_load(code: str):
     if not row:
         raise HTTPException(404, "code introuvable")
     return json.loads(row[0])
+
+
+# ----------------------------------------------------------------------------
+# Pronostics (paris) : comptes Google, pose de paris sur les matchs à venir, règlement
+# automatique (piloté par le polling — l'API n'a ni id ni date de match), classement.
+# ----------------------------------------------------------------------------
+_MAX_GOALS = 30                          # borne de saisie (anti-abus)
+
+
+def _upsert_user(sub, email, name, picture):
+    now = time.time()
+    with closing(_db()) as con:
+        con.execute(
+            "INSERT INTO users(google_sub,email,name,picture,created,last_login) VALUES(?,?,?,?,?,?) "
+            "ON CONFLICT(google_sub) DO UPDATE SET email=excluded.email,name=excluded.name,"
+            "picture=excluded.picture,last_login=excluded.last_login",
+            (sub, email, name, picture, now, now))
+        con.commit()
+        row = con.execute("SELECT id,name,email,picture FROM users WHERE google_sub=?",
+                          (sub,)).fetchone()
+    return {"id": row[0], "name": row[1], "email": row[2], "picture": row[3]}
+
+
+def current_user(request):
+    """Utilisateur connecté (via le cookie de session signé) ou None."""
+    uid = request.session.get("uid") if hasattr(request, "session") else None
+    if not uid:
+        return None
+    with closing(_db()) as con:
+        row = con.execute("SELECT id,name,email,picture FROM users WHERE id=?", (uid,)).fetchone()
+    return {"id": row[0], "name": row[1], "email": row[2], "picture": row[3]} if row else None
+
+
+def _require_user(request):
+    u = current_user(request)
+    if not u:
+        raise HTTPException(401, "connexion requise")
+    return u
+
+
+# Limitation de débit par utilisateur (token bucket en mémoire) pour la pose de paris.
+_rl, _rl_lock = {}, threading.Lock()
+
+
+def _rate_ok(uid, rate=1.0, burst=8):
+    now = time.time()
+    with _rl_lock:
+        tok, last = _rl.get(uid, (burst, now))
+        tok = min(burst, tok + (now - last) * rate)
+        if tok < 1:
+            _rl[uid] = (tok, now)
+            return False
+        _rl[uid] = (tok - 1, now)
+        return True
+
+
+# --- Règlement automatique (idempotent, paresseux, throttlé — pas de worker) ---
+_settle = {"ts": 0.0, "lock": threading.Lock()}
+
+
+def _played_rows(season):
+    """Matchs JOUÉS d'une saison, normalisés pour fh_bets.build_played_index."""
+    raw = list(core.api_season_matches(season) or [])
+    if not raw:
+        raw = list((core.api_all_matchs() or {}).get(f"saison{season}") or [])
+    out = []
+    for o in raw:
+        sd, se = core._num(o.get("Score dom")), core._num(o.get("Score ext"))
+        out.append({"competition": o.get("competition"), "home": o.get("Equipe dom"),
+                    "away": o.get("Equipe ext"),
+                    "home_goals": int(sd) if sd is not None else None,
+                    "away_goals": int(se) if se is not None else None})
+    return out
+
+
+def settle_bets(season):
+    """Règle les paris de `season` : score final -> points ; live/score partiel -> verrou ;
+    saison finie + match jamais joué -> annulé (0 pt, hors classement). Ré-exécutable sans
+    double comptage (toutes les écritures sont gardées par settled=0)."""
+    played = bets.build_played_index(_played_rows(season))
+    live = {(o.get("competition"), o.get("nom_equipe_dom"), o.get("nom_equipe_ext"))
+            for o in (core.api_live_matchs() or [])}
+    finished = season < core.SEASON
+    now = time.time()
+    with closing(_db()) as con:
+        rows = con.execute("SELECT id,competition,home,away,pred_home,pred_away FROM bets "
+                           "WHERE season=? AND settled=0", (season,)).fetchall()
+        for bid, comp, home, away, ph, pa in rows:
+            key = (comp, home, away)
+            if key in played:
+                hg, ag = played[key]
+                pts = bets.bet_points(ph, pa, hg, ag)
+                con.execute("UPDATE bets SET act_home=?,act_away=?,points=?,locked=1,settled=1,"
+                            "settled_ts=?,updated=? WHERE id=?", (hg, ag, pts, now, now, bid))
+            elif key in live:
+                con.execute("UPDATE bets SET locked=1,updated=? WHERE id=?", (now, bid))
+            elif finished:
+                con.execute("UPDATE bets SET voided=1,settled=1,points=0,settled_ts=?,updated=? "
+                            "WHERE id=?", (now, now, bid))
+        con.commit()
+
+
+def maybe_settle():
+    if time.time() - _settle["ts"] < 12:                 # throttle (~ TTL du live/résultats)
+        return
+    if not _settle["lock"].acquire(blocking=False):
+        return
+    try:
+        with closing(_db()) as con:
+            seasons = [r[0] for r in con.execute(
+                "SELECT DISTINCT season FROM bets WHERE settled=0").fetchall()]
+        for s in seasons:
+            settle_bets(s)
+        _settle["ts"] = time.time()
+    except Exception:
+        pass
+    finally:
+        _settle["lock"].release()
+
+
+# --- Auth Google (flux OAuth côté serveur) ---
+@app.get("/api/auth/login")
+async def auth_login(request: Request, dev: str = ""):
+    if AUTH_STUB and dev:                # RACCOURCI DEV UNIQUEMENT
+        u = _upsert_user("dev:" + dev, dev + "@dev.local", dev, "")
+        request.session["uid"] = u["id"]
+        return RedirectResponse("/")
+    if not AUTH_ENABLED:
+        raise HTTPException(503, "authentification non configurée")
+    return await oauth.google.authorize_redirect(request, PUBLIC_URL + "/api/auth/callback")
+
+
+@app.get("/api/auth/callback")
+async def auth_callback(request: Request):
+    if not AUTH_ENABLED:
+        raise HTTPException(503, "authentification non configurée")
+    try:
+        token = await oauth.google.authorize_access_token(request)   # valide code+state+id_token
+    except Exception:
+        raise HTTPException(400, "échec de la connexion Google")
+    info = token.get("userinfo") or {}
+    sub = info.get("sub")
+    if not sub:
+        raise HTTPException(400, "profil Google incomplet")
+    u = _upsert_user(sub, info.get("email"),
+                     info.get("name") or info.get("email") or "Joueur", info.get("picture"))
+    request.session["uid"] = u["id"]
+    return RedirectResponse("/")
+
+
+@app.get("/api/auth/me")
+def auth_me(request: Request):
+    return {"auth_enabled": bool(AUTH_ENABLED or AUTH_STUB), "user": current_user(request)}
+
+
+@app.post("/api/auth/logout")
+def auth_logout(request: Request):
+    try:
+        request.session.clear()
+    except Exception:
+        pass
+    return {"ok": True}
+
+
+# --- Paris ---
+def _bettable_status(comp, home, away):
+    """Statut du match (home, away) dans `comp` : ('scheduled'|'live'|'result', phase) ou
+    (None, None) s'il est introuvable."""
+    groups, _ = core.fetch_competition(comp)
+    for g in groups:
+        for m in g["matches"]:
+            if m.get("a") == home and m.get("b") == away:
+                if m.get("status") == "scheduled":
+                    return "scheduled", g["label"]
+                return ("live" if m.get("site_live") else "result"), g["label"]
+    return None, None
+
+
+@app.get("/api/bets/fixtures/{competition}")
+def bets_fixtures(competition: str, request: Request):
+    maybe_settle()
+    u = current_user(request)
+    uid = u["id"] if u else None
+    groups, _ = core.fetch_competition(competition)
+    fixtures = [{"home": m.get("a"), "away": m.get("b"), "phase": g["label"]}
+                for g in groups for m in g["matches"] if m.get("status") == "scheduled"]
+    mine, my_bets = {}, []
+    if uid:
+        with closing(_db()) as con:
+            for r in con.execute(
+                "SELECT home,away,phase,pred_home,pred_away,act_home,act_away,points,locked,settled,voided "
+                "FROM bets WHERE user_id=? AND season=? AND competition=?",
+                    (uid, core.SEASON, competition)).fetchall():
+                my_bets.append({"home": r[0], "away": r[1], "phase": r[2], "pred_home": r[3],
+                                "pred_away": r[4], "act_home": r[5], "act_away": r[6],
+                                "points": r[7], "locked": bool(r[8]), "settled": bool(r[9]),
+                                "voided": bool(r[10])})
+                mine[(r[0], r[1])] = {"pred_home": r[3], "pred_away": r[4]}
+    for f in fixtures:
+        f["my_bet"] = mine.get((f["home"], f["away"]))
+    return {"competition": competition, "season": core.SEASON,
+            "fixtures": fixtures, "my_bets": my_bets, "authed": bool(uid)}
+
+
+@app.post("/api/bets")
+def bets_place(request: Request, body: dict = Body(...)):
+    u = _require_user(request)
+    maybe_settle()
+    if not _rate_ok(u["id"]):
+        raise HTTPException(429, "trop de paris, réessaie dans un instant")
+    comp = (body.get("competition") or "").strip()
+    home = (body.get("home") or "").strip()
+    away = (body.get("away") or "").strip()
+    try:
+        ph, pa = int(body.get("pred_home")), int(body.get("pred_away"))
+    except (TypeError, ValueError):
+        raise HTTPException(400, "score invalide")
+    if not comp or not home or not away:
+        raise HTTPException(400, "match invalide")
+    if not (0 <= ph <= _MAX_GOALS and 0 <= pa <= _MAX_GOALS):
+        raise HTTPException(400, "score hors limites")
+    status, phase = _bettable_status(comp, home, away)
+    if status != "scheduled":            # verrou piloté par le polling (live/joué/inexistant)
+        raise HTTPException(409, "match verrouillé ou introuvable")
+    now = time.time()
+    with closing(_db()) as con:
+        con.execute(
+            "INSERT INTO bets(user_id,season,competition,home,away,phase,pred_home,pred_away,created,updated) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id,season,competition,home,away) DO UPDATE SET "
+            "pred_home=excluded.pred_home,pred_away=excluded.pred_away,phase=excluded.phase,"
+            "updated=excluded.updated WHERE bets.locked=0 AND bets.settled=0",
+            (u["id"], core.SEASON, comp, home, away, phase, ph, pa, now, now))
+        con.commit()
+    return {"ok": True, "pred_home": ph, "pred_away": pa}
+
+
+@app.post("/api/bets/remove")
+def bets_remove(request: Request, body: dict = Body(...)):
+    u = _require_user(request)
+    comp = (body.get("competition") or "").strip()
+    home = (body.get("home") or "").strip()
+    away = (body.get("away") or "").strip()
+    with closing(_db()) as con:
+        cur = con.execute("DELETE FROM bets WHERE user_id=? AND season=? AND competition=? AND "
+                          "home=? AND away=? AND locked=0 AND settled=0",
+                          (u["id"], core.SEASON, comp, home, away))
+        con.commit()
+    if cur.rowcount == 0:
+        raise HTTPException(409, "pari verrouillé ou introuvable")
+    return {"ok": True}
+
+
+@app.get("/api/bets/mine")
+def bets_mine(request: Request):
+    u = _require_user(request)
+    maybe_settle()
+    with closing(_db()) as con:
+        rows = con.execute(
+            "SELECT competition,home,away,phase,pred_home,pred_away,act_home,act_away,points,"
+            "locked,settled,voided FROM bets WHERE user_id=? AND season=? ORDER BY competition",
+            (u["id"], core.SEASON)).fetchall()
+    lst = [{"competition": r[0], "home": r[1], "away": r[2], "phase": r[3], "pred_home": r[4],
+            "pred_away": r[5], "act_home": r[6], "act_away": r[7], "points": r[8],
+            "locked": bool(r[9]), "settled": bool(r[10]), "voided": bool(r[11])} for r in rows]
+    total = sum(b["points"] or 0 for b in lst if b["settled"] and not b["voided"])
+    return {"season": core.SEASON, "bets": lst, "total": total}
+
+
+@app.get("/api/leaderboard")
+def bets_leaderboard(request: Request, competition: str = ""):
+    maybe_settle()
+    me = current_user(request)
+    me_id = me["id"] if me else None
+    q = ("SELECT u.id,u.name,u.picture,COALESCE(SUM(b.points),0) pts,COUNT(*) n,"
+         "SUM(CASE WHEN b.points>0 THEN 1 ELSE 0 END) good "
+         "FROM bets b JOIN users u ON u.id=b.user_id "
+         "WHERE b.season=? AND b.settled=1 AND b.voided=0")
+    args = [core.SEASON]
+    if competition:
+        q += " AND b.competition=?"
+        args.append(competition)
+    q += " GROUP BY u.id ORDER BY pts DESC, good DESC, n ASC"
+    with closing(_db()) as con:
+        rows = con.execute(q, args).fetchall()
+    out = [{"rank": i, "name": r[1], "picture": r[2], "points": r[3], "n": r[4], "good": r[5],
+            "is_me": (r[0] == me_id)} for i, r in enumerate(rows, 1)]
+    return {"competition": competition or None, "season": core.SEASON, "rows": out}
 
 
 # La SPA (catch-all) APRÈS les routes /api pour qu'elles aient la priorité.

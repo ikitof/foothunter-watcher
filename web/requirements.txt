@@ -1,2 +1,6 @@
 fastapi>=0.110
 uvicorn[standard]>=0.27
+# Auth Google (flux OAuth côté serveur) + session signée
+authlib>=1.3
+httpx>=0.27
+itsdangerous>=2.1

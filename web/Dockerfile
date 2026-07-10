@@ -8,7 +8,7 @@ COPY web/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Cœur réutilisé (logique pure, importable sans interface graphique)
-COPY foot_scores.py fh_mercato.py ./
+COPY foot_scores.py fh_mercato.py fh_bets.py ./
 # Backend + SPA
 COPY web/server.py ./server.py
 COPY web/static ./static
