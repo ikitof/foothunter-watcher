@@ -721,28 +721,43 @@ def _bettable_status(comp, home, away):
 
 @app.get("/api/bets/fixtures/{competition}")
 def bets_fixtures(competition: str, request: Request):
+    """Matchs de la compétition GROUPÉS PAR JOURNÉE (phase) — passés (avec score + le pari de
+    l'utilisateur et ses points), en direct, et à venir (pariables). `current` = index de la
+    1re journée contenant un match à venir (sinon la dernière)."""
     maybe_settle()
     u = current_user(request)
     uid = u["id"] if u else None
     groups, _ = core.fetch_competition(competition)
-    fixtures = [{"home": m.get("a"), "away": m.get("b"), "phase": g["label"]}
-                for g in groups for m in g["matches"] if m.get("status") == "scheduled"]
-    mine, my_bets = {}, []
+    mine = {}
     if uid:
         with closing(_db()) as con:
             for r in con.execute(
-                "SELECT home,away,phase,pred_home,pred_away,act_home,act_away,points,locked,settled,voided "
+                "SELECT home,away,pred_home,pred_away,act_home,act_away,points,locked,settled,voided "
                 "FROM bets WHERE user_id=? AND season=? AND competition=?",
                     (uid, core.SEASON, competition)).fetchall():
-                my_bets.append({"home": r[0], "away": r[1], "phase": r[2], "pred_home": r[3],
-                                "pred_away": r[4], "act_home": r[5], "act_away": r[6],
-                                "points": r[7], "locked": bool(r[8]), "settled": bool(r[9]),
-                                "voided": bool(r[10])})
-                mine[(r[0], r[1])] = {"pred_home": r[3], "pred_away": r[4]}
-    for f in fixtures:
-        f["my_bet"] = mine.get((f["home"], f["away"]))
-    return {"competition": competition, "season": core.SEASON,
-            "fixtures": fixtures, "my_bets": my_bets, "authed": bool(uid)}
+                mine[(r[0], r[1])] = {"pred_home": r[2], "pred_away": r[3], "act_home": r[4],
+                                      "act_away": r[5], "points": r[6], "locked": bool(r[7]),
+                                      "settled": bool(r[8]), "voided": bool(r[9])}
+    out = []
+    for g in groups:
+        matches = []
+        for m in g["matches"]:
+            a, b = m.get("a"), m.get("b")
+            if not a or not b:
+                continue
+            sc = core._pair(m.get("mid"))
+            status = ("scheduled" if m.get("status") == "scheduled"
+                      else ("live" if m.get("site_live") else "played"))
+            matches.append({"home": a, "away": b, "status": status,
+                            "score": [sc[0], sc[1]] if sc else None,
+                            "my_bet": mine.get((a, b))})
+        if matches:
+            out.append({"phase": g["label"] or "—", "matches": matches})
+    current = next((i for i, g in enumerate(out)
+                    if any(mm["status"] == "scheduled" for mm in g["matches"])),
+                   len(out) - 1 if out else 0)
+    return {"competition": competition, "season": core.SEASON, "groups": out,
+            "current": current, "authed": bool(uid)}
 
 
 @app.post("/api/bets")

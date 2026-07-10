@@ -367,30 +367,47 @@
       <div v-if="!betData" class="card muted">{{error||'Chargement…'}}</div>
       <template v-else>
         <div class="card">
-          <h2>À parier <span class="note">· {{betData.fixtures.length}} match(s) à venir</span></h2>
-          <div v-if="!betData.fixtures.length" class="muted">Aucun match à venir dans cette compétition.</div>
-          <div class="match" v-for="f in betData.fixtures" :key="bkey(f)">
-            <span class="t clk" @click="openTeam(f.home)">{{f.home}}</span>
-            <span style="display:flex;gap:4px;align-items:center;justify-content:center;min-width:112px">
-              <input type="number" min="0" max="30" v-model.number="betInputs[bkey(f)].h" style="width:42px;text-align:center" :disabled="!me">
-              <span class="muted">–</span>
-              <input type="number" min="0" max="30" v-model.number="betInputs[bkey(f)].a" style="width:42px;text-align:center" :disabled="!me">
+          <div class="row" style="justify-content:space-between">
+            <h2 style="margin:0">Matchs</h2>
+            <span class="row" v-if="betData.groups.length" style="gap:4px">
+              <button class="ghost" @click="betDay=Math.max(0,betDay-1)" :disabled="betDay<=0">◀</button>
+              <select v-model.number="betDay"><option v-for="(g,i) in betData.groups" :key="i" :value="i">{{g.phase}}</option></select>
+              <button class="ghost" @click="betDay=Math.min(betData.groups.length-1,betDay+1)" :disabled="betDay>=betData.groups.length-1">▶</button>
             </span>
-            <span class="t away clk" @click="openTeam(f.away)">{{f.away}}</span>
-            <button class="mini" :disabled="!me" @click="placeBet(f)">{{f.my_bet?'maj':'parier'}}</button>
-            <button v-if="f.my_bet" class="ghost" @click="removeBet(f)" title="Retirer le pari">✕</button>
           </div>
+          <div v-if="!betData.groups.length" class="muted" style="margin-top:6px">Aucun match dans cette compétition.</div>
+          <template v-else-if="betDayGroup">
+            <div class="match" v-for="f in betDayGroup.matches" :key="bkey(f)" :class="{hot:f.status==='live'}">
+              <span class="t clk" @click="openTeam(f.home)">{{f.home}}</span>
+              <span v-if="f.status==='scheduled'" style="display:flex;gap:4px;align-items:center;justify-content:center;min-width:104px">
+                <input type="number" min="0" max="30" v-model.number="betInputs[bkey(f)].h" style="width:40px;text-align:center" :disabled="!me">
+                <span class="muted">–</span>
+                <input type="number" min="0" max="30" v-model.number="betInputs[bkey(f)].a" style="width:40px;text-align:center" :disabled="!me">
+              </span>
+              <span v-else class="sc" :class="{live:f.status==='live'}" style="min-width:104px">{{f.score?f.score[0]+' - '+f.score[1]:'–'}}<span v-if="f.status==='live'" class="dot"></span></span>
+              <span class="t away clk" @click="openTeam(f.away)">{{f.away}}</span>
+              <span style="min-width:132px;text-align:right;font-size:12px">
+                <template v-if="f.status==='scheduled'&&me">
+                  <button class="mini" @click="placeBet(f)">{{f.my_bet?'maj':'parier'}}</button>
+                  <button v-if="f.my_bet" class="ghost" @click="removeBet(f)" title="Retirer">✕</button>
+                </template>
+                <span v-else-if="f.my_bet" class="muted">prono {{f.my_bet.pred_home}}-{{f.my_bet.pred_away}}<b v-if="f.my_bet.settled&&!f.my_bet.voided" :style="{color:f.my_bet.points>0?'var(--green)':(f.my_bet.points<0?'var(--live)':'var(--muted)'),marginLeft:'4px'}">{{f.my_bet.points>0?'+':''}}{{f.my_bet.points}}</b></span>
+                <span v-else-if="f.status==='scheduled'&&!me&&authEnabled" class="note">connecte-toi</span>
+              </span>
+            </div>
+          </template>
         </div>
-        <div class="card" v-if="me && betData.my_bets.length">
-          <h2>Mes paris <span class="note">· total {{myBetTotal}} pts</span></h2>
+        <div class="card" v-if="me && myBets.length">
+          <h2>Mes paris <span class="note">· {{myBets.length}} paris · total {{myBetTotal}} pts</span></h2>
           <div class="scroll"><table>
-            <tr><th>Match</th><th class="num">Prono</th><th class="num">Score</th><th class="num">Pts</th><th>État</th></tr>
-            <tr v-for="b in betData.my_bets" :key="bkey(b)">
+            <tr><th>Journée</th><th>Match</th><th class="num">Prono</th><th class="num">Score</th><th class="num">Pts</th><th>État</th></tr>
+            <tr v-for="b in myBets" :key="bkey(b)">
+              <td class="muted" style="font-size:11px">{{b.phase}}</td>
               <td><span class="clk" @click="openTeam(b.home)">{{b.home}}</span> - <span class="clk" @click="openTeam(b.away)">{{b.away}}</span></td>
-              <td class="num">{{b.pred_home}}-{{b.pred_away}}</td>
-              <td class="num">{{b.settled&&!b.voided?b.act_home+'-'+b.act_away:'·'}}</td>
-              <td class="num" :style="{color:(b.points>0?'var(--green)':(b.points<0?'var(--live)':'var(--muted)'))}">{{b.settled&&!b.voided?((b.points>0?'+':'')+b.points):'·'}}</td>
-              <td class="muted" style="font-size:11px">{{b.voided?'annulé':(b.settled?'réglé':(b.locked?'en cours':'en attente'))}}</td>
+              <td class="num">{{b.my_bet.pred_home}}-{{b.my_bet.pred_away}}</td>
+              <td class="num">{{b.score?b.score[0]+'-'+b.score[1]:'·'}}</td>
+              <td class="num" :style="{color:(b.my_bet.points>0?'var(--green)':(b.my_bet.points<0?'var(--live)':'var(--muted)'))}">{{b.my_bet.settled&&!b.my_bet.voided?((b.my_bet.points>0?'+':'')+b.my_bet.points):'·'}}</td>
+              <td class="muted" style="font-size:11px">{{b.my_bet.voided?'annulé':(b.my_bet.settled?'réglé':(b.my_bet.locked?'en cours':'à venir'))}}</td>
             </tr>
           </table></div>
         </div>
@@ -623,7 +640,7 @@ createApp({
     saveCode:'', loadCode:'', loadErr:'', copied:false,
     palmares:null,
     me:null, authEnabled:false, isAdmin:false,
-    betComp:'', betData:null, betInputs:{}, leaderScope:'global', leaderData:null,
+    betComp:'', betData:null, betDay:0, betInputs:{}, leaderScope:'global', leaderData:null,
     marketsData:null, marketPicks:{}, mkWinners:{},
     mkForm:{title:'',competition:'',points:20,pick:2,choicesText:''},
     gameBase:'', detail:null,
@@ -654,7 +671,11 @@ createApp({
       if(!k)return rows;const dir=this.scSort.dir;
       return [...rows].sort((a,b)=>{const x=this.scoutVal(a,k),y=this.scoutVal(b,k);
         if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return -1;return (x-y)*dir;});},
-    myBetTotal(){return ((this.betData&&this.betData.my_bets)||[]).filter(b=>b.settled&&!b.voided).reduce((s,b)=>s+(b.points||0),0);},
+    betDayGroup(){return (this.betData&&this.betData.groups)?this.betData.groups[this.betDay]:null;},
+    myBets(){if(!this.betData||!this.betData.groups)return[];const out=[];
+      for(const g of this.betData.groups)for(const m of g.matches)if(m.my_bet)out.push({...m,phase:g.phase});
+      return out;},
+    myBetTotal(){return this.myBets.filter(b=>b.my_bet.settled&&!b.my_bet.voided).reduce((s,b)=>s+(b.my_bet.points||0),0);},
     evoRows(){if(!this.evoData)return[];let a=this.evoData.players;
       const q=this.evoSearch.toLowerCase().trim();
       if(q)a=a.filter(p=>(p.nom||'').toLowerCase().includes(q));
@@ -771,8 +792,8 @@ createApp({
     async logout(){try{await api('/auth/logout',{method:'POST'});}catch(e){}location.reload();},
     bkey(f){return f.home+'|'+f.away;},
     async loadBets(){this.error='';if(!this.betComp)this.betComp=this.competitions[0]||'';this.betData=null;
-      try{const d=await api('/bets/fixtures/'+encodeURIComponent(this.betComp));this.betData=d;
-        const bi={};for(const f of d.fixtures){bi[this.bkey(f)]={h:f.my_bet?f.my_bet.pred_home:'',a:f.my_bet?f.my_bet.pred_away:''};}
+      try{const d=await api('/bets/fixtures/'+encodeURIComponent(this.betComp));this.betData=d;this.betDay=d.current||0;
+        const bi={};for(const g of d.groups)for(const f of g.matches){if(f.status==='scheduled')bi[this.bkey(f)]={h:f.my_bet?f.my_bet.pred_home:'',a:f.my_bet?f.my_bet.pred_away:''};}
         this.betInputs=bi;}catch(e){this.error='Impossible de charger les pronostics.';}},
     async placeBet(f){const v=this.betInputs[this.bkey(f)]||{};
       if(v.h===''||v.a===''||v.h==null||v.a==null){this.error='Entre un score complet.';return;}
