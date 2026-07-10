@@ -394,6 +394,55 @@
             </tr>
           </table></div>
         </div>
+        <div class="card" v-if="marketsData && (marketsData.markets.length || isAdmin)">
+          <div class="row" style="justify-content:space-between">
+            <h2 style="margin:0">🏅 Paris spéciaux</h2>
+            <span class="note">promotion · relégation · vainqueurs — clôturés par l'admin</span>
+          </div>
+          <div v-if="isAdmin" style="background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0">
+            <div class="note" style="margin-bottom:6px"><b>Admin</b> — créer un marché</div>
+            <div class="row">
+              <input v-model="mkForm.title" placeholder="Titre (ex. Relégués de Ligue 1)" style="flex:1;min-width:150px">
+              <select v-model="mkForm.competition" @change="mkLoadTeams"><option value="">— compétition —</option><option v-for="c in competitions" :key="c" :value="c">{{c}}</option></select>
+              <label>pts/bon <input type="number" min="1" v-model.number="mkForm.points" style="width:56px"></label>
+              <label>à choisir <input type="number" min="1" v-model.number="mkForm.pick" style="width:48px"></label>
+              <button class="act" @click="createMarket">Créer</button>
+            </div>
+            <textarea v-model="mkForm.choicesText" placeholder="Équipes (une par ligne) — auto-rempli en choisissant une compétition" style="width:100%;margin-top:6px;min-height:56px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;font:12px system-ui"></textarea>
+          </div>
+          <div v-if="!marketsData.markets.length" class="muted">Aucun pari spécial pour l'instant.</div>
+          <div v-for="m in marketsData.markets" :key="m.id" style="border-top:1px solid var(--line);padding:9px 0">
+            <div class="row" style="justify-content:space-between">
+              <span><b>{{m.title}}</b><span class="muted" v-if="m.competition"> · {{m.competition}}</span></span>
+              <span class="note">{{m.points}} pts/bon · choisis {{m.pick}} · <span :style="{color:m.status==='open'?'var(--green)':(m.status==='settled'?'var(--accent)':'var(--muted)')}">{{m.status==='open'?'ouvert':(m.status==='closed'?'fermé':'réglé')}}</span></span>
+            </div>
+            <div class="pills" style="margin:6px 0">
+              <span v-for="c in m.choices" :key="c" class="pill"
+                :class="{on: m.status==='open' ? (marketPicks[m.id]||[]).includes(c) : (m.my_bet && m.my_bet.choices.includes(c))}"
+                :style="mkWinStyle(m,c)"
+                @click="(m.status==='open'&&me)?toggleMarketPick(m,c):null">{{c}}<span v-if="m.winners&&m.winners.includes(c)"> ✓</span></span>
+            </div>
+            <div class="row">
+              <button v-if="m.status==='open'&&me" class="mini" :disabled="(marketPicks[m.id]||[]).length!==m.pick" @click="placeMarketBet(m)">{{m.my_bet?'modifier':'valider'}} ({{(marketPicks[m.id]||[]).length}}/{{m.pick}})</button>
+              <span v-if="!me&&authEnabled&&m.status==='open'" class="note">connecte-toi pour parier</span>
+              <span v-if="m.status==='settled'&&m.my_bet" class="note">tes points : <b :style="{color:m.my_bet.points>0?'var(--green)':'var(--muted)'}">{{m.my_bet.points||0}}</b></span>
+              <span v-else-if="m.status==='closed'&&m.my_bet" class="note">ton choix : {{m.my_bet.choices.join(', ')}}</span>
+              <template v-if="isAdmin">
+                <button v-if="m.status==='open'" class="ghost" @click="marketAction(m,'close')">Fermer</button>
+                <button v-if="m.status==='closed'" class="ghost" @click="marketAction(m,'reopen')">Rouvrir</button>
+                <button v-if="m.status!=='open'" class="ghost" @click="startSettle(m)">Régler…</button>
+                <button class="ghost" style="color:var(--live)" @click="marketAction(m,'delete')">Suppr.</button>
+              </template>
+            </div>
+            <div v-if="isAdmin && mkWinners[m.id]" style="margin-top:6px">
+              <div class="note">Coche la/les bonne(s) réponse(s) puis valide :</div>
+              <div class="pills" style="margin:4px 0">
+                <span v-for="c in m.choices" :key="c" class="pill" :class="{on:(mkWinners[m.id]||[]).includes(c)}" @click="toggleWinner(m,c)">{{c}}</span>
+              </div>
+              <button class="act" @click="settleMarket(m)">Valider le résultat</button>
+            </div>
+          </div>
+        </div>
         <div class="card">
           <div class="row" style="justify-content:space-between">
             <h2 style="margin:0">🏆 Classement</h2>
@@ -488,6 +537,7 @@
           <div class="muted" v-if="detail.aggregate">{{detail.aggregate.count}} joueurs · célé moy.
             {{detail.aggregate.avg_celebrite||'—'}} · âge moy. {{detail.aggregate.avg_age||'—'}}
             · masse salariale {{detail.aggregate.total_salaire}} M€</div>
+          <div v-if="detail.tactic" style="margin-top:6px"><span class="tag" style="color:var(--accent)" title="Tactique du club (géré par un humain)">🎯 Tactique : {{detail.tactic}}</span></div>
           <h3 style="margin-top:6px">Effectif</h3>
           <div class="scroll"><table>
             <tr><th>Poste</th><th>Joueur</th><th class="num">Célé</th><th class="num">M€</th><th class="num">Âge</th></tr>
@@ -572,8 +622,10 @@ createApp({
     pool:[], squad:{}, modes:{}, evalData:null,
     saveCode:'', loadCode:'', loadErr:'', copied:false,
     palmares:null,
-    me:null, authEnabled:false,
+    me:null, authEnabled:false, isAdmin:false,
     betComp:'', betData:null, betInputs:{}, leaderScope:'global', leaderData:null,
+    marketsData:null, marketPicks:{}, mkWinners:{},
+    mkForm:{title:'',competition:'',points:20,pick:2,choicesText:''},
     gameBase:'', detail:null,
   }},
   computed:{
@@ -651,7 +703,7 @@ createApp({
       if(t==='evolution'&&!this.evoData)this.loadEvo();
       if(t==='mercato'&&!this.pool.length)this.loadPool();
       if(t==='palmares'&&!this.palmares)this.loadPalmares();
-      if(t==='bets'){this.loadBets();this.loadLeaderboard();}
+      if(t==='bets'){this.loadBets();this.loadLeaderboard();this.loadMarkets();}
     },
     async boot(){
       try{const s=await api('/state');this.season=s.season;this.competitions=s.competitions;
@@ -697,7 +749,8 @@ createApp({
       this.pool.length?this.evalMercato():this.loadPool();},
     async evalMercato(){try{this.evalData=await api('/mercato/evaluate',{method:'POST',
       headers:{'Content-Type':'application/json'},body:JSON.stringify({squad:this.squad,modes:this.modes})});}catch(e){}},
-    persist(){try{localStorage.setItem('fh_mercato',JSON.stringify({squad:this.squad,modes:this.modes}));}catch(e){}},
+    persist(){try{localStorage.setItem('fh_mercato',JSON.stringify({squad:this.squad,modes:this.modes}));}catch(e){}
+      if(this.me)api('/user/mercato',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({squad:this.squad,modes:this.modes})}).catch(()=>{});},
     async saveMercato(){try{const d=await api('/mercato/save',{method:'POST',
       headers:{'Content-Type':'application/json'},body:JSON.stringify({squad:this.squad,modes:this.modes})});
       this.saveCode=d.code;this.copied=false;}catch(e){this.error='Sauvegarde impossible.';}},
@@ -709,7 +762,12 @@ createApp({
         this.persist();this.tab='mercato';this.pool.length?this.evalMercato():this.loadPool();}
       catch(e){this.loadErr='code introuvable';}},
     async loadPalmares(){this.error='';try{this.palmares=await api('/palmares');}catch(e){this.error='Impossible de charger le palmarès.';}},
-    async loadMe(){try{const d=await api('/auth/me');this.authEnabled=!!d.auth_enabled;this.me=d.user||null;}catch(e){this.me=null;}},
+    async loadMe(){try{const d=await api('/auth/me');this.authEnabled=!!d.auth_enabled;this.me=d.user||null;this.isAdmin=!!d.is_admin;
+      if(this.me && !new URLSearchParams(location.search).get('m'))this.loadUserMercato();}catch(e){this.me=null;}},
+    async loadUserMercato(){try{const d=await api('/user/mercato');
+      if(d&&d.squad&&Object.keys(d.squad).length){this.squad=d.squad;this.modes=d.modes||{};
+        try{localStorage.setItem('fh_mercato',JSON.stringify({squad:this.squad,modes:this.modes}));}catch(e){}
+        if(this.pool.length)this.evalMercato();}}catch(e){}},
     async logout(){try{await api('/auth/logout',{method:'POST'});}catch(e){}location.reload();},
     bkey(f){return f.home+'|'+f.away;},
     async loadBets(){this.error='';if(!this.betComp)this.betComp=this.competitions[0]||'';this.betData=null;
@@ -727,6 +785,33 @@ createApp({
       catch(e){this.error='Retrait impossible (pari verrouillé).';}},
     async loadLeaderboard(){try{const c=this.leaderScope==='comp'?this.betComp:'';
       this.leaderData=await api('/leaderboard'+(c?'?competition='+encodeURIComponent(c):''));}catch(e){}},
+    async loadMarkets(){try{this.marketsData=await api('/markets');this.isAdmin=!!this.marketsData.is_admin;
+      const mp={};for(const m of this.marketsData.markets)mp[m.id]=m.my_bet?m.my_bet.choices.slice():[];
+      this.marketPicks=mp;}catch(e){}},
+    toggleMarketPick(m,c){const a=this.marketPicks[m.id]||(this.marketPicks[m.id]=[]);
+      const i=a.indexOf(c);if(i>=0)a.splice(i,1);else if(a.length<m.pick)a.push(c);
+      this.marketPicks={...this.marketPicks};},
+    async placeMarketBet(m){const c=this.marketPicks[m.id]||[];if(c.length!==m.pick)return;
+      try{await api('/markets/'+m.id+'/bet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({choices:c})});
+        this.error='';this.loadMarkets();this.loadLeaderboard();}catch(e){this.error='Pari spécial refusé.';}},
+    async marketAction(m,act){if(act==='delete'&&!confirm('Supprimer définitivement ce marché ?'))return;
+      try{await api('/markets/'+m.id+'/'+act,{method:'POST'});this.loadMarkets();this.loadLeaderboard();}catch(e){this.error='Action refusée.';}},
+    startSettle(m){this.mkWinners={...this.mkWinners,[m.id]:(m.winners||[]).slice()};},
+    toggleWinner(m,c){const a=this.mkWinners[m.id]||(this.mkWinners[m.id]=[]);
+      const i=a.indexOf(c);i>=0?a.splice(i,1):a.push(c);this.mkWinners={...this.mkWinners};},
+    async settleMarket(m){const w=this.mkWinners[m.id]||[];if(!w.length){this.error='Coche au moins une bonne réponse.';return;}
+      try{await api('/markets/'+m.id+'/settle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({winners:w})});
+        delete this.mkWinners[m.id];this.mkWinners={...this.mkWinners};this.loadMarkets();this.loadLeaderboard();}catch(e){this.error='Règlement refusé.';}},
+    async mkLoadTeams(){if(!this.mkForm.competition)return;
+      try{const d=await api('/competition/'+encodeURIComponent(this.mkForm.competition));const t=new Set();
+        for(const g of d.groups)for(const mm of g.matches){if(mm.a)t.add(mm.a);if(mm.b)t.add(mm.b);}
+        this.mkForm.choicesText=[...t].sort().join('\n');}catch(e){}},
+    async createMarket(){const choices=(this.mkForm.choicesText||'').split('\n').map(s=>s.trim()).filter(Boolean);
+      if(!this.mkForm.title.trim()||choices.length<2){this.error='Titre + au moins 2 équipes requis.';return;}
+      try{await api('/markets',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({title:this.mkForm.title,competition:this.mkForm.competition,points:this.mkForm.points,pick:this.mkForm.pick,choices})});
+        this.mkForm={title:'',competition:'',points:20,pick:2,choicesText:''};this.error='';this.loadMarkets();}catch(e){this.error='Création refusée (titre, ≥2 équipes, 1≤choisir<équipes).';}},
+    mkWinStyle(m,c){return (m.status==='settled'&&m.winners&&m.winners.includes(c))?{borderColor:'var(--green)',color:'var(--green)'}:{};},
     setUrl(params){const u=new URL(location);u.search='';for(const k in params)if(params[k])u.searchParams.set(k,params[k]);
       history.replaceState(null,'',u);},
     async openPlayer(nom,poste){if(!nom)return;this.detail={type:'player',nom,loading:true};this.setUrl({player:nom,poste});
