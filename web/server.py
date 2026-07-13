@@ -792,6 +792,47 @@ def bets_place(request: Request, body: dict = Body(...)):
     return {"ok": True, "pred_home": ph, "pred_away": pa}
 
 
+@app.post("/api/bets/bulk")
+def bets_bulk(request: Request, body: dict = Body(...)):
+    """Enregistre plusieurs pronos d'un coup (1 requête, 1 transaction) — pour le bouton
+    « Valider mes pronos » global. N'accepte que les matchs encore programmés."""
+    u = _require_user(request)
+    maybe_settle()
+    if not _rate_ok(u["id"]):
+        raise HTTPException(429, "trop de paris, réessaie dans un instant")
+    comp = (body.get("competition") or "").strip()
+    items = body.get("bets") or []
+    if not comp or not isinstance(items, list):
+        raise HTTPException(400, "requête invalide")
+    if len(items) > 100:
+        raise HTTPException(413, "trop de paris d'un coup")
+    groups, _ = core.fetch_competition(comp)
+    sched = {(m.get("a"), m.get("b")): g["label"] for g in groups for m in g["matches"]
+             if m.get("status") == "scheduled" and m.get("a") and m.get("b")}
+    now, saved, skipped = time.time(), 0, 0
+    with closing(_db()) as con:
+        for it in items:
+            home = (it.get("home") or "").strip()
+            away = (it.get("away") or "").strip()
+            try:
+                ph, pa = int(it.get("pred_home")), int(it.get("pred_away"))
+            except (TypeError, ValueError):
+                skipped += 1
+                continue
+            if (home, away) not in sched or not (0 <= ph <= _MAX_GOALS and 0 <= pa <= _MAX_GOALS):
+                skipped += 1
+                continue
+            con.execute(
+                "INSERT INTO bets(user_id,season,competition,home,away,phase,pred_home,pred_away,created,updated) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id,season,competition,home,away) DO UPDATE SET "
+                "pred_home=excluded.pred_home,pred_away=excluded.pred_away,phase=excluded.phase,"
+                "updated=excluded.updated WHERE bets.locked=0 AND bets.settled=0",
+                (u["id"], core.SEASON, comp, home, away, sched[(home, away)], ph, pa, now, now))
+            saved += 1
+        con.commit()
+    return {"ok": True, "saved": saved, "skipped": skipped}
+
+
 @app.post("/api/bets/remove")
 def bets_remove(request: Request, body: dict = Body(...)):
     u = _require_user(request)
