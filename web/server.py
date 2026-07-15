@@ -200,12 +200,78 @@ def _db():
     return con
 
 
+# ----------------------------------------------------------------------------
+# Compteur d'occasions EN DIRECT. L'API ne donne qu'un booléen occas_dom/ext (« occasion /
+# but imminent »). On accumule donc un nombre d'occasions par match en comptant les fronts
+# montants (false -> true) de ce booléen, via un petit thread de fond (indépendant des
+# clients, pour que le total couvre tout le match). État en mémoire (éphémère, réinitialisé
+# au redémarrage — ce sont des données live).
+# ----------------------------------------------------------------------------
+_occ = {"counts": {}, "last": {}, "miss": {}}   # key -> [dom,ext] / (bd,be,sd,se) / cycles absents
+_occ_lock = threading.Lock()
+
+
+def _occ_key(m):
+    return (m.get("competition"), m.get("nom_equipe_dom"), m.get("nom_equipe_ext"))
+
+
+def _occ_update(live):
+    """Met à jour les compteurs d'occasions depuis un instantané du flux live. Idempotent pour
+    un même état (compter un front montant deux fois est impossible : on mémorise le dernier
+    booléen). Réinitialise si le score recule (même affiche réutilisée pour un nouveau match)."""
+    with _occ_lock:
+        seen = set()
+        for m in (live or []):
+            k = _occ_key(m)
+            seen.add(k)
+            cd, ce = bool(m.get("occas_dom")), bool(m.get("occas_ext"))
+            sd, se = m.get("score_dom"), m.get("score_ext")
+            st = _occ["last"].get(k)
+            cnt = _occ["counts"].setdefault(k, [0, 0])
+            if st is None:                       # 1re observation : occasion en cours comptée 1
+                cnt[0], cnt[1] = (1 if cd else 0), (1 if ce else 0)
+            else:
+                pbd, pbe, psd, pse = st
+                if (sd is not None and psd is not None and sd < psd) or \
+                   (se is not None and pse is not None and se < pse):
+                    cnt[0], cnt[1] = (1 if cd else 0), (1 if ce else 0)   # nouveau match
+                else:
+                    if cd and not pbd:
+                        cnt[0] += 1
+                    if ce and not pbe:
+                        cnt[1] += 1
+            _occ["last"][k] = (cd, ce, sd, se)
+            _occ["miss"][k] = 0
+        for k in list(_occ["last"]):             # purge des matchs terminés (absents ~1 min)
+            if k not in seen:
+                _occ["miss"][k] = _occ["miss"].get(k, 0) + 1
+                if _occ["miss"][k] > 6:
+                    _occ["counts"].pop(k, None)
+                    _occ["last"].pop(k, None)
+                    _occ["miss"].pop(k, None)
+
+
+def _occ_counts(m):
+    with _occ_lock:
+        return _occ["counts"].get(_occ_key(m)) or [0, 0]
+
+
+def _occ_poller():
+    while True:
+        try:
+            _occ_update(core.api_live_matchs())
+        except Exception:
+            pass
+        time.sleep(10)
+
+
 @app.on_event("startup")
 def _startup():
     try:
         core.refresh_current_season()
     except Exception:
         pass
+    threading.Thread(target=_occ_poller, daemon=True).start()   # comptage des occasions live
 
 
 def _match(m):
@@ -235,8 +301,14 @@ def state():
 
 @app.get("/api/live")
 def live():
-    """Tous les matchs EN DIRECT, toutes compétitions (occas_* = but imminent)."""
-    return {"matches": core.api_live_matchs()}
+    """Tous les matchs EN DIRECT, toutes compétitions. occas_* = but imminent (booléen) ;
+    occ_dom/occ_ext = nombre d'occasions accumulées (fronts montants du booléen)."""
+    ms = core.api_live_matchs()
+    _occ_update(ms)                    # compte aussi à chaque appel client (redondant, idempotent)
+    for m in ms:
+        c = _occ_counts(m)
+        m["occ_dom"], m["occ_ext"] = c[0], c[1]
+    return {"matches": ms}
 
 
 @app.get("/api/competition/{name}")

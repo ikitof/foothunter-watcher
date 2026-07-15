@@ -111,7 +111,7 @@
     <!-- LIVE -->
     <section v-if="tab==='live'">
       <div class="card">
-        <h2 style="margin:0 0 8px">En direct <span class="note">· rafraîchi toutes les 10 s · <span style="color:var(--flash)">⚡</span> = occasion, but possible</span></h2>
+        <h2 style="margin:0 0 8px">En direct <span class="note">· rafraîchi toutes les 10 s · <span style="color:var(--flash)">⚡</span> = occasion imminente · « N occ » = occasions comptées sur le match</span></h2>
         <div class="row" style="align-items:flex-start;margin-bottom:8px">
           <span class="note" style="margin-top:7px;white-space:nowrap">Ligues suivies :</span>
           <div class="pills" style="flex:1">
@@ -124,9 +124,9 @@
         <div v-for="(ms,comp) in liveByComp" :key="comp">
           <h3 class="lk" @click="openComp(comp)">{{comp}} ↗</h3>
           <div class="match" v-for="(m,i) in ms" :key="i" :class="{hot:m.occas_dom||m.occas_ext}">
-            <span class="t" :class="{hot:m.occas_dom}"><span v-if="m.occas_dom" class="imminent">⚡</span><span class="clk" @click="openTeam(m.nom_equipe_dom)">{{m.nom_equipe_dom}}</span></span>
+            <span class="t" :class="{hot:m.occas_dom}"><span v-if="m.occas_dom" class="imminent">⚡</span><span class="clk" @click="openTeam(m.nom_equipe_dom)">{{m.nom_equipe_dom}}</span><span v-if="m.occ_dom" class="note" title="Occasions comptées depuis le début du suivi"> · {{m.occ_dom}} occ</span></span>
             <span class="sc live">{{m.score_dom ?? '–'}} - {{m.score_ext ?? '–'}}<span class="dot"></span></span>
-            <span class="t away" :class="{hot:m.occas_ext}"><span class="clk" @click="openTeam(m.nom_equipe_ext)">{{m.nom_equipe_ext}}</span><span v-if="m.occas_ext" class="imminent">⚡</span></span>
+            <span class="t away" :class="{hot:m.occas_ext}"><span v-if="m.occ_ext" class="note" title="Occasions comptées depuis le début du suivi">{{m.occ_ext}} occ · </span><span class="clk" @click="openTeam(m.nom_equipe_ext)">{{m.nom_equipe_ext}}</span><span v-if="m.occas_ext" class="imminent">⚡</span></span>
           </div>
         </div>
       </div>
